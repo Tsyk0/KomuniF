@@ -1,28 +1,26 @@
+// src/stores/auth.ts
 import { defineStore } from 'pinia'
-import { authApi } from '@/services/auth'
+// 改为从新位置导入 API 函数
+import { loginApi, registerApi } from '@/apis/auth'
 
 export const useAuthStore = defineStore('auth', {
-  // 状态 - 改为从 sessionStorage 读取
   state: () => ({
     token: sessionStorage.getItem('token') || '',
     user: JSON.parse(sessionStorage.getItem('user') || 'null')
   }),
   
-  // 计算属性
   getters: {
     isAuthenticated: (state) => !!state.token,
     currentUser: (state) => state.user
   },
   
-  // 动作（方法）
   actions: {
-    // 登录方法
     async login(userId: string, userPwd: string) {
       try {
         console.log('🔄 调用后端登录接口...')
         
-        // 调用后端 API
-        const response = await authApi.login({
+        // 使用新的 API 函数
+        const response = await loginApi({
           userId: userId,
           userPwd: userPwd
         })
@@ -30,11 +28,9 @@ export const useAuthStore = defineStore('auth', {
         console.log('✅ 后端响应:', response)
         
         if (response.code === 200) {
-          // 保存到 sessionStorage（标签页关闭后自动清除）
           sessionStorage.setItem('token', response.data.token)
           sessionStorage.setItem('user', JSON.stringify(response.data.user))
           
-          // 更新 store 状态
           this.token = response.data.token
           this.user = response.data.user
           
@@ -48,12 +44,10 @@ export const useAuthStore = defineStore('auth', {
             message: response.message || '登录失败'
           }
         }
-        
       } catch (error: any) {
         console.error('❌ 登录失败:', error)
         
         let errorMessage = '登录失败'
-        
         if (error.response) {
           errorMessage = error.response.data?.message || `服务器错误`
         } else if (error.request) {
@@ -67,18 +61,14 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     
-      
-       // 新增：注册方法
     async register(userData: any) {
       try {
         console.log('📤 调用后端注册接口...')
-        console.log('注册数据:', userData)
         
-        // 调用后端注册API
-        const response = await authApi.register({
+        // 使用新的 API 函数
+        const response = await registerApi({
           userNickname: userData.userNickname,
           userPassword: userData.userPassword,
-          // 可选字段，如果提供了就传递
           userAvatar: userData.userAvatar || null,
           userGender: userData.userGender || 0,
           userBirthday: userData.userBirthday || null,
@@ -94,7 +84,7 @@ export const useAuthStore = defineStore('auth', {
           return {
             success: true,
             message: response.message,
-            userId: response.data  // 后端返回的用户ID
+            userId: response.data
           }
         } else {
           return {
@@ -107,12 +97,9 @@ export const useAuthStore = defineStore('auth', {
         
         let errorMessage = '注册失败'
         if (error.response) {
-          console.log('注册错误响应:', error.response.data)
           errorMessage = error.response.data?.message || `服务器错误 (${error.response.status})`
         } else if (error.request) {
           errorMessage = '无法连接到服务器，请检查后端是否运行'
-        } else {
-          errorMessage = '请求配置错误: ' + error.message
         }
         
         return {
@@ -121,13 +108,10 @@ export const useAuthStore = defineStore('auth', {
         }
       }
     },
-    // 登出方法
+    
     logout() {
-      // 清除 sessionStorage
       sessionStorage.removeItem('token')
       sessionStorage.removeItem('user')
-      
-      // 清除 store 状态
       this.token = ''
       this.user = null
     }

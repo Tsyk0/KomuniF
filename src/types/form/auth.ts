@@ -1,3 +1,4 @@
+// types/auth.ts
 // 登录表单数据类型
 export interface LoginForm {
   username: string
