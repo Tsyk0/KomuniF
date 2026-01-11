@@ -24,7 +24,8 @@
       <!-- 左侧会话列表区域 -->
       <div class="conversation-sidebar">
         <div class="sidebar-header">
-          <div class="user-profile">
+          <!-- 可点击的用户资料区域 -->
+          <div class="user-profile" @click="enterEditMode">
             <div class="avatar-placeholder">
               {{ userNickname.charAt(0) }}
             </div>
@@ -72,56 +73,231 @@
         </div>
       </div>
 
-      <!-- 右侧聊天区域 -->
+      <!-- 右侧聊天区域 - 支持两种模式：聊天和编辑资料 -->
       <div class="chat-main-area">
-        <div class="chat-area-label">
+        <!-- 用户资料编辑界面 -->
+        <div v-if="isEditingProfile" class="profile-edit-container">
+          <div class="edit-header">
+            <button class="back-btn" @click="exitEditMode">
+              <span>←</span> 返回聊天
+            </button>
+            <h2>编辑个人资料</h2>
+            <button class="save-btn" @click="saveProfile" :disabled="saving">
+              {{ saving ? "保存中..." : "保存更改" }}
+            </button>
+          </div>
+
+          <div class="edit-content">
+            <!-- 头像编辑 -->
+            <div class="avatar-edit-section">
+              <div class="avatar-preview">
+                <div v-if="editForm.userAvatar" class="avatar-img-container">
+                  <img
+                    :src="editForm.userAvatar"
+                    alt="头像"
+                    class="avatar-img"
+                  />
+                </div>
+                <div v-else class="avatar-placeholder-large">
+                  {{ editForm.userNickname?.charAt(0) || "用" }}
+                </div>
+              </div>
+              <div class="avatar-controls">
+                <button class="upload-btn" @click="triggerAvatarUpload">
+                  <span class="btn-icon">📷</span>
+                  更换头像
+                </button>
+                <input
+                  type="file"
+                  ref="avatarInput"
+                  accept="image/*"
+                  @change="handleAvatarUpload"
+                  style="display: none"
+                />
+                <p class="avatar-hint">支持 JPG、PNG 格式，最大 2MB</p>
+              </div>
+            </div>
+
+            <!-- 基本信息表单 -->
+            <div class="form-section">
+              <div class="form-group">
+                <label for="userNickname">昵称</label>
+                <input
+                  id="userNickname"
+                  v-model="editForm.userNickname"
+                  type="text"
+                  placeholder="请输入昵称"
+                  class="el-input"
+                  maxlength="20"
+                />
+                <div class="char-count">
+                  {{ editForm.userNickname?.length || 0 }}/20
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="userGender">性别</label>
+                <div class="gender-options">
+                  <label
+                    class="gender-option"
+                    :class="{ active: editForm.userGender === 0 }"
+                  >
+                    <input
+                      type="radio"
+                      v-model="editForm.userGender"
+                      :value="0"
+                      style="display: none"
+                    />
+                    <span class="gender-icon">⚪</span>
+                    <span>未知</span>
+                  </label>
+                  <label
+                    class="gender-option"
+                    :class="{ active: editForm.userGender === 1 }"
+                  >
+                    <input
+                      type="radio"
+                      v-model="editForm.userGender"
+                      :value="1"
+                      style="display: none"
+                    />
+                    <span class="gender-icon">♂️</span>
+                    <span>男</span>
+                  </label>
+                  <label
+                    class="gender-option"
+                    :class="{ active: editForm.userGender === 2 }"
+                  >
+                    <input
+                      type="radio"
+                      v-model="editForm.userGender"
+                      :value="2"
+                      style="display: none"
+                    />
+                    <span class="gender-icon">♀️</span>
+                    <span>女</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="userBirthday">生日</label>
+                <input
+                  id="userBirthday"
+                  v-model="editForm.userBirthday"
+                  type="date"
+                  class="el-input"
+                />
+                <div class="hint">格式：YYYY-MM-DD</div>
+              </div>
+
+              <div class="form-group">
+                <label for="userLocation">所在地</label>
+                <input
+                  id="userLocation"
+                  v-model="editForm.userLocation"
+                  type="text"
+                  placeholder="请输入所在地"
+                  class="el-input"
+                  maxlength="50"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="userSignature">个性签名</label>
+                <textarea
+                  id="userSignature"
+                  v-model="editForm.userSignature"
+                  placeholder="介绍一下自己吧～"
+                  class="el-textarea"
+                  rows="3"
+                  maxlength="100"
+                ></textarea>
+                <div class="char-count">
+                  {{ editForm.userSignature?.length || 0 }}/100
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="userPhone">手机号</label>
+                <input
+                  id="userPhone"
+                  v-model="editForm.userPhone"
+                  type="tel"
+                  placeholder="请输入手机号"
+                  class="el-input"
+                  maxlength="11"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="userEmail">邮箱</label>
+                <input
+                  id="userEmail"
+                  v-model="editForm.userEmail"
+                  type="email"
+                  placeholder="请输入邮箱"
+                  class="el-input"
+                  maxlength="50"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="userPassword">修改密码</label>
+                <div class="password-edit">
+                  <input
+                    id="userPassword"
+                    v-model="editForm.userPassword"
+                    type="password"
+                    placeholder="留空表示不修改密码"
+                    class="el-input"
+                    maxlength="20"
+                  />
+                  <div class="hint">密码至少6位，留空则不修改</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+              <button class="cancel-btn" @click="resetForm">
+                <span class="btn-icon">↺</span>
+                重置
+              </button>
+              <button class="logout-btn" @click="confirmLogout">
+                <span class="btn-icon">🚪</span>
+                退出登录
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 原有的聊天区域（当不在编辑模式时显示） -->
+        <div v-else class="chat-area-label">
           <div class="chat-label-header">
             <span class="chat-label-icon">💭</span>
             <span class="chat-label-text">聊天区域</span>
           </div>
           <div class="chat-label-content">
-            <p class="chat-label-description">这里将显示选中的聊天会话：</p>
+            <p class="chat-label-description">点击左侧用户资料进入编辑模式</p>
             <div class="chat-features">
               <div class="feature-item">
                 <div class="feature-icon">👤</div>
                 <div class="feature-desc">
-                  <h4>聊天头部</h4>
-                  <p>显示对方信息、在线状态和功能按钮</p>
+                  <h4>用户资料</h4>
+                  <p>点击左侧头像区域编辑个人信息</p>
                 </div>
               </div>
               <div class="feature-item">
                 <div class="feature-icon">💬</div>
                 <div class="feature-desc">
                   <h4>消息区域</h4>
-                  <p>显示双方的聊天记录，支持文本、图片、文件</p>
-                </div>
-              </div>
-              <div class="feature-item">
-                <div class="feature-icon">⌨️</div>
-                <div class="feature-desc">
-                  <h4>输入区域</h4>
-                  <p>发送消息、表情、附件和语音消息</p>
+                  <p>这里将显示聊天会话</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- <div class="welcome-message">
-          <div class="welcome-icon">👋</div>
-          <h2 class="welcome-title">欢迎使用 Komuni</h2>
-          <p class="welcome-text">选择一个会话开始聊天，或创建新的对话</p>
-          <div class="quick-actions">
-            <button class="action-btn" @click="startNewChat">
-              <span class="action-icon">➕</span>
-              <span>新建聊天</span>
-            </button>
-            <button class="action-btn" @click="showContacts">
-              <span class="action-icon">👥</span>
-              <span>查看联系人</span>
-            </button>
-          </div>
-        </div> -->
       </div>
     </div>
 
@@ -145,35 +321,246 @@ export default {
       userId: "",
       userNickname: "用户",
       lastLoginTime: "",
+      isEditingProfile: false,
+      saving: false,
+      // 编辑表单数据
+      editForm: {
+        userId: "",
+        userNickname: "",
+        userAvatar: "",
+        userGender: 0,
+        userBirthday: "",
+        userLocation: "",
+        userSignature: "",
+        userPhone: "",
+        userEmail: "",
+        userPassword: "",
+      },
+      // 原始数据备份（用于重置）
+      originalUserData: null,
     };
   },
   mounted() {
-    const userStr = sessionStorage.getItem("user");
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        this.userId = user.userId || "";
-        this.userNickname = user.userNickname || "用户";
-        this.lastLoginTime = user.lastLoginTime || "";
-      } catch (e) {
-        console.error("解析用户信息失败:", e);
-      }
-    }
+    this.loadUserData();
   },
   methods: {
+    loadUserData() {
+      const userStr = sessionStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          this.userId = user.userId || "";
+          this.userNickname = user.userNickname || "用户";
+          this.lastLoginTime = user.lastLoginTime || "";
+
+          // 初始化编辑表单
+          this.editForm = {
+            userId: user.userId || "",
+            userNickname: user.userNickname || "",
+            userAvatar: user.userAvatar || "",
+            userGender: user.userGender || 0,
+            userBirthday: this.formatDateForInput(user.userBirthday),
+            userLocation: user.userLocation || "",
+            userSignature: user.userSignature || "",
+            userPhone: user.userPhone || "",
+            userEmail: user.userEmail || "",
+            userPassword: "",
+          };
+
+          // 保存原始数据用于重置
+          this.originalUserData = JSON.parse(JSON.stringify(this.editForm));
+        } catch (e) {
+          console.error("解析用户信息失败:", e);
+        }
+      }
+    },
+
+    formatDateForInput(dateString) {
+      if (!dateString) return "";
+      // 将后端返回的日期格式转换为 input[type=date] 需要的格式
+      const date = new Date(dateString);
+      return date.toISOString().split("T")[0];
+    },
+
+    formatDateForApi(dateString) {
+      if (!dateString) return null;
+      return dateString;
+    },
+
+    // 进入编辑模式
+    enterEditMode() {
+      this.isEditingProfile = true;
+      this.loadUserData(); // 重新加载最新数据
+    },
+
+    // 退出编辑模式
+    exitEditMode() {
+      this.isEditingProfile = false;
+    },
+
+    // 触发头像上传
+    triggerAvatarUpload() {
+      this.$refs.avatarInput.click();
+    },
+
+    // 处理头像上传
+    handleAvatarUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // 文件大小限制 2MB
+      if (file.size > 2 * 1024 * 1024) {
+        alert("图片大小不能超过2MB");
+        return;
+      }
+
+      // 图片类型验证
+      if (!file.type.startsWith("image/")) {
+        alert("请选择图片文件");
+        return;
+      }
+
+      // 预览图片（这里只是本地预览，实际需要上传到服务器）
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.editForm.userAvatar = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      // 清空input，以便可以再次选择同一文件
+      event.target.value = "";
+    },
+
+    // 保存资料
+    async saveProfile() {
+      // 简单的表单验证
+      if (!this.editForm.userNickname.trim()) {
+        alert("昵称不能为空");
+        return;
+      }
+
+      if (this.editForm.userPassword && this.editForm.userPassword.length < 6) {
+        alert("密码至少需要6位字符");
+        return;
+      }
+
+      if (
+        this.editForm.userPhone &&
+        !/^1[3-9]\d{9}$/.test(this.editForm.userPhone)
+      ) {
+        alert("请输入有效的手机号");
+        return;
+      }
+
+      if (
+        this.editForm.userEmail &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.editForm.userEmail)
+      ) {
+        alert("请输入有效的邮箱地址");
+        return;
+      }
+
+      this.saving = true;
+
+      try {
+        // 准备提交数据
+        const submitData = {
+          userId: this.editForm.userId,
+          userNickname: this.editForm.userNickname.trim(),
+          userAvatar: this.editForm.userAvatar,
+          userGender: this.editForm.userGender,
+          userBirthday: this.editForm.userBirthday
+            ? this.formatDateForApi(this.editForm.userBirthday)
+            : null,
+          userLocation: this.editForm.userLocation.trim(),
+          userSignature: this.editForm.userSignature.trim(),
+          userPhone: this.editForm.userPhone.trim(),
+          userEmail: this.editForm.userEmail.trim(),
+          userPassword: this.editForm.userPassword || null, // 为空时不修改密码
+        };
+
+        console.log("📤 提交用户数据:", submitData);
+
+        // TODO: 这里需要调用后端更新接口
+        // 当 userService 可用后，取消注释下面的代码
+        // import { userService } from '@/services'
+        // const result = await userService.updateUser(submitData)
+        // if (result.success) {
+        //   // 更新本地存储的用户信息
+        //   const updatedUser = { ...this.getCurrentUser(), ...submitData }
+        //   sessionStorage.setItem('user', JSON.stringify(updatedUser))
+        //
+        //   // 更新原始数据备份
+        //   this.originalUserData = JSON.parse(JSON.stringify(this.editForm))
+        //
+        //   alert('资料更新成功！')
+        //   this.exitEditMode()
+        // } else {
+        //   alert('更新失败: ' + result.message)
+        // }
+
+        // 模拟成功（暂时保留，等 userService 实现后删除）
+        setTimeout(() => {
+          // 更新本地存储
+          const currentUser = JSON.parse(
+            sessionStorage.getItem("user") || "{}"
+          );
+          const updatedUser = { ...currentUser, ...submitData };
+          sessionStorage.setItem("user", JSON.stringify(updatedUser));
+
+          // 更新显示的数据
+          this.userNickname = updatedUser.userNickname;
+          this.loadUserData();
+
+          alert("资料更新成功！");
+          this.saving = false;
+          this.exitEditMode();
+        }, 1000);
+      } catch (error) {
+        console.error("保存资料失败:", error);
+        alert("保存失败，请稍后重试");
+        this.saving = false;
+      }
+    },
+
+    // 重置表单
+    resetForm() {
+      if (confirm("确定要重置所有修改吗？")) {
+        this.editForm = JSON.parse(JSON.stringify(this.originalUserData));
+      }
+    },
+
+    // 确认退出登录
+    confirmLogout() {
+      if (confirm("确定要退出登录吗？")) {
+        this.handleLogout();
+      }
+    },
+
+    // 原有的登出方法
     handleLogout() {
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
+      localStorage.removeItem("rememberMe");
       this.$router.push("/");
     },
+
     showSettings() {
       alert("设置功能开发中...");
     },
+
     startNewChat() {
       alert("新建聊天功能开发中...");
     },
+
     showContacts() {
       alert("联系人功能开发中...");
+    },
+
+    // 获取当前用户信息
+    getCurrentUser() {
+      const userStr = sessionStorage.getItem("user");
+      return userStr ? JSON.parse(userStr) : null;
     },
   },
 };
@@ -300,11 +687,55 @@ export default {
   border-bottom: 1px solid #f0f0f0;
 }
 
+/* 用户资料区域 - 可点击样式 */
 .user-profile {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.user-profile:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 122, 255, 0.08),
+    rgba(0, 122, 255, 0.12)
+  );
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.1);
+}
+
+.user-profile:hover .avatar-placeholder {
+  transform: scale(1.05);
+}
+
+.user-profile:hover .user-name {
+  color: #007aff;
+}
+
+.user-profile:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 122, 255, 0.1);
+}
+
+.user-profile::after {
+  content: "✏️";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 14px;
+}
+
+.user-profile:hover::after {
+  opacity: 1;
 }
 
 .avatar-placeholder {
@@ -318,6 +749,7 @@ export default {
   justify-content: center;
   font-size: 20px;
   font-weight: 600;
+  transition: transform 0.3s ease;
 }
 
 .user-info {
@@ -329,6 +761,7 @@ export default {
   color: #333;
   font-size: 16px;
   margin-bottom: 4px;
+  transition: color 0.3s ease;
 }
 
 .user-status {
@@ -588,68 +1021,6 @@ export default {
   text-align: left;
 }
 
-/* 欢迎消息 */
-.welcome-message {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 40px;
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
-
-.welcome-icon {
-  font-size: 60px;
-  margin-bottom: 20px;
-}
-
-.welcome-title {
-  color: #333;
-  margin-bottom: 10px;
-  font-size: 24px;
-}
-
-.welcome-text {
-  color: #666;
-  margin-bottom: 30px;
-  font-size: 16px;
-}
-
-.quick-actions {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-}
-
-.action-btn {
-  padding: 12px 24px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 14px;
-  color: #333;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s;
-}
-
-.action-btn:hover {
-  background: #f8f9fa;
-  border-color: #007aff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.action-icon {
-  font-size: 18px;
-}
-
 /* 底部信息栏 */
 .bottom-info-bar {
   background: rgba(0, 0, 0, 0.2);
@@ -663,6 +1034,307 @@ export default {
 .bottom-info-bar p {
   margin: 0;
   opacity: 0.8;
+}
+
+/* 用户资料编辑界面样式 */
+.profile-edit-container {
+  width: 100%;
+  height: 100%;
+  background: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-header {
+  padding: 20px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #f8f9fa, #f1f3f5);
+}
+
+.edit-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.back-btn {
+  padding: 8px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s;
+}
+
+.back-btn:hover {
+  background: #f8f9fa;
+  border-color: #007aff;
+  color: #007aff;
+}
+
+.save-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #007aff, #0056cc);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056cc, #004099);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.edit-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 30px;
+}
+
+.avatar-edit-section {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.avatar-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.avatar-placeholder-large {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007aff, #0056cc);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+}
+
+.avatar-img-container {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upload-btn {
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.upload-btn:hover {
+  background: #e9ecef;
+  border-color: #007aff;
+  color: #007aff;
+}
+
+.avatar-hint {
+  font-size: 12px;
+  color: #95a5a6;
+  margin: 0;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 500px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.el-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.el-input:focus {
+  outline: none;
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.el-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+  transition: border-color 0.3s;
+}
+
+.el-textarea:focus {
+  outline: none;
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.char-count {
+  font-size: 12px;
+  color: #95a5a6;
+  text-align: right;
+}
+
+.hint {
+  font-size: 12px;
+  color: #95a5a6;
+}
+
+.gender-options {
+  display: flex;
+  gap: 15px;
+}
+
+.gender-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  user-select: none;
+}
+
+.gender-option:hover {
+  border-color: #007aff;
+  background: rgba(0, 122, 255, 0.05);
+}
+
+.gender-option.active {
+  border-color: #007aff;
+  background: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+}
+
+.gender-icon {
+  font-size: 18px;
+}
+
+.password-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.cancel-btn,
+.logout-btn {
+  flex: 1;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.cancel-btn {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  color: #666;
+}
+
+.cancel-btn:hover {
+  background: #e9ecef;
+  border-color: #ff3b30;
+  color: #ff3b30;
+}
+
+.logout-btn {
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  color: #ff3b30;
+}
+
+.logout-btn:hover {
+  background: #ffcdd2;
+  border-color: #ff3b30;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
+}
+
+.btn-icon {
+  font-size: 16px;
 }
 
 /* 响应式设计 */
@@ -688,6 +1360,23 @@ export default {
 
   .chat-main-area {
     height: 60vh;
+  }
+
+  .edit-content {
+    padding: 20px;
+  }
+
+  .avatar-edit-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .gender-options {
+    flex-wrap: wrap;
+  }
+
+  .action-buttons {
+    flex-direction: column;
   }
 }
 </style>
