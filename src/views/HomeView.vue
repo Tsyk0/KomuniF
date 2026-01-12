@@ -10,16 +10,13 @@
         <span class="status-indicator online">● 在线</span>
       </div>
       <div class="nav-right">
-        <button class="nav-btn" @click="showSettings">
-          <span class="nav-icon">⚙️</span>
-        </button>
-        <button class="nav-btn logout-btn" @click="handleLogout">
-          <span class="nav-icon">🚪</span>
+        <button class="nav-btn" @click="handleLogout">
+          <span class="nav-icon">🚪</span> 退出
         </button>
       </div>
     </div>
 
-    <!-- 主内容区域 - 两端留紫色渐变背景 -->
+    <!-- 主内容区域 -->
     <div class="main-content-wrapper">
       <!-- 左侧会话列表区域 -->
       <div class="conversation-sidebar">
@@ -34,10 +31,6 @@
               <div class="user-status online">在线</div>
             </div>
           </div>
-          <div class="search-box">
-            <input type="text" placeholder="搜索会话..." class="search-input" />
-            <span class="search-icon">🔍</span>
-          </div>
         </div>
 
         <div class="conversation-list">
@@ -47,81 +40,28 @@
             <p class="empty-text">暂无会话</p>
             <p class="empty-hint">开始新的对话或等待好友消息</p>
           </div>
-          <!-- 会话条区域 -->
-          <div class="conversation-area-label">
-            <div class="label-header">
-              <span class="label-icon">📋</span>
-              <span class="label-text">会话条区域</span>
-            </div>
-            <p class="label-description">
-              这里将显示所有会话列表，每个会话包含：
-            </p>
-            <ul class="label-features">
-              <li>• 好友头像和昵称</li>
-              <li>• 最后一条消息预览</li>
-              <li>• 未读消息数量</li>
-              <li>• 最后消息时间</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="sidebar-footer">
-          <button class="new-chat-btn" @click="startNewChat">
-            <span class="btn-icon">+</span>
-            <span class="btn-text">新建聊天</span>
-          </button>
         </div>
       </div>
 
-      <!-- 右侧聊天区域 - 支持两种模式：聊天和编辑资料 -->
+      <!-- 右侧聊天区域 -->
       <div class="chat-main-area">
         <!-- 用户资料编辑界面 -->
         <div v-if="isEditingProfile" class="profile-edit-container">
           <div class="edit-header">
             <button class="back-btn" @click="exitEditMode">
-              <span>←</span> 返回聊天
+              <span>←</span> 返回
             </button>
             <h2>编辑个人资料</h2>
             <button class="save-btn" @click="saveProfile" :disabled="saving">
-              {{ saving ? "保存中..." : "保存更改" }}
+              {{ saving ? "保存中..." : "保存" }}
             </button>
           </div>
 
           <div class="edit-content">
-            <!-- 头像编辑 -->
-            <div class="avatar-edit-section">
-              <div class="avatar-preview">
-                <div v-if="editForm.userAvatar" class="avatar-img-container">
-                  <img
-                    :src="editForm.userAvatar"
-                    alt="头像"
-                    class="avatar-img"
-                  />
-                </div>
-                <div v-else class="avatar-placeholder-large">
-                  {{ editForm.userNickname?.charAt(0) || "用" }}
-                </div>
-              </div>
-              <div class="avatar-controls">
-                <button class="upload-btn" @click="triggerAvatarUpload">
-                  <span class="btn-icon">📷</span>
-                  更换头像
-                </button>
-                <input
-                  type="file"
-                  ref="avatarInput"
-                  accept="image/*"
-                  @change="handleAvatarUpload"
-                  style="display: none"
-                />
-                <p class="avatar-hint">支持 JPG、PNG 格式，最大 2MB</p>
-              </div>
-            </div>
-
             <!-- 基本信息表单 -->
             <div class="form-section">
               <div class="form-group">
-                <label for="userNickname">昵称</label>
+                <label for="userNickname">昵称 *</label>
                 <input
                   id="userNickname"
                   v-model="editForm.userNickname"
@@ -188,7 +128,6 @@
                   type="date"
                   class="el-input"
                 />
-                <div class="hint">格式：YYYY-MM-DD</div>
               </div>
 
               <div class="form-group">
@@ -241,21 +180,6 @@
                   maxlength="50"
                 />
               </div>
-
-              <div class="form-group">
-                <label for="userPassword">修改密码</label>
-                <div class="password-edit">
-                  <input
-                    id="userPassword"
-                    v-model="editForm.userPassword"
-                    type="password"
-                    placeholder="留空表示不修改密码"
-                    class="el-input"
-                    maxlength="20"
-                  />
-                  <div class="hint">密码至少6位，留空则不修改</div>
-                </div>
-              </div>
             </div>
 
             <!-- 操作按钮 -->
@@ -264,38 +188,18 @@
                 <span class="btn-icon">↺</span>
                 重置
               </button>
-              <button class="logout-btn" @click="confirmLogout">
-                <span class="btn-icon">🚪</span>
-                退出登录
-              </button>
             </div>
           </div>
         </div>
 
-        <!-- 原有的聊天区域（当不在编辑模式时显示） -->
+        <!-- 聊天区域（当不在编辑模式时显示） -->
         <div v-else class="chat-area-label">
           <div class="chat-label-header">
             <span class="chat-label-icon">💭</span>
             <span class="chat-label-text">聊天区域</span>
           </div>
           <div class="chat-label-content">
-            <p class="chat-label-description">点击左侧用户资料进入编辑模式</p>
-            <div class="chat-features">
-              <div class="feature-item">
-                <div class="feature-icon">👤</div>
-                <div class="feature-desc">
-                  <h4>用户资料</h4>
-                  <p>点击左侧头像区域编辑个人信息</p>
-                </div>
-              </div>
-              <div class="feature-item">
-                <div class="feature-icon">💬</div>
-                <div class="feature-desc">
-                  <h4>消息区域</h4>
-                  <p>这里将显示聊天会话</p>
-                </div>
-              </div>
-            </div>
+            <p class="chat-label-description">选择一个对话以开始</p>
           </div>
         </div>
       </div>
@@ -313,6 +217,8 @@
 
 <script>
 import { useRouter } from "vue-router";
+import { useUpdateStore } from "@/stores/update";
+import { useAuthStore } from "@/stores/auth";
 
 export default {
   name: "HomeView",
@@ -327,14 +233,12 @@ export default {
       editForm: {
         userId: "",
         userNickname: "",
-        userAvatar: "",
         userGender: 0,
         userBirthday: "",
         userLocation: "",
         userSignature: "",
         userPhone: "",
         userEmail: "",
-        userPassword: "",
       },
       // 原始数据备份（用于重置）
       originalUserData: null,
@@ -342,6 +246,12 @@ export default {
   },
   mounted() {
     this.loadUserData();
+  },
+  setup() {
+    const updateStore = useUpdateStore();
+    const authStore = useAuthStore();
+    const router = useRouter();
+    return { updateStore, authStore, router };
   },
   methods: {
     loadUserData() {
@@ -357,14 +267,12 @@ export default {
           this.editForm = {
             userId: user.userId || "",
             userNickname: user.userNickname || "",
-            userAvatar: user.userAvatar || "",
             userGender: user.userGender || 0,
             userBirthday: this.formatDateForInput(user.userBirthday),
             userLocation: user.userLocation || "",
             userSignature: user.userSignature || "",
             userPhone: user.userPhone || "",
             userEmail: user.userEmail || "",
-            userPassword: "",
           };
 
           // 保存原始数据用于重置
@@ -377,20 +285,91 @@ export default {
 
     formatDateForInput(dateString) {
       if (!dateString) return "";
-      // 将后端返回的日期格式转换为 input[type=date] 需要的格式
       const date = new Date(dateString);
       return date.toISOString().split("T")[0];
     },
 
-    formatDateForApi(dateString) {
-      if (!dateString) return null;
-      return dateString;
+    // 验证表单
+    validateForm() {
+      // 昵称验证
+      if (!this.editForm.userNickname?.trim()) {
+        alert("昵称不能为空");
+        return false;
+      }
+
+      // 手机号验证（如果填写了）
+      if (
+        this.editForm.userPhone &&
+        !/^1[3-9]\d{9}$/.test(this.editForm.userPhone)
+      ) {
+        alert("请输入有效的手机号");
+        return false;
+      }
+
+      // 邮箱验证（如果填写了）
+      if (
+        this.editForm.userEmail &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.editForm.userEmail)
+      ) {
+        alert("请输入有效的邮箱地址");
+        return false;
+      }
+
+      return true;
+    },
+
+    async saveProfile() {
+      if (!this.validateForm()) {
+        return;
+      }
+
+      this.saving = true;
+
+      try {
+        // 准备用户信息更新数据
+        const userUpdateData = {
+          userId: this.editForm.userId,
+          userNickname: this.editForm.userNickname?.trim(),
+          userGender: this.editForm.userGender,
+          userBirthday: this.editForm.userBirthday || null,
+          userLocation: this.editForm.userLocation?.trim() || null,
+          userSignature: this.editForm.userSignature?.trim() || null,
+          userPhone: this.editForm.userPhone?.trim() || null,
+          userEmail: this.editForm.userEmail?.trim() || null,
+        };
+
+        console.log("📤 提交用户数据:", userUpdateData);
+
+        // 1. 先更新用户基本信息
+        const userResult = await this.updateStore.updateUser(userUpdateData);
+
+        if (!userResult.success) {
+          alert("更新用户信息失败: " + userResult.message);
+          return;
+        }
+
+        // 3. 更新本地存储的用户信息
+        const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
+        const updatedUser = { ...currentUser, ...userUpdateData };
+        sessionStorage.setItem("user", JSON.stringify(updatedUser));
+
+        // 4. 更新显示的数据
+        this.userNickname = updatedUser.userNickname;
+        this.loadUserData(); // 重新加载数据
+
+        this.exitEditMode();
+      } catch (error) {
+        console.error("保存资料失败:", error);
+        alert("保存失败，请稍后重试");
+      } finally {
+        this.saving = false;
+      }
     },
 
     // 进入编辑模式
     enterEditMode() {
       this.isEditingProfile = true;
-      this.loadUserData(); // 重新加载最新数据
+      this.loadUserData();
     },
 
     // 退出编辑模式
@@ -398,173 +377,31 @@ export default {
       this.isEditingProfile = false;
     },
 
-    // 触发头像上传
-    triggerAvatarUpload() {
-      this.$refs.avatarInput.click();
-    },
-
-    // 处理头像上传
-    handleAvatarUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      // 文件大小限制 2MB
-      if (file.size > 2 * 1024 * 1024) {
-        alert("图片大小不能超过2MB");
-        return;
-      }
-
-      // 图片类型验证
-      if (!file.type.startsWith("image/")) {
-        alert("请选择图片文件");
-        return;
-      }
-
-      // 预览图片（这里只是本地预览，实际需要上传到服务器）
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.editForm.userAvatar = e.target.result;
-      };
-      reader.readAsDataURL(file);
-
-      // 清空input，以便可以再次选择同一文件
-      event.target.value = "";
-    },
-
-    // 保存资料
-    async saveProfile() {
-      // 简单的表单验证
-      if (!this.editForm.userNickname.trim()) {
-        alert("昵称不能为空");
-        return;
-      }
-
-      if (this.editForm.userPassword && this.editForm.userPassword.length < 6) {
-        alert("密码至少需要6位字符");
-        return;
-      }
-
-      if (
-        this.editForm.userPhone &&
-        !/^1[3-9]\d{9}$/.test(this.editForm.userPhone)
-      ) {
-        alert("请输入有效的手机号");
-        return;
-      }
-
-      if (
-        this.editForm.userEmail &&
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.editForm.userEmail)
-      ) {
-        alert("请输入有效的邮箱地址");
-        return;
-      }
-
-      this.saving = true;
-
-      try {
-        // 准备提交数据
-        const submitData = {
-          userId: this.editForm.userId,
-          userNickname: this.editForm.userNickname.trim(),
-          userAvatar: this.editForm.userAvatar,
-          userGender: this.editForm.userGender,
-          userBirthday: this.editForm.userBirthday
-            ? this.formatDateForApi(this.editForm.userBirthday)
-            : null,
-          userLocation: this.editForm.userLocation.trim(),
-          userSignature: this.editForm.userSignature.trim(),
-          userPhone: this.editForm.userPhone.trim(),
-          userEmail: this.editForm.userEmail.trim(),
-          userPassword: this.editForm.userPassword || null, // 为空时不修改密码
-        };
-
-        console.log("📤 提交用户数据:", submitData);
-
-        // TODO: 这里需要调用后端更新接口
-        // 当 userService 可用后，取消注释下面的代码
-        // import { userService } from '@/services'
-        // const result = await userService.updateUser(submitData)
-        // if (result.success) {
-        //   // 更新本地存储的用户信息
-        //   const updatedUser = { ...this.getCurrentUser(), ...submitData }
-        //   sessionStorage.setItem('user', JSON.stringify(updatedUser))
-        //
-        //   // 更新原始数据备份
-        //   this.originalUserData = JSON.parse(JSON.stringify(this.editForm))
-        //
-        //   alert('资料更新成功！')
-        //   this.exitEditMode()
-        // } else {
-        //   alert('更新失败: ' + result.message)
-        // }
-
-        // 模拟成功（暂时保留，等 userService 实现后删除）
-        setTimeout(() => {
-          // 更新本地存储
-          const currentUser = JSON.parse(
-            sessionStorage.getItem("user") || "{}"
-          );
-          const updatedUser = { ...currentUser, ...submitData };
-          sessionStorage.setItem("user", JSON.stringify(updatedUser));
-
-          // 更新显示的数据
-          this.userNickname = updatedUser.userNickname;
-          this.loadUserData();
-
-          alert("资料更新成功！");
-          this.saving = false;
-          this.exitEditMode();
-        }, 1000);
-      } catch (error) {
-        console.error("保存资料失败:", error);
-        alert("保存失败，请稍后重试");
-        this.saving = false;
-      }
-    },
-
     // 重置表单
     resetForm() {
       if (confirm("确定要重置所有修改吗？")) {
         this.editForm = JSON.parse(JSON.stringify(this.originalUserData));
+        // 清空密码字段
+        this.editForm.currentPassword = "";
+        this.editForm.newPassword = "";
+        this.editForm.confirmPassword = "";
       }
     },
 
-    // 确认退出登录
-    confirmLogout() {
-      if (confirm("确定要退出登录吗？")) {
-        this.handleLogout();
-      }
-    },
-
-    // 原有的登出方法
+    // 登出方法
     handleLogout() {
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("user");
-      localStorage.removeItem("rememberMe");
-      this.$router.push("/");
-    },
-
-    showSettings() {
-      alert("设置功能开发中...");
-    },
-
-    startNewChat() {
-      alert("新建聊天功能开发中...");
-    },
-
-    showContacts() {
-      alert("联系人功能开发中...");
-    },
-
-    // 获取当前用户信息
-    getCurrentUser() {
-      const userStr = sessionStorage.getItem("user");
-      return userStr ? JSON.parse(userStr) : null;
+      if (confirm("确定要退出登录吗？")) {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        localStorage.removeItem("rememberMe");
+        this.router.push("/");
+      }
     },
   },
 };
 </script>
+
+
 
 <style scoped>
 /* 整体容器 */
