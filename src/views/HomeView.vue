@@ -10,7 +10,12 @@
         <span class="status-indicator online">● 在线</span>
       </div>
       <div class="nav-right">
-        <button class="nav-btn" @click="handleLogout">
+        <!-- 添加更多按钮 -->
+        <button class="nav-btn" @click="showMoreOptions" v-ripple>
+          <span class="nav-icon">⋮</span> 更多
+        </button>
+        <!-- 原有的退出按钮 -->
+        <button class="nav-btn" @click="handleLogout" v-ripple>
           <span class="nav-icon">🚪</span> 退出
         </button>
       </div>
@@ -20,11 +25,27 @@
     <div class="main-content-wrapper">
       <!-- 左侧会话列表区域 -->
       <div class="conversation-sidebar">
+        <!-- 左侧会话列表区域 -->
         <div class="sidebar-header">
-          <!-- 可点击的用户资料区域 -->
           <div class="user-profile" @click="enterEditMode">
+            <!-- 修改这里：使用动态头像 -->
             <div class="avatar-placeholder">
-              {{ userNickname.charAt(0) }}
+              <!-- 如果有图片URL，显示图片 -->
+              <img
+                v-if="
+                  currentUserAvatar &&
+                  currentUserAvatar !== '' &&
+                  !currentUserAvatar.startsWith('data:image/')
+                "
+                :src="currentUserAvatar"
+                alt="头像"
+                class="avatar-img-small"
+                @error="handleAvatarError"
+              />
+              <!-- 否则显示文字 -->
+              <span v-else>
+                {{ userNickname.charAt(0) }}
+              </span>
             </div>
             <div class="user-info">
               <div class="user-name">{{ userNickname }}</div>
@@ -48,17 +69,50 @@
         <!-- 用户资料编辑界面 -->
         <div v-if="isEditingProfile" class="profile-edit-container">
           <div class="edit-header">
-            <button class="back-btn" @click="exitEditMode">
+            <button class="back-btn" @click="exitEditMode" v-ripple>
               <span>←</span> 返回
             </button>
             <h2>编辑个人资料</h2>
-            <button class="save-btn" @click="saveProfile" :disabled="saving">
+            <button
+              class="save-btn"
+              @click="saveProfile"
+              :disabled="saving"
+              v-ripple="{ color: 'rgba(0, 119, 230, 0.3)', duration: 600 }"
+            >
               {{ saving ? "保存中..." : "保存" }}
             </button>
           </div>
 
           <div class="edit-content">
-            <!-- 基本信息表单 -->
+            <!-- 左半部分：头像区域 -->
+            <div class="avatar-section">
+              <div class="avatar-display" @click="triggerAvatarUpload">
+                <div v-if="editForm.userAvatar" class="avatar-img-container">
+                  <img :src="editForm.userAvatar" class="avatar-img" />
+                  <div class="avatar-overlay"></div>
+                </div>
+                <div v-else class="avatar-placeholder-large">
+                  {{ editForm.userNickname?.charAt(0) || " " }}
+                  <div class="upload-hint">点击上传头像</div>
+                </div>
+              </div>
+
+              <input
+                type="file"
+                ref="avatarInput"
+                accept="image/*"
+                @change="handleAvatarUpload"
+                style="display: none"
+              />
+
+              <div class="avatar-info">
+                <p class="avatar-hint">支持 JPG、PNG 格式</p>
+                <p class="avatar-hint">最大 2MB</p>
+                <p class="avatar-hint">点击头像选择图片</p>
+              </div>
+            </div>
+
+            <!-- 右半部分：基本信息表单 -->
             <div class="form-section">
               <div class="form-group">
                 <label for="userNickname">昵称 *</label>
@@ -181,13 +235,153 @@
                 />
               </div>
             </div>
+          </div>
 
-            <!-- 操作按钮 -->
-            <div class="action-buttons">
-              <button class="cancel-btn" @click="resetForm">
-                <span class="btn-icon">↺</span>
-                重置
+          <!-- 操作按钮 -->
+          <div class="action-buttons">
+            <button class="cancel-btn" @click="resetForm" v-ripple>
+              <span class="btn-icon">↺</span>
+              重置
+            </button>
+          </div>
+        </div>
+
+        <!-- 更多选项菜单 -->
+        <div v-else-if="showMoreMenu" class="more-options-container">
+          <div class="more-options-header">
+            <button class="back-btn" @click="backToMainMenu" v-ripple>
+              <span>←</span> 返回
+            </button>
+            <h2>更多选项</h2>
+          </div>
+
+          <div class="more-options-content">
+            <!-- 主菜单 -->
+            <div v-if="!currentSubMenu" class="options-list">
+              <button class="option-btn" @click="showAccountSecurity" v-ripple>
+                <span class="option-icon">🔒</span>
+                <span class="option-text">账号与安全</span>
+                <span class="option-arrow">→</span>
               </button>
+              <button class="option-btn" @click="showPrivacySettings" v-ripple>
+                <span class="option-icon">👁️</span>
+                <span class="option-text">隐私设置</span>
+                <span class="option-arrow">→</span>
+              </button>
+              <button
+                class="option-btn"
+                @click="showNotificationSettings"
+                v-ripple
+              >
+                <span class="option-icon">🔔</span>
+                <span class="option-text">通知设置</span>
+                <span class="option-arrow">→</span>
+              </button>
+            </div>
+
+            <!-- 账号安全子菜单 -->
+            <div v-else-if="currentSubMenu === 'account'" class="options-list">
+              <button class="option-btn" @click="showChangePassword" v-ripple>
+                <span class="option-icon">🔑</span>
+                <span class="option-text">修改密码</span>
+                <span class="option-arrow">→</span>
+              </button>
+              <button class="option-btn" @click="showLoginDevices" v-ripple>
+                <span class="option-icon">📱</span>
+                <span class="option-text">登录设备管理</span>
+                <span class="option-arrow">→</span>
+              </button>
+              <button class="option-btn" @click="showTwoFactorAuth" v-ripple>
+                <span class="option-icon">🔐</span>
+                <span class="option-text">双重验证</span>
+                <span class="option-arrow">→</span>
+              </button>
+            </div>
+
+            <!-- 修改密码界面 -->
+            <div
+              v-else-if="currentSubMenu === 'changePassword'"
+              class="change-password-container"
+            >
+              <div class="change-password-header">
+                <button class="back-btn" @click="backToAccountMenu" v-ripple>
+                  <span>←</span> 返回
+                </button>
+                <h2>修改密码</h2>
+              </div>
+
+              <div class="change-password-form">
+                <div class="form-group">
+                  <label for="currentNickname">当前用户</label>
+                  <input
+                    id="currentNickname"
+                    type="text"
+                    :value="userNickname"
+                    class="el-input disabled"
+                    disabled
+                    placeholder="当前用户名"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="currentPassword">原密码 *</label>
+                  <input
+                    id="currentPassword"
+                    v-model="passwordForm.currentPassword"
+                    type="password"
+                    placeholder="请输入原密码"
+                    class="el-input"
+                    @input="clearPasswordError"
+                  />
+                  <div v-if="passwordError" class="error-message">
+                    {{ passwordError }}
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="newPassword">新密码 *</label>
+                  <input
+                    id="newPassword"
+                    v-model="passwordForm.newPassword"
+                    type="password"
+                    placeholder="请输入新密码"
+                    class="el-input"
+                    @input="clearPasswordError"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="confirmPassword">确认新密码 *</label>
+                  <input
+                    id="confirmPassword"
+                    v-model="passwordForm.confirmPassword"
+                    type="password"
+                    placeholder="请再次输入新密码"
+                    class="el-input"
+                    @input="clearPasswordError"
+                  />
+                  <div v-if="passwordMismatch" class="error-message">
+                    两次输入的新密码不一致
+                  </div>
+                </div>
+
+                <div class="password-requirements">
+                  <p>密码要求：</p>
+                  <ul>
+                    <li>至少6个字符</li>
+                    <li>建议包含字母、数字和特殊字符</li>
+                  </ul>
+                </div>
+
+                <button
+                  class="submit-btn"
+                  @click="handleChangePassword"
+                  :disabled="changingPassword || !isPasswordFormValid"
+                  v-ripple
+                >
+                  {{ changingPassword ? "处理中..." : "修改密码" }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -212,12 +406,22 @@
         © 2024
       </p>
     </div>
+
+    <!-- 成功提示 -->
+    <div v-if="showSuccessMessage" class="success-toast">
+      <div class="toast-content">
+        <span class="toast-icon">✅</span>
+        <span class="toast-text">{{ successMessage }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
+<!-- script 部分保持不变 -->
+
 <script>
 import { useRouter } from "vue-router";
-import { useUpdateStore } from "@/stores/update";
+import { useUserStore } from "@/stores/user";
 import { useAuthStore } from "@/stores/auth";
 
 export default {
@@ -229,10 +433,12 @@ export default {
       lastLoginTime: "",
       isEditingProfile: false,
       saving: false,
+      currentUserAvatar: "", // 新增：专门用于左侧显示的头像
       // 编辑表单数据
       editForm: {
         userId: "",
         userNickname: "",
+        userAvatar: "",
         userGender: 0,
         userBirthday: "",
         userLocation: "",
@@ -242,20 +448,58 @@ export default {
       },
       // 原始数据备份（用于重置）
       originalUserData: null,
+      avatarLoadError: false, // 新增：头像加载错误标志
+
+      // 新增：修改密码相关数据
+      showMoreMenu: false,
+      currentSubMenu: "", // 'account', 'changePassword'等
+      changingPassword: false,
+      passwordError: "",
+      passwordMismatch: false,
+      showSuccessMessage: false, // 修改变量名，避免冲突
+      successMessage: "",
+      passwordForm: {
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      },
     };
+  },
+  computed: {
+    // 新增：密码表单验证
+    isPasswordFormValid() {
+      return (
+        this.passwordForm.currentPassword &&
+        this.passwordForm.newPassword &&
+        this.passwordForm.confirmPassword &&
+        this.passwordForm.newPassword === this.passwordForm.confirmPassword &&
+        this.passwordForm.newPassword.length >= 6
+      );
+    },
   },
   mounted() {
     this.loadUserData();
+    console.log("HomeView mounted, 当前用户头像:", this.currentUserAvatar);
   },
   setup() {
-    const updateStore = useUpdateStore();
+    const userStore = useUserStore();
     const authStore = useAuthStore();
     const router = useRouter();
-    return { updateStore, authStore, router };
+    return { userStore, authStore, router };
   },
+
   methods: {
+    // 头像加载失败处理
+    handleAvatarError() {
+      console.log("头像加载失败，使用默认头像");
+      this.avatarLoadError = true;
+    },
+
+    // 在 HomeView.vue 中修改 loadUserData 方法
     loadUserData() {
       const userStr = sessionStorage.getItem("user");
+      console.log("loadUserData调用, sessionStorage:", userStr);
+
       if (userStr) {
         try {
           const user = JSON.parse(userStr);
@@ -263,10 +507,23 @@ export default {
           this.userNickname = user.userNickname || "用户";
           this.lastLoginTime = user.lastLoginTime || "";
 
-          // 初始化编辑表单
+          // 处理头像URL - 优化逻辑
+          let avatarUrl = user.userAvatar || "";
+          console.log("原始头像路径:", avatarUrl);
+
+          // 统一头像URL处理逻辑
+          avatarUrl = this.processAvatarUrl(avatarUrl);
+          console.log("处理后头像URL:", avatarUrl);
+
+          // 更新左侧头像
+          this.currentUserAvatar = avatarUrl;
+          console.log("设置currentUserAvatar:", this.currentUserAvatar);
+
+          // 初始化编辑表单 - 使用处理后的头像URL
           this.editForm = {
             userId: user.userId || "",
             userNickname: user.userNickname || "",
+            userAvatar: avatarUrl, // 使用处理后的URL
             userGender: user.userGender || 0,
             userBirthday: this.formatDateForInput(user.userBirthday),
             userLocation: user.userLocation || "",
@@ -277,10 +534,37 @@ export default {
 
           // 保存原始数据用于重置
           this.originalUserData = JSON.parse(JSON.stringify(this.editForm));
+
+          console.log("用户数据加载完成");
         } catch (e) {
           console.error("解析用户信息失败:", e);
         }
+      } else {
+        console.log("sessionStorage中没有用户数据");
       }
+    },
+
+    // 新增辅助方法：处理头像URL
+    processAvatarUrl(avatarUrl) {
+      if (!avatarUrl || avatarUrl === "") {
+        return "";
+      }
+
+      // 如果已经是完整URL或base64格式，直接返回
+      if (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:image/")) {
+        return avatarUrl;
+      }
+
+      // 清理路径
+      avatarUrl = avatarUrl.trim();
+
+      // 确保路径以斜杠开头
+      if (!avatarUrl.startsWith("/")) {
+        avatarUrl = "/" + avatarUrl;
+      }
+
+      // 拼接完整URL
+      return "http://localhost:8081" + avatarUrl;
     },
 
     formatDateForInput(dateString) {
@@ -289,15 +573,47 @@ export default {
       return date.toISOString().split("T")[0];
     },
 
+    // 图片压缩方法
+    compressImage(file, maxWidth = 400, maxHeight = 400, quality = 0.7) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth || height > maxHeight) {
+              const ratio = Math.min(maxWidth / width, maxHeight / height);
+              width *= ratio;
+              height *= ratio;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedBase64 = canvas.toDataURL("image/jpeg", quality);
+            resolve(compressedBase64);
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    },
+
     // 验证表单
     validateForm() {
-      // 昵称验证
       if (!this.editForm.userNickname?.trim()) {
         alert("昵称不能为空");
         return false;
       }
 
-      // 手机号验证（如果填写了）
       if (
         this.editForm.userPhone &&
         !/^1[3-9]\d{9}$/.test(this.editForm.userPhone)
@@ -306,7 +622,6 @@ export default {
         return false;
       }
 
-      // 邮箱验证（如果填写了）
       if (
         this.editForm.userEmail &&
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.editForm.userEmail)
@@ -318,15 +633,16 @@ export default {
       return true;
     },
 
+    // 在 HomeView.vue 中修改 saveProfile 方法
     async saveProfile() {
       if (!this.validateForm()) {
         return;
       }
 
       this.saving = true;
+      console.log("开始保存资料...");
 
       try {
-        // 准备用户信息更新数据
         const userUpdateData = {
           userId: this.editForm.userId,
           userNickname: this.editForm.userNickname?.trim(),
@@ -338,26 +654,41 @@ export default {
           userEmail: this.editForm.userEmail?.trim() || null,
         };
 
-        console.log("📤 提交用户数据:", userUpdateData);
+        // 如果有base64格式的头像，添加到更新数据中
+        if (
+          this.editForm.userAvatar &&
+          this.editForm.userAvatar.startsWith("data:image/")
+        ) {
+          userUpdateData.userAvatar = this.editForm.userAvatar;
+          console.log("包含base64头像，长度:", this.editForm.userAvatar.length);
+        }
 
-        // 1. 先更新用户基本信息
-        const userResult = await this.updateStore.updateUser(userUpdateData);
+        console.log("提交数据到后端");
+
+        // 1. 调用更新接口
+        const userResult = await this.userStore.updateUser(userUpdateData);
 
         if (!userResult.success) {
           alert("更新用户信息失败: " + userResult.message);
           return;
         }
 
-        // 3. 更新本地存储的用户信息
-        const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
-        const updatedUser = { ...currentUser, ...userUpdateData };
-        sessionStorage.setItem("user", JSON.stringify(updatedUser));
+        console.log("后端更新成功，开始获取最新的用户信息");
 
-        // 4. 更新显示的数据
-        this.userNickname = updatedUser.userNickname;
-        this.loadUserData(); // 重新加载数据
+        // 2. 调用API获取最新的用户信息
+        const latestUserResult = await this.userStore.fetchUserById(
+          this.editForm.userId
+        );
 
-        this.exitEditMode();
+        if (!latestUserResult.success) {
+          console.warn("获取最新用户信息失败:", latestUserResult.message);
+          alert("更新成功，但获取最新信息失败，部分信息可能不会立即显示");
+        } else {
+          // 3. 用最新的数据更新sessionStorage和界面
+          await this.syncUserData(latestUserResult.data);
+        }
+
+        // this.exitEditMode();
       } catch (error) {
         console.error("保存资料失败:", error);
         alert("保存失败，请稍后重试");
@@ -366,25 +697,207 @@ export default {
       }
     },
 
+    // 新增方法：同步用户数据到sessionStorage和界面
+    async syncUserData(latestUserData) {
+      try {
+        console.log("开始同步用户数据:", latestUserData);
+
+        // 获取当前sessionStorage中的数据
+        const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
+
+        // 更新为新数据（使用后端返回的最新数据）
+        const updatedUser = {
+          ...currentUser,
+          // 覆盖所有可能更新的字段
+          userId: latestUserData.userId,
+          userNickname: latestUserData.userNickname,
+          userAvatar: latestUserData.userAvatar, // 关键：使用服务器返回的头像路径
+          userGender: latestUserData.userGender,
+          userBirthday: latestUserData.userBirthday,
+          userLocation: latestUserData.userLocation,
+          userSignature: latestUserData.userSignature,
+          userPhone: latestUserData.userPhone,
+          userEmail: latestUserData.userEmail,
+          userStatus: latestUserData.userStatus,
+          onlineStatus: latestUserData.onlineStatus,
+          lastLoginTime: latestUserData.lastLoginTime,
+          updateTime: latestUserData.updateTime,
+        };
+
+        // 保存到sessionStorage
+        sessionStorage.setItem("user", JSON.stringify(updatedUser));
+
+        // 更新组件数据
+        this.userId = updatedUser.userId;
+        this.userNickname = updatedUser.userNickname;
+        this.lastLoginTime = updatedUser.lastLoginTime;
+
+        // 使用统一的头像处理方法
+        const avatarUrl = this.processAvatarUrl(updatedUser.userAvatar);
+
+        // 更新左侧头像
+        this.currentUserAvatar = avatarUrl;
+        console.log("左侧头像已更新:", this.currentUserAvatar);
+
+        // 同时更新编辑表单中的头像（避免下次编辑时显示旧数据）
+        this.editForm.userAvatar = avatarUrl;
+
+        // 重置头像错误标志
+        this.avatarLoadError = false;
+
+        console.log("用户数据同步完成");
+        return true;
+      } catch (error) {
+        console.error("同步用户数据失败:", error);
+        return false;
+      }
+    },
+
+    // 新增方法：获取最新的用户信息
+    async fetchLatestUserInfo(userId) {
+      try {
+        console.log("获取最新的用户信息，用户ID:", userId);
+
+        // 使用axios或其他HTTP客户端进行GET请求
+        const response = await this.$http.get(
+          `/user/selectUserByUserId?userId=${userId}`
+        );
+
+        if (response.data.code === 200) {
+          console.log("获取最新用户信息成功:", response.data.data);
+          return response.data.data;
+        } else {
+          console.error("获取用户信息失败:", response.data.message);
+          return null;
+        }
+      } catch (error) {
+        console.error("获取用户信息异常:", error);
+        return null;
+      }
+    },
+
+    // 新增方法：同步用户数据到sessionStorage
+    syncUserDataToSessionStorage(userData) {
+      try {
+        // 获取当前sessionStorage中的数据
+        const currentUser = JSON.parse(sessionStorage.getItem("user") || "{}");
+
+        // 更新为新数据
+        const updatedUser = {
+          ...currentUser,
+          userId: userData.userId,
+          userNickname: userData.userNickname,
+          userAvatar: userData.userAvatar,
+          userGender: userData.userGender,
+          userBirthday: userData.userBirthday,
+          userLocation: userData.userLocation,
+          userSignature: userData.userSignature,
+          userPhone: userData.userPhone,
+          userEmail: userData.userEmail,
+          userStatus: userData.userStatus,
+          onlineStatus: userData.onlineStatus,
+          lastLoginTime: userData.lastLoginTime,
+          updateTime: userData.updateTime,
+        };
+
+        // 保存到sessionStorage
+        sessionStorage.setItem("user", JSON.stringify(updatedUser));
+
+        // 更新组件数据
+        this.userId = updatedUser.userId;
+        this.userNickname = updatedUser.userNickname;
+        this.lastLoginTime = updatedUser.lastLoginTime;
+
+        // 处理头像URL
+        let avatarUrl = updatedUser.userAvatar || "";
+        if (
+          avatarUrl &&
+          !avatarUrl.startsWith("http") &&
+          !avatarUrl.startsWith("data:image")
+        ) {
+          avatarUrl = avatarUrl.trim();
+          if (!avatarUrl.startsWith("/")) {
+            avatarUrl = "/" + avatarUrl;
+          }
+          avatarUrl = "http://localhost:8081" + avatarUrl;
+        }
+
+        // 更新左侧头像
+        this.currentUserAvatar = avatarUrl;
+
+        console.log("用户数据同步完成:", {
+          userId: updatedUser.userId,
+          nickname: updatedUser.userNickname,
+          avatar: avatarUrl,
+        });
+
+        return true;
+      } catch (error) {
+        console.error("同步用户数据失败:", error);
+        return false;
+      }
+    },
+
+    // 触发头像上传
+    triggerAvatarUpload() {
+      this.$refs.avatarInput.click();
+    },
+
+    // 处理头像上传
+    async handleAvatarUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+        alert("图片大小不能超过2MB");
+        return;
+      }
+
+      if (!file.type.startsWith("image/")) {
+        alert("请选择图片文件");
+        return;
+      }
+
+      try {
+        this.saving = true;
+        console.log("开始压缩图片...");
+
+        const compressedBase64 = await this.compressImage(file, 400, 400, 0.7);
+
+        console.log("图片压缩完成，base64长度:", compressedBase64.length);
+
+        // 更新编辑表单中的头像（base64格式）
+        this.editForm.userAvatar = compressedBase64;
+
+        // 注意：这里不更新currentUserAvatar，因为还是base64
+        // 等保存成功后，后端会返回URL，再更新
+      } catch (error) {
+        console.error("图片处理失败:", error);
+        alert("图片处理失败，请重试");
+      } finally {
+        this.saving = false;
+        event.target.value = "";
+      }
+    },
+
     // 进入编辑模式
     enterEditMode() {
       this.isEditingProfile = true;
+      console.log("进入编辑模式");
       this.loadUserData();
     },
 
     // 退出编辑模式
     exitEditMode() {
       this.isEditingProfile = false;
+      console.log("退出编辑模式");
     },
 
     // 重置表单
     resetForm() {
       if (confirm("确定要重置所有修改吗？")) {
         this.editForm = JSON.parse(JSON.stringify(this.originalUserData));
-        // 清空密码字段
-        this.editForm.currentPassword = "";
-        this.editForm.newPassword = "";
-        this.editForm.confirmPassword = "";
+        console.log("表单已重置");
       }
     },
 
@@ -397,823 +910,204 @@ export default {
         this.router.push("/");
       }
     },
+
+    // 调试方法
+    debugAvatar() {
+      console.log("=== 调试信息 ===");
+      console.log("1. currentUserAvatar:", this.currentUserAvatar);
+      console.log("2. editForm.userAvatar:", this.editForm.userAvatar);
+      console.log("3. sessionStorage:", sessionStorage.getItem("user"));
+
+      const userStr = sessionStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        console.log("4. 数据库路径:", user.userAvatar);
+
+        // 测试URL访问
+        if (user.userAvatar && user.userAvatar.startsWith("/")) {
+          const testUrl = "http://localhost:8081" + user.userAvatar;
+          console.log("5. 测试URL:", testUrl);
+          window.open(testUrl, "_blank");
+        }
+      }
+    },
+
+    // ============ 新增：修改密码相关方法 ============
+
+    // 显示更多选项
+    showMoreOptions() {
+      this.showMoreMenu = true;
+      this.currentSubMenu = "";
+      this.isEditingProfile = false; // 确保退出编辑模式
+    },
+
+    // 返回主菜单
+    backToMainMenu() {
+      this.showMoreMenu = false;
+      this.currentSubMenu = "";
+    },
+
+    // 返回账号菜单
+    backToAccountMenu() {
+      this.currentSubMenu = "account";
+      this.resetPasswordForm();
+    },
+
+    // 显示账号安全菜单
+    showAccountSecurity() {
+      this.currentSubMenu = "account";
+    },
+
+    // 显示修改密码界面
+    showChangePassword() {
+      this.currentSubMenu = "changePassword";
+      this.resetPasswordForm();
+    },
+
+    // 重置密码表单
+    resetPasswordForm() {
+      this.passwordForm = {
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      };
+      this.passwordError = "";
+      this.passwordMismatch = false;
+    },
+
+    // 清除密码错误
+    clearPasswordError() {
+      this.passwordError = "";
+      this.passwordMismatch = false;
+    },
+
+    // 显示成功提示 - 修正变量名冲突
+    showSuccessToast(message) {
+      this.successMessage = message;
+      this.showSuccessMessage = true; // 使用新的变量名
+
+      // 3秒后自动隐藏
+      setTimeout(() => {
+        this.showSuccessMessage = false;
+      }, 3000);
+    },
+
+    // 处理修改密码
+    async handleChangePassword() {
+      // 验证表单
+      if (!this.isPasswordFormValid) {
+        if (
+          this.passwordForm.newPassword !== this.passwordForm.confirmPassword
+        ) {
+          this.passwordMismatch = true;
+        }
+        return;
+      }
+
+      this.changingPassword = true;
+      this.passwordError = "";
+
+      try {
+        console.log("开始验证原密码...");
+
+        // 1. 验证原密码
+        const checkResponse = await this.checkCurrentPassword(
+          this.userId,
+          this.passwordForm.currentPassword
+        );
+
+        if (!checkResponse.success) {
+          this.passwordError = checkResponse.message;
+          return;
+        }
+
+        console.log("原密码验证成功，开始更新密码...");
+
+        // 2. 更新密码
+        const updateResponse = await this.updatePassword(
+          this.userId,
+          this.passwordForm.newPassword
+        );
+
+        if (updateResponse.success) {
+          // 显示成功提示 - 现在可以正常调用了
+          this.showSuccessToast("密码修改成功！");
+
+          // 重置表单
+          this.resetPasswordForm();
+
+          // 延迟返回主菜单
+          setTimeout(() => {
+            this.backToMainMenu();
+          }, 1500);
+        } else {
+          this.passwordError = updateResponse.message;
+        }
+      } catch (error) {
+        console.error("修改密码失败:", error);
+        this.passwordError = "修改密码失败，请稍后重试";
+      } finally {
+        this.changingPassword = false;
+      }
+    },
+
+    // 验证原密码
+    // 修改 checkCurrentPassword 方法
+    async checkCurrentPassword(userId, currentPassword) {
+      try {
+        // 改为使用 store 方法
+        const result = await this.userStore.checkUserPassword(
+          userId,
+          currentPassword
+        );
+        return result;
+      } catch (error) {
+        console.error("验证原密码失败:", error);
+        return {
+          success: false,
+          message: "验证原密码失败，请检查网络连接",
+        };
+      }
+    },
+
+    // 修改 updatePassword 方法
+    async updatePassword(userId, newPassword) {
+      try {
+        // 改为使用 store 方法
+        const result = await this.userStore.updateUserPassword(
+          userId,
+          newPassword
+        );
+        return result;
+      } catch (error) {
+        console.error("更新密码失败:", error);
+        return {
+          success: false,
+          message: "更新密码失败，请稍后重试",
+        };
+      }
+    },
+    // 占位方法（其他菜单项）
+    showPrivacySettings() {
+      alert("隐私设置功能开发中...");
+    },
+
+    showNotificationSettings() {
+      alert("通知设置功能开发中...");
+    },
+
+    showLoginDevices() {
+      alert("登录设备管理功能开发中...");
+    },
+
+    showTwoFactorAuth() {
+      alert("双重验证功能开发中...");
+    },
   },
 };
 </script>
 
-
-
 <style scoped>
-/* 整体容器 */
-.home-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  flex-direction: column;
-}
-
-/* 顶部导航栏 */
-.top-navbar {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 0 20px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.app-title {
-  color: #007aff;
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.nav-center {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.current-user {
-  font-weight: 600;
-  color: #333;
-  font-size: 16px;
-}
-
-.status-indicator {
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  background: rgba(76, 217, 100, 0.1);
-  color: #4cd964;
-}
-
-.status-indicator.online {
-  background: rgba(76, 217, 100, 0.1);
-  color: #4cd964;
-}
-
-.nav-right {
-  display: flex;
-  gap: 10px;
-}
-
-.nav-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 50%;
-  background: #f8f9fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.nav-btn:hover {
-  background: #e9ecef;
-  transform: translateY(-1px);
-}
-
-.nav-icon {
-  font-size: 18px;
-}
-
-.logout-btn {
-  background: #ffebee;
-}
-
-.logout-btn:hover {
-  background: #ffcdd2;
-}
-
-/* 主内容区域 */
-.main-content-wrapper {
-  flex: 1;
-  margin-left: 200px;
-  margin-right: 200px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  display: flex;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-}
-
-/* 左侧会话列表 */
-.conversation-sidebar {
-  width: 320px;
-  background: white;
-  border-right: 1px solid #f0f0f0;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar-header {
-  padding: 20px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-/* 用户资料区域 - 可点击样式 */
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.user-profile:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(0, 122, 255, 0.08),
-    rgba(0, 122, 255, 0.12)
-  );
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.1);
-}
-
-.user-profile:hover .avatar-placeholder {
-  transform: scale(1.05);
-}
-
-.user-profile:hover .user-name {
-  color: #007aff;
-}
-
-.user-profile:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0, 122, 255, 0.1);
-}
-
-.user-profile::after {
-  content: "✏️";
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0;
-  transition: opacity 0.3s;
-  font-size: 14px;
-}
-
-.user-profile:hover::after {
-  opacity: 1;
-}
-
-.avatar-placeholder {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #007aff, #0056cc);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: 600;
-  transition: transform 0.3s ease;
-}
-
-.user-info {
-  flex: 1;
-}
-
-.user-name {
-  font-weight: 600;
-  color: #333;
-  font-size: 16px;
-  margin-bottom: 4px;
-  transition: color 0.3s ease;
-}
-
-.user-status {
-  font-size: 12px;
-  color: #666;
-}
-
-.user-status.online {
-  color: #4cd964;
-}
-
-.search-box {
-  position: relative;
-}
-
-.search-input {
-  width: 100%;
-  padding: 12px 40px 12px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 14px;
-  background: #f8f9fa;
-  transition: all 0.3s;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #007aff;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-}
-
-.search-icon {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #999;
-  font-size: 16px;
-}
-
-.conversation-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.section-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 20px;
-}
-
-.empty-conversation {
-  text-align: center;
-  padding: 40px 20px;
-  color: #999;
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.empty-text {
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #666;
-}
-
-.empty-hint {
-  font-size: 14px;
-  color: #999;
-}
-
-/* 会话条区域标注 */
-.conversation-area-label {
-  background: linear-gradient(135deg, #f8f9fa, #f1f3f5);
-  border: 2px dashed #dee2e6;
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 20px;
-}
-
-.label-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.label-icon {
-  font-size: 20px;
-  color: #007aff;
-}
-
-.label-text {
-  font-weight: 600;
-  color: #333;
-  font-size: 16px;
-}
-
-.label-description {
-  color: #666;
-  margin-bottom: 15px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.label-features {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.label-features li {
-  color: #666;
-  font-size: 13px;
-  padding: 4px 0;
-  padding-left: 20px;
-  position: relative;
-}
-
-.label-features li:before {
-  content: "•";
-  position: absolute;
-  left: 8px;
-  color: #007aff;
-}
-
-.sidebar-footer {
-  padding: 20px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.new-chat-btn {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #007aff, #0056cc);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: all 0.3s;
-}
-
-.new-chat-btn:hover {
-  background: linear-gradient(135deg, #0056cc, #004099);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-}
-
-.btn-icon {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-/* 右侧聊天区域 */
-.chat-main-area {
-  flex: 1;
-  background: #f8f9fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-/* 聊天区域标注 */
-.chat-area-label {
-  max-width: 500px;
-  text-align: center;
-  padding: 40px;
-}
-
-.chat-label-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 30px;
-}
-
-.chat-label-icon {
-  font-size: 36px;
-  color: #007aff;
-}
-
-.chat-label-text {
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-}
-
-.chat-label-description {
-  color: #666;
-  margin-bottom: 30px;
-  font-size: 16px;
-}
-
-.chat-features {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-bottom: 40px;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 20px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s;
-}
-
-.feature-item:hover {
-  transform: translateY(-2px);
-}
-
-.feature-icon {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #007aff, #0056cc);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  color: white;
-  flex-shrink: 0;
-}
-
-.feature-desc h4 {
-  margin: 0 0 8px 0;
-  color: #333;
-  font-size: 18px;
-  text-align: left;
-}
-
-.feature-desc p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-  text-align: left;
-}
-
-/* 底部信息栏 */
-.bottom-info-bar {
-  background: rgba(0, 0, 0, 0.2);
-  color: white;
-  padding: 12px 20px;
-  text-align: center;
-  font-size: 12px;
-  backdrop-filter: blur(10px);
-}
-
-.bottom-info-bar p {
-  margin: 0;
-  opacity: 0.8;
-}
-
-/* 用户资料编辑界面样式 */
-.profile-edit-container {
-  width: 100%;
-  height: 100%;
-  background: white;
-  display: flex;
-  flex-direction: column;
-}
-
-.edit-header {
-  padding: 20px;
-  border-bottom: 1px solid #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(135deg, #f8f9fa, #f1f3f5);
-}
-
-.edit-header h2 {
-  margin: 0;
-  color: #333;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.back-btn {
-  padding: 8px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background: white;
-  color: #666;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.3s;
-}
-
-.back-btn:hover {
-  background: #f8f9fa;
-  border-color: #007aff;
-  color: #007aff;
-}
-
-.save-btn {
-  padding: 10px 24px;
-  background: linear-gradient(135deg, #007aff, #0056cc);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.save-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0056cc, #004099);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-}
-
-.save-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.edit-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 30px;
-}
-
-.avatar-edit-section {
-  display: flex;
-  align-items: center;
-  gap: 30px;
-  margin-bottom: 40px;
-  padding-bottom: 30px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.avatar-preview {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
-
-.avatar-placeholder-large {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #007aff, #0056cc);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36px;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
-}
-
-.avatar-img-container {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.upload-btn {
-  padding: 10px 20px;
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  color: #333;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s;
-}
-
-.upload-btn:hover {
-  background: #e9ecef;
-  border-color: #007aff;
-  color: #007aff;
-}
-
-.avatar-hint {
-  font-size: 12px;
-  color: #95a5a6;
-  margin: 0;
-}
-
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  max-width: 500px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: 14px;
-}
-
-.el-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: border-color 0.3s;
-}
-
-.el-input:focus {
-  outline: none;
-  border-color: #007aff;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-}
-
-.el-textarea {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  resize: vertical;
-  transition: border-color 0.3s;
-}
-
-.el-textarea:focus {
-  outline: none;
-  border-color: #007aff;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-}
-
-.char-count {
-  font-size: 12px;
-  color: #95a5a6;
-  text-align: right;
-}
-
-.hint {
-  font-size: 12px;
-  color: #95a5a6;
-}
-
-.gender-options {
-  display: flex;
-  gap: 15px;
-}
-
-.gender-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  user-select: none;
-}
-
-.gender-option:hover {
-  border-color: #007aff;
-  background: rgba(0, 122, 255, 0.05);
-}
-
-.gender-option.active {
-  border-color: #007aff;
-  background: rgba(0, 122, 255, 0.1);
-  color: #007aff;
-}
-
-.gender-icon {
-  font-size: 18px;
-}
-
-.password-edit {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 15px;
-  margin-top: 40px;
-  padding-top: 30px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.cancel-btn,
-.logout-btn {
-  flex: 1;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.3s;
-}
-
-.cancel-btn {
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  color: #666;
-}
-
-.cancel-btn:hover {
-  background: #e9ecef;
-  border-color: #ff3b30;
-  color: #ff3b30;
-}
-
-.logout-btn {
-  background: #ffebee;
-  border: 1px solid #ffcdd2;
-  color: #ff3b30;
-}
-
-.logout-btn:hover {
-  background: #ffcdd2;
-  border-color: #ff3b30;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
-}
-
-.btn-icon {
-  font-size: 16px;
-}
-
-/* 响应式设计 */
-@media (max-width: 1024px) {
-  .main-content-wrapper {
-    margin: 10px;
-  }
-
-  .conversation-sidebar {
-    width: 280px;
-  }
-}
-
-@media (max-width: 768px) {
-  .main-content-wrapper {
-    flex-direction: column;
-  }
-
-  .conversation-sidebar {
-    width: 100%;
-    height: 40vh;
-  }
-
-  .chat-main-area {
-    height: 60vh;
-  }
-
-  .edit-content {
-    padding: 20px;
-  }
-
-  .avatar-edit-section {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .gender-options {
-    flex-wrap: wrap;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-  }
-}
+/* 引入外置CSS */
+@import "@/assets/styles/homeview.css";
 </style>

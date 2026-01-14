@@ -1,0 +1,26 @@
+/* src/directives/ripple/style.css */
+
+/**
+ * 涟漪动画效果
+ * 这个样式需要在全局引入，可以放在 main.ts 或全局样式文件中
+ */
+
+@keyframes ripple-animation {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* 可选：为涟漪元素添加平滑的过渡效果 */
+.vue-ripple-effect {
+  will-change: transform, opacity;
+  animation-fill-mode: forwards;
+}

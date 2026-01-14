@@ -1,9 +1,10 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
+import rippleDirective from '@/directives/ripple/index'
 import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
-
+import '@/directives/ripple/style.css'
 import App from './App.vue'
 import router from './router'  // 导入路由
 
@@ -15,7 +16,7 @@ app.use(createPinia())
 
 // 使用路由
 app.use(router)
-
+app.directive('ripple', rippleDirective)
 // 使用Element Plus UI库
 app.use(ElementPlus)
 
