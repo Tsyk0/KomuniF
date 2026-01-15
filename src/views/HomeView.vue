@@ -403,7 +403,7 @@
     <div class="bottom-info-bar">
       <p>
         用户ID: {{ userId }} | 最后登录: {{ lastLoginTime || "刚刚" }} | Komuni
-        © 2024
+        © 2026
       </p>
     </div>
 
@@ -634,6 +634,7 @@ export default {
     },
 
     // 在 HomeView.vue 中修改 saveProfile 方法
+    // 在 HomeView.vue 中修改 saveProfile 方法
     async saveProfile() {
       if (!this.validateForm()) {
         return;
@@ -682,13 +683,18 @@ export default {
 
         if (!latestUserResult.success) {
           console.warn("获取最新用户信息失败:", latestUserResult.message);
-          alert("更新成功，但获取最新信息失败，部分信息可能不会立即显示");
+          // 即使获取失败，也显示成功提示（因为更新操作本身成功了）
+          this.showSuccessToast("个人信息修改成功！");
         } else {
           // 3. 用最新的数据更新sessionStorage和界面
-          await this.syncUserData(latestUserResult.data);
-        }
+          const syncSuccess = await this.syncUserData(latestUserResult.data);
 
-        // this.exitEditMode();
+          if (syncSuccess) {
+            this.showSuccessToast("个人信息修改成功！");
+          } else {
+            this.showSuccessToast("个人信息已更新，但部分信息同步失败");
+          }
+        }
       } catch (error) {
         console.error("保存资料失败:", error);
         alert("保存失败，请稍后重试");
@@ -697,6 +703,7 @@ export default {
       }
     },
 
+    // 新增方法：同步用户数据到sessionStorage和界面
     // 新增方法：同步用户数据到sessionStorage和界面
     async syncUserData(latestUserData) {
       try {
@@ -746,13 +753,12 @@ export default {
         this.avatarLoadError = false;
 
         console.log("用户数据同步完成");
-        return true;
+        return true; // 返回成功状态
       } catch (error) {
         console.error("同步用户数据失败:", error);
-        return false;
+        return false; // 返回失败状态
       }
     },
-
     // 新增方法：获取最新的用户信息
     async fetchLatestUserInfo(userId) {
       try {
@@ -1035,11 +1041,6 @@ export default {
 
           // 重置表单
           this.resetPasswordForm();
-
-          // 延迟返回主菜单
-          setTimeout(() => {
-            this.backToMainMenu();
-          }, 1500);
         } else {
           this.passwordError = updateResponse.message;
         }
