@@ -1,0 +1,92 @@
+/* src/assets/styles/more-options.css */
+
+/* ========== 更多选项菜单 ========== */
+.more-options-container {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.95); /* 统一透明度：0.95 */
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.more-options-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+.more-options-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.more-options-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  min-height: 0; /* 允许flex容器收缩 */
+}
+
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 选项按钮 - 修改为统一样式 */
+.option-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.8); /* 统一透明度：0.8 */
+  border: none; /* 无边框 */
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  flex-shrink: 0;
+  position: relative; /* 为涟漪效果准备 */
+  overflow: hidden; /* 为涟漪效果准备 */
+  color: #374151;
+  font-size: 16px;
+  font-weight: 500;
+  min-height: 40px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.option-btn:hover {
+  background: rgba(255, 255, 255, 0.9); /* 悬停时透明度降低 */
+  transform: translateY(-1px);
+}
+
+.option-btn:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.option-icon {
+  font-size: 20px;
+  margin-right: 12px;
+  width: 24px;
+  text-align: center;
+}
+
+.option-text {
+  flex: 1;
+  font-size: 16px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.option-arrow {
+  color: #9ca3af;
+  font-size: 18px;
+}
