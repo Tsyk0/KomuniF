@@ -1,6 +1,6 @@
-/* src/assets/styles/homeview-specific.css */
+/* src/assets/styles/homeview.css */
 
-/* ========== 5. 左侧会话列表区域 ========== */
+/* ========== 左侧会话列表区域 ========== */
 .conversation-sidebar {
   width: 320px;
   background: white;
@@ -163,7 +163,7 @@
   color: #999;
 }
 
-/* ========== 6. 聊天主区域 ========== */
+/* ========== 聊天主区域 ========== */
 .chat-main-area {
   flex: 1;
   background: #f8f9fa;
@@ -175,7 +175,7 @@
   height: 100%;
 }
 
-/* 聊天区域标注 - 修复居中问题 */
+/* 聊天区域标注 */
 .chat-area-label {
   max-width: 500px;
   text-align: center;
@@ -185,8 +185,8 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* 垂直居中 */
-  align-items: center; /* 水平居中 */
+  justify-content: center;
+  align-items: center;
 }
 
 .chat-label-header {
@@ -194,7 +194,7 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  margin-bottom: 20px; /* 调整间距 */
+  margin-bottom: 20px;
 }
 
 .chat-label-icon {
@@ -221,7 +221,7 @@
   text-align: center;
 }
 
-/* ========== 11. 成功提示 ========== */
+/* ========== 成功提示 ========== */
 .success-toast {
   position: fixed;
   bottom: 80px;
@@ -275,7 +275,6 @@
     min-height: 300px;
   }
   
-  /* 聊天区域居中调整 */
   .chat-area-label {
     padding: 20px;
     justify-content: flex-start;
@@ -300,7 +299,6 @@
 }
 
 @media (max-width: 480px) {
-  /* 聊天区域进一步调整 */
   .chat-area-label {
     padding: 15px;
   }

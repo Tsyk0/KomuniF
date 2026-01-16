@@ -19,7 +19,112 @@ html, body {
   overflow: hidden;
 }
 
-/* ========== 3. 顶部导航栏 ========== */
+/* ========== 3. 通用按钮样式 ========== */
+/* 按钮基础样式 */
+.btn-base {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 80px;
+  min-height: 36px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #333;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  user-select: none;
+  box-sizing: border-box;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* 导航按钮样式 */
+.nav-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 80px;
+  min-height: 36px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #333;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  user-select: none;
+  box-sizing: border-box;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.nav-btn:hover {
+  background: rgba(227, 227, 227, 0.9);
+}
+
+.nav-btn:active {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(1px);
+}
+
+/* 返回按钮样式 */
+.back-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 80px;
+  min-height: 36px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #333;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  user-select: none;
+  box-sizing: border-box;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.back-btn:hover {
+  background: rgba(227, 227, 227, 0.9);
+}
+
+.back-btn:active {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(1px);
+}
+
+/* 图标样式 */
+.nav-icon {
+  font-size: 18px;
+}
+
+/* 聚焦状态 */
+.nav-btn:focus,
+.back-btn:focus {
+  outline: none;
+}
+
+/* ========== 4. 顶部导航栏 ========== */
 .top-navbar {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -67,81 +172,7 @@ html, body {
   gap: 10px;
 }
 
-/* 统一的按钮基础样式 */
-.btn-base {
-  padding: 8px 16px;
-  border: none; /* 无边框 */
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.3); /* 半透明白色背景 */
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 80px;
-  min-height: 36px; /* 统一最小高度 */
-  transition: all 0.2s ease;
-  font-size: 14px;
-  color: #333;
-  position: relative; /* 为涟漪效果准备 */
-  overflow: hidden; /* 为涟漪效果准备 */
-  text-align: center;
-  user-select: none;
-  box-sizing: border-box;
-  font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-
-.nav-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.8); /* 统一透明度：0.8 */
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 80px;
-  min-height: 36px;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  color: #333;
-  position: relative;
-  overflow: hidden;
-  text-align: center;
-  user-select: none;
-  box-sizing: border-box;
-  font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-/* 悬停效果 - 透明度降低，白色更明显 */
-.nav-btn:hover {
-  background: rgba(255, 255, 255, 0.9); /* 悬停时透明度：0.9 */
-  border: none;
-}
-
-/* 按下效果 */
-.nav-btn:active {
-  background: rgba(255, 255, 255, 0.95);
-  transform: translateY(1px);
-  border: none;
-}
-
-.nav-icon {
-  font-size: 18px;
-}
-
-/* 聚焦状态 */
-.nav-btn:focus {
-  outline: 2px solid rgba(0, 122, 255, 0.3);
-  outline-offset: 2px;
-  border: none;
-}
-
-/* ========== 4. 主内容区域 ========== */
+/* ========== 5. 主内容区域 ========== */
 .main-content-wrapper {
   flex: 1;
   margin-left: 200px;
@@ -157,7 +188,7 @@ html, body {
   height: calc(100vh - 120px);
 }
 
-/* ========== 10. 底部信息栏 ========== */
+/* ========== 6. 底部信息栏 ========== */
 .bottom-info-bar {
   background: rgba(0, 0, 0, 0.2);
   color: white;
@@ -165,7 +196,7 @@ html, body {
   text-align: center;
   font-size: 12px;
   backdrop-filter: blur(10px);
-  flex-shrink: 0; /* 防止底部信息栏被压缩 */
+  flex-shrink: 0;
 }
 
 .bottom-info-bar p {
@@ -173,7 +204,135 @@ html, body {
   opacity: 0.8;
 }
 
-/* ========== 13. 响应式调整 ========== */
+/* ========== 7. 表单通用样式 ========== */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.el-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.el-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.el-input.disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 5px;
+  min-height: 20px;
+}
+
+/* 提交按钮样式 */
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  min-height: 44px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ========== 8. 选项按钮样式 ========== */
+.option-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  color: #374151;
+  font-size: 16px;
+  font-weight: 500;
+  min-height: 40px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.option-btn:hover {
+  background: rgba(227, 227, 227, 0.9);
+  transform: translateY(-1px);
+}
+
+.option-btn:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.option-icon {
+  font-size: 20px;
+  margin-right: 12px;
+  width: 24px;
+  text-align: center;
+}
+
+.option-text {
+  flex: 1;
+  font-size: 16px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.option-arrow {
+  color: #9ca3af;
+  font-size: 18px;
+}
+
+/* ========== 9. 响应式调整 ========== */
 /* 平板尺寸 (1024px及以下) */
 @media (max-width: 1024px) {
   .main-content-wrapper {
@@ -190,15 +349,27 @@ html, body {
     height: calc(100vh - 80px);
   }
   
-  .nav-btn {
+  .nav-btn,
+  .back-btn {
     padding: 6px 12px;
     min-width: 70px;
     min-height: 32px;
-    border: none;
   }
   
   .nav-icon {
     font-size: 16px;
+  }
+  
+  .submit-btn {
+    padding: 12px;
+    min-height: 40px;
+    font-size: 15px;
+  }
+  
+  .option-btn {
+    padding: 12px;
+    min-height: 36px;
+    font-size: 15px;
   }
 }
 
@@ -208,15 +379,21 @@ html, body {
     margin: 5px;
   }
   
-  .nav-btn {
+  .nav-btn,
+  .back-btn {
     padding: 5px 10px;
     min-width: 65px;
     min-height: 30px;
     font-size: 14px;
-    border: none;
   }
   
   .nav-icon {
+    font-size: 14px;
+  }
+  
+  .option-btn {
+    padding: 10px;
+    min-height: 34px;
     font-size: 14px;
   }
 }

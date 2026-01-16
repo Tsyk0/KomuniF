@@ -45,28 +45,15 @@
           <span class="option-arrow">→</span>
         </button>
       </div>
-
-      <!-- 修改密码组件 -->
-      <ChangePassword
-        v-else-if="currentView === 'changePassword'"
-        :user-nickname="userNickname"
-        :user-id="userId"
-        @back="currentView = 'account'"
-        @success="handlePasswordSuccess"
-      />
     </div>
   </div>
 </template>
 
 <script>
 import { ref, computed } from "vue";
-import ChangePassword from "./ChangePassword.vue";
 
 export default {
   name: "MoreOptions",
-  components: {
-    ChangePassword,
-  },
   props: {
     userId: {
       type: String,
@@ -77,7 +64,7 @@ export default {
       required: true,
     },
   },
-  emits: ["back"],
+  emits: ["back", "showChangePassword"], // 添加showChangePassword事件
   setup(props, { emit }) {
     const currentView = ref("main");
 
@@ -88,8 +75,6 @@ export default {
           return "更多选项";
         case "account":
           return "账号与安全";
-        case "changePassword":
-          return "修改密码";
         default:
           return "更多选项";
       }
@@ -110,7 +95,8 @@ export default {
     };
 
     const showChangePassword = () => {
-      currentView.value = "changePassword";
+      // 触发事件，让父组件显示修改密码页面
+      emit("showChangePassword");
     };
 
     const showPrivacySettings = () => {
@@ -129,12 +115,6 @@ export default {
       alert("双重验证功能开发中...");
     };
 
-    // 密码修改成功处理
-    const handlePasswordSuccess = (message) => {
-      alert(message);
-      currentView.value = "account";
-    };
-
     return {
       currentView,
       headerTitle,
@@ -145,7 +125,6 @@ export default {
       showNotificationSettings,
       showLoginDevices,
       showTwoFactorAuth,
-      handlePasswordSuccess,
     };
   },
 };

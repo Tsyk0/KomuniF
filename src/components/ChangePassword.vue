@@ -1,7 +1,7 @@
 <template>
   <div class="change-password-container">
     <div class="change-password-header">
-      <button class="back-btn" @click="$emit('back')" v-ripple>
+      <button class="back-btn" @click="handleBack" v-ripple>
         <span>←</span> 返回
       </button>
       <h2>修改密码</h2>
@@ -85,6 +85,7 @@
 <script>
 import { ref, reactive, computed } from "vue";
 import { useUserStore } from "@/stores/user";
+import toast from "@/commons/utils/toast";
 
 export default {
   name: "ChangePassword",
@@ -143,12 +144,14 @@ export default {
 
         if (!result.success) {
           errors.currentPassword = result.message;
+          toast.error(result.message);
           return false;
         }
         return true;
       } catch (error) {
         console.error("验证原密码失败:", error);
         errors.currentPassword = "验证原密码失败，请检查网络连接";
+        toast.error("验证原密码失败，请检查网络连接");
         return false;
       }
     };
@@ -158,18 +161,21 @@ export default {
       // 检查密码长度
       if (formData.newPassword.length < 6) {
         errors.confirmPassword = "新密码至少需要6个字符";
+        toast.error("新密码至少需要6个字符");
         return false;
       }
 
       // 检查两次输入是否一致
       if (formData.newPassword !== formData.confirmPassword) {
         errors.confirmPassword = "两次输入的新密码不一致";
+        toast.error("两次输入的新密码不一致");
         return false;
       }
 
       // 检查新密码是否与原密码相同
       if (formData.newPassword === formData.currentPassword) {
         errors.confirmPassword = "新密码不能与原密码相同";
+        toast.error("新密码不能与原密码相同");
         return false;
       }
 
@@ -208,12 +214,17 @@ export default {
 
           // 触发成功事件
           emit("success", "密码修改成功！");
+
+          // 使用toast显示成功消息
+          toast.success("密码修改成功！");
         } else {
           errors.confirmPassword = result.message;
+          toast.error(result.message || "密码修改失败");
         }
       } catch (error) {
         console.error("修改密码失败:", error);
         errors.confirmPassword = "修改密码失败，请稍后重试";
+        toast.error("修改密码失败，请稍后重试");
       } finally {
         loading.value = false;
       }
@@ -226,6 +237,11 @@ export default {
       formData.confirmPassword = "";
     };
 
+    // 返回处理
+    const handleBack = () => {
+      emit("back");
+    };
+
     return {
       loading,
       formData,
@@ -233,6 +249,7 @@ export default {
       isFormValid,
       clearErrors,
       handleSubmit,
+      handleBack,
     };
   },
 };

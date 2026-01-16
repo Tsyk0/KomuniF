@@ -1,14 +1,13 @@
 /* src/assets/styles/profile-edit.css */
 
 /* ========== 用户资料编辑界面 ========== */
-/* 修复核心问题：profile-edit-container的flex布局 */
 .profile-edit-container {
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.95); /* 统一透明度：0.95 */
+  background: rgba(255, 255, 255, 0.95);
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 防止外部滚动 */
+  overflow: hidden;
 }
 
 .edit-header {
@@ -18,8 +17,8 @@
   align-items: center;
   justify-content: space-between;
   background: rgba(255, 255, 255, 0.95);
-  flex-shrink: 0; /* 防止头部被压缩 */
-  min-height: 70px; /* 固定头部高度 */
+  flex-shrink: 0;
+  min-height: 70px;
   box-sizing: border-box;
 }
 
@@ -31,30 +30,28 @@
   white-space: nowrap;
 }
 
-/* 重新设计 edit-content 布局 */
 .edit-content {
   flex: 1;
   display: flex;
-  padding: 0; /* 移除内边距 */
-  gap: 0; /* 移除间隙 */
+  padding: 0;
+  gap: 0;
   min-height: 0;
   box-sizing: border-box;
   position: relative;
-  overflow: hidden; /* 父容器隐藏溢出 */
+  overflow: hidden;
 }
 
-/* 头像区域 */
 .avatar-section {
-  width: 280px; /* 稍微宽一点 */
+  width: 280px;
   display: flex;
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
   padding: 30px;
-  background: rgba(255, 255, 255, 0.95); /* 统一透明度：0.95 */
+  background: rgba(255, 255, 255, 0.95);
   border-right: 1px solid rgba(240, 240, 240, 0.8);
-  overflow-y: auto; /* 头像区域也可以滚动 */
-  height: 100%; /* 填满高度 */
+  overflow-y: auto;
+  height: 100%;
 }
 
 .avatar-display {
@@ -139,28 +136,25 @@
   margin: 4px 0;
 }
 
-/* 表单区域 - 关键修改 */
 .form-section {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden; /* 隐藏溢出 */
+  overflow: hidden;
   position: relative;
   width: 100%;
 }
 
-/* 表单内容容器 */
 .form-content {
   flex: 1;
   overflow-y: auto;
-  padding: 30px 40px 30px 30px; /* 右边距更大 */
+  padding: 30px 40px 30px 30px;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
 }
 
-/* 添加一个视觉指示器，表示这是滚动区域 */
 .form-section::before {
   content: '';
   position: absolute;
@@ -178,35 +172,6 @@
   opacity: 0.3;
   z-index: 1;
   pointer-events: none;
-}
-
-.form-group {
-  margin-bottom: 25px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: 14px;
-}
-
-.el-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid rgba(224, 224, 224, 0.8);
-  border-radius: 8px;
-  font-size: 14px;
-  transition: border-color 0.3s;
-  box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.el-input:focus {
-  outline: none;
-  border-color: #007aff;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
 .el-textarea {
@@ -233,34 +198,33 @@
   gap: 20px;
 }
 
-/* 性别选项按钮 - 修改为统一样式 */
 .gender-option {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  border: none; /* 无边框 */
+  border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.8); /* 统一透明度：0.8 */
+  background: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: all 0.3s;
   user-select: none;
   flex-shrink: 0;
-  position: relative; /* 为涟漪效果准备 */
-  overflow: hidden; /* 为涟漪效果准备 */
+  position: relative;
+  overflow: hidden;
   min-width: 100px;
   min-height: 40px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .gender-option:hover {
-  background: rgba(255, 255, 255, 0.9); /* 悬停时透明度降低 */
+  background: rgba(255, 255, 255, 0.9);
   color: #007aff;
 }
 
 .gender-option.active {
-  background: rgba(0, 122, 255, 0.1); /* 选中状态保持蓝色 */
+  background: rgba(0, 122, 255, 0.1);
   color: #007aff;
 }
 
@@ -275,41 +239,12 @@
   margin-top: 4px;
 }
 
-/* ========== 统一按钮样式 ========== */
-
-/* 返回按钮 */
-.back-btn {
-  padding: 8px 16px;
-  border: none; /* 无边框 */
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.8); /* 统一透明度：0.8 */
-  color: #666;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.3s;
-  flex-shrink: 0;
-  position: relative; /* 为涟漪效果准备 */
-  overflow: hidden; /* 为涟漪效果准备 */
-  min-width: 80px;
-  min-height: 36px;
-  justify-content: center;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.9); /* 悬停时透明度降低 */
-  color: #333;
-}
-
 /* 保存按钮 */
 .save-btn {
   padding: 10px 24px;
   background: linear-gradient(135deg, #66b3ff, #3399ff);
   color: white;
-  border: none; /* 无边框 */
+  border: none;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -352,7 +287,7 @@
   gap: 20px;
   padding: 20px 30px;
   border-top: 1px solid rgba(240, 240, 240, 0.8);
-  background: rgba(255, 255, 255, 0.95); /* 统一透明度：0.95 */
+  background: rgba(255, 255, 255, 0.95);
   flex-shrink: 0;
   min-height: 80px;
   box-sizing: border-box;
@@ -363,9 +298,9 @@
 /* 取消/重置按钮 */
 .cancel-btn {
   padding: 12px 24px;
-  border: none; /* 无边框 */
+  border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.8); /* 统一透明度：0.8 */
+  background: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -376,13 +311,13 @@
   min-height: 36px;
   transition: all 0.3s;
   flex-shrink: 0;
-  position: relative; /* 为涟漪效果准备 */
-  overflow: hidden; /* 为涟漪效果准备 */
+  position: relative;
+  overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.9); /* 悬停时透明度降低 */
+  background: rgba(255, 255, 255, 0.9);
   color: #ff3b30;
 }
 
@@ -445,7 +380,6 @@
     max-width: 200px;
   }
   
-  .back-btn,
   .save-btn,
   .cancel-btn,
   .gender-option {
@@ -498,7 +432,6 @@
     padding: 15px 20px;
   }
   
-  .back-btn,
   .save-btn,
   .cancel-btn,
   .gender-option {

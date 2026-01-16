@@ -75,12 +75,22 @@
           @success="handleEditSuccess"
         />
 
-        <!-- 更多选项组件 -->
+        <!-- 更多选项主菜单 -->
         <MoreOptions
-          v-else-if="showMoreMenu"
-          :user-id="userId"
+          v-else-if="showMoreMenu && !showChangePasswordView"
+          :user-id="userId.toString()"
           :user-nickname="userNickname"
           @back="backToMainMenu"
+          @show-change-password="showChangePassword"
+        />
+
+        <!-- 修改密码组件 -->
+        <ChangePassword
+          v-else-if="showChangePasswordView"
+          :user-id="userId"
+          :user-nickname="userNickname"
+          @back="backToAccountSecurity"
+          @success="handlePasswordSuccess"
         />
 
         <!-- 聊天区域（当不在编辑模式时显示） -->
@@ -120,12 +130,14 @@ import { useUserStore } from "@/stores/user";
 import { useAuthStore } from "@/stores/auth";
 import ProfileEdit from "@/components/ProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
+import ChangePassword from "@/components/ChangePassword.vue"; // 导入ChangePassword组件
 
 export default {
   name: "HomeView",
   components: {
     ProfileEdit,
     MoreOptions,
+    ChangePassword, // 注册ChangePassword组件
   },
   data() {
     return {
@@ -147,6 +159,7 @@ export default {
       },
       avatarLoadError: false,
       showMoreMenu: false,
+      showChangePasswordView: false, // 新增：控制是否显示修改密码页面
       showSuccessMessage: false,
       successMessage: "",
     };
@@ -236,6 +249,7 @@ export default {
     enterEditMode() {
       this.isEditingProfile = true;
       this.showMoreMenu = false;
+      this.showChangePasswordView = false;
       console.log("进入编辑模式");
       this.loadUserData();
     },
@@ -244,6 +258,43 @@ export default {
     exitEditMode() {
       this.isEditingProfile = false;
       console.log("退出编辑模式");
+    },
+
+    // 显示更多选项
+    showMoreOptions() {
+      this.showMoreMenu = true;
+      this.showChangePasswordView = false;
+      this.isEditingProfile = false;
+    },
+
+    // 显示修改密码页面
+    showChangePassword() {
+      this.showChangePasswordView = true;
+      this.showMoreMenu = false;
+      this.isEditingProfile = false;
+    },
+
+    // 返回主菜单
+    backToMainMenu() {
+      this.showMoreMenu = false;
+      this.showChangePasswordView = false;
+      this.isEditingProfile = false;
+    },
+
+    // 返回账号安全菜单
+    backToAccountSecurity() {
+      this.showChangePasswordView = false;
+      this.showMoreMenu = true;
+      this.isEditingProfile = false;
+    },
+
+    // 处理密码修改成功
+    handlePasswordSuccess(message) {
+      // 返回更多菜单
+      this.backToAccountSecurity();
+
+      // 显示成功消息
+      this.showSuccessToast(message);
     },
 
     // 处理用户数据更新
@@ -270,17 +321,6 @@ export default {
     // 处理编辑成功
     handleEditSuccess(message) {
       this.showSuccessToast(message);
-    },
-
-    // 显示更多选项
-    showMoreOptions() {
-      this.showMoreMenu = true;
-      this.isEditingProfile = false;
-    },
-
-    // 返回主菜单
-    backToMainMenu() {
-      this.showMoreMenu = false;
     },
 
     showSuccessToast(message) {

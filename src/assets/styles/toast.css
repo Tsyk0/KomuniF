@@ -1,20 +1,9 @@
-/* src/assets/styles/toast.css */
-
-/* ========== 提示框样式 ========== */
-.simple-toast-overlay {
+/* Toast消息样式 - 防止滚动条出现 */
+.toast-message {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 9999;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.simple-toast-content {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -26,87 +15,110 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   min-width: 280px;
   max-width: 400px;
-  animation: toastSlideUp 0.3s ease forwards;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
   pointer-events: auto;
-  margin-bottom: 100px; /* 在中间偏下方 */
+  
+  /* 防止滚动条出现的关键 */
+  overflow: visible !important;
+  max-height: 90vh; /* 确保不超过视口高度 */
 }
 
-/* 成功样式 */
-.simple-toast-content.success {
+/* 显示状态 */
+.toast-message.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 当toast显示时，防止body滚动 */
+body.toast-active {
+  overflow: hidden !important;
+  position: fixed;
+  width: 100%;
+}
+
+/* 类型样式 */
+.toast-message.toast-success {
   border-left: 4px solid #52c41a;
 }
 
-/* 错误样式 */
-.simple-toast-content.error {
+.toast-message.toast-error {
   border-left: 4px solid #ff4d4f;
 }
 
-/* 警告样式 */
-.simple-toast-content.warning {
+.toast-message.toast-warning {
   border-left: 4px solid #faad14;
 }
 
-/* 信息样式 */
-.simple-toast-content.info {
+.toast-message.toast-info {
   border-left: 4px solid #1890ff;
 }
 
-.simple-toast-content .toast-icon {
+/* 图标 */
+.toast-message .toast-icon {
   font-size: 20px;
   font-weight: bold;
   flex-shrink: 0;
 }
 
-.simple-toast-content.success .toast-icon {
+.toast-message.toast-success .toast-icon {
   color: #52c41a;
 }
 
-.simple-toast-content.error .toast-icon {
+.toast-message.toast-error .toast-icon {
   color: #ff4d4f;
 }
 
-.simple-toast-content.warning .toast-icon {
+.toast-message.toast-warning .toast-icon {
   color: #faad14;
 }
 
-.simple-toast-content.info .toast-icon {
+.toast-message.toast-info .toast-icon {
   color: #1890ff;
 }
 
-.simple-toast-content .toast-text {
+/* 文字 */
+.toast-message .toast-text {
   font-size: 14px;
   font-weight: 500;
   color: #333;
   line-height: 1.4;
+  flex: 1;
 }
 
 /* 动画效果 */
 @keyframes toastSlideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translate(-50%, -40%);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate(-50%, -50%);
   }
+}
+
+/* 如果还想使用动画，可以这样 */
+.toast-message.show {
+  animation: toastSlideUp 0.3s ease forwards;
 }
 
 /* 响应式调整 */
 @media (max-width: 768px) {
-  .simple-toast-content {
+  .toast-message {
     min-width: 240px;
     max-width: 90%;
     padding: 14px 20px;
     margin: 0 20px;
-    margin-bottom: 80px;
   }
   
-  .simple-toast-content .toast-text {
+  .toast-message .toast-text {
     font-size: 13px;
   }
   
-  .simple-toast-content .toast-icon {
+  .toast-message .toast-icon {
     font-size: 18px;
   }
 }

@@ -5,6 +5,7 @@ import rippleDirective from '@/directives/ripple/index'
 import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import '@/directives/ripple/style.css'
+import './assets/styles/toast.css' // 添加这一行
 import App from './App.vue'
 import router from './router'  // 导入路由
 

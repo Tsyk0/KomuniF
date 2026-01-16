@@ -179,20 +179,13 @@
         重置
       </button>
     </div>
-
-    <!-- 提示框 -->
-    <div v-if="showToastMessage" class="simple-toast-overlay">
-      <div :class="['simple-toast-content', toastType]">
-        <span class="toast-icon">{{ toastIcon }}</span>
-        <span class="toast-text">{{ toastMessage }}</span>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
 import { ref, reactive, onMounted, watch } from "vue";
 import { useUserStore } from "@/stores/user";
+import toast from "@/commons/utils/toast"; // 导入独立的toast服务
 
 export default {
   name: "ProfileEdit",
@@ -207,12 +200,6 @@ export default {
     const userStore = useUserStore();
     const avatarInput = ref(null);
     const saving = ref(false);
-
-    // 提示框相关状态
-    const showToastMessage = ref(false);
-    const toastMessage = ref("");
-    const toastType = ref("success");
-    const toastIcon = ref("✓");
 
     // 表单数据
     const formData = reactive({
@@ -229,37 +216,6 @@ export default {
 
     // 原始数据备份
     const originalData = ref(null);
-
-    // 显示提示框的方法
-    const showToast = (message, type = "success") => {
-      toastMessage.value = message;
-      toastType.value = type;
-
-      // 根据类型设置图标
-      switch (type) {
-        case "success":
-          toastIcon.value = "✓";
-          break;
-        case "error":
-          toastIcon.value = "✗";
-          break;
-        case "warning":
-          toastIcon.value = "⚠";
-          break;
-        case "info":
-          toastIcon.value = "ℹ";
-          break;
-        default:
-          toastIcon.value = "✓";
-      }
-
-      showToastMessage.value = true;
-
-      // 2秒后自动隐藏
-      setTimeout(() => {
-        showToastMessage.value = false;
-      }, 2000);
-    };
 
     // 初始化表单数据
     const initFormData = () => {
@@ -327,12 +283,12 @@ export default {
     // 表单验证
     const validateForm = () => {
       if (!formData.userNickname?.trim()) {
-        showToast("昵称不能为空", "error");
+        toast.error("昵称不能为空");
         return false;
       }
 
       if (formData.userPhone && !/^1[3-9]\d{9}$/.test(formData.userPhone)) {
-        showToast("请输入有效的手机号", "error");
+        toast.error("请输入有效的手机号");
         return false;
       }
 
@@ -340,7 +296,7 @@ export default {
         formData.userEmail &&
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.userEmail)
       ) {
-        showToast("请输入有效的邮箱地址", "error");
+        toast.error("请输入有效的邮箱地址");
         return false;
       }
 
@@ -375,7 +331,7 @@ export default {
         const result = await userStore.updateUser(userUpdateData);
 
         if (!result.success) {
-          showToast("更新用户信息失败: " + result.message, "error");
+          toast.error("更新用户信息失败: " + result.message);
           return;
         }
 
@@ -383,13 +339,13 @@ export default {
 
         if (latestResult.success) {
           emit("update:userData", latestResult.data);
-          showToast("个人信息修改成功！", "success");
+          toast.success("个人信息修改成功！");
         } else {
-          showToast("个人信息已更新，但部分信息同步失败", "warning");
+          toast.warning("个人信息已更新，但部分信息同步失败");
         }
       } catch (error) {
         console.error("保存资料失败:", error);
-        showToast("保存失败，请稍后重试", "error");
+        toast.error("保存失败，请稍后重试");
       } finally {
         saving.value = false;
       }
@@ -406,12 +362,12 @@ export default {
       if (!file) return;
 
       if (file.size > 2 * 1024 * 1024) {
-        showToast("图片大小不能超过2MB", "error");
+        toast.error("图片大小不能超过2MB");
         return;
       }
 
       if (!file.type.startsWith("image/")) {
-        showToast("请选择图片文件", "error");
+        toast.error("请选择图片文件");
         return;
       }
 
@@ -419,10 +375,10 @@ export default {
         saving.value = true;
         const compressedBase64 = await compressImage(file, 400, 400, 0.7);
         formData.userAvatar = compressedBase64;
-        showToast("头像上传成功", "success");
+        toast.success("头像上传成功");
       } catch (error) {
         console.error("图片处理失败:", error);
-        showToast("图片处理失败，请重试", "error");
+        toast.error("图片处理失败，请重试");
       } finally {
         saving.value = false;
         event.target.value = "";
@@ -433,7 +389,7 @@ export default {
     const resetForm = () => {
       if (confirm("确定要重置所有修改吗？")) {
         Object.assign(formData, JSON.parse(JSON.stringify(originalData.value)));
-        showToast("表单已重置", "info");
+        toast.info("表单已重置");
       }
     };
 
@@ -444,10 +400,6 @@ export default {
       avatarInput,
       saving,
       formData,
-      showToastMessage,
-      toastMessage,
-      toastType,
-      toastIcon,
       saveProfile,
       triggerAvatarUpload,
       handleAvatarUpload,
@@ -461,6 +413,6 @@ export default {
 /* 使用外部样式 */
 @import "@/assets/styles/base.css";
 @import "@/assets/styles/profile-edit.css";
-@import "@/assets/styles/toast.css";
 @import "@/assets/styles/scrollbar.css";
+/* 移除toast.css的导入，因为使用独立的toast服务 */
 </style>
