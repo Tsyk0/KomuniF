@@ -51,7 +51,7 @@
 
 <script>
 import { ref, computed } from "vue";
-
+import toast from "@/commons/utils/toast";
 export default {
   name: "MoreOptions",
   props: {
@@ -100,19 +100,19 @@ export default {
     };
 
     const showPrivacySettings = () => {
-      alert("隐私设置功能开发中...");
+      toast.warning("隐私设置功能开发中...");
     };
 
     const showNotificationSettings = () => {
-      alert("通知设置功能开发中...");
+      toast.warning("通知设置功能开发中...");
     };
 
     const showLoginDevices = () => {
-      alert("登录设备管理功能开发中...");
+      toast.warning("登录设备管理功能开发中...");
     };
 
     const showTwoFactorAuth = () => {
-      alert("双重验证功能开发中...");
+      toast.warning("双重验证功能开发中...");
     };
 
     return {

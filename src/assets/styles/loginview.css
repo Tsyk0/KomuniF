@@ -19,6 +19,7 @@ html, body {
 }
 
 .login-card {
+  height: 80vh;
   width: 100%;
   max-width: 420px;
   background: white;
