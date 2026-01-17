@@ -1,7 +1,7 @@
 // src/apis/auth/index.ts
 import service from '../service'
-import type { LoginRequest, RegisterRequest } from '@/types/flow/auth.request'
-import type { LoginResponse, RegisterResponse } from '@/types/flow/auth.response'
+import type { LoginRequest, RegisterRequest,CheckTokenRequest } from '@/types/flow/auth.request'
+import type { LoginResponse, RegisterResponse,CheckTokenResponse } from '@/types/flow/auth.response'
 
 /**
  * 用户登录
@@ -13,6 +13,17 @@ export function loginApi(data: LoginRequest): Promise<LoginResponse> {
     url: '/user/loginCheck',
     method: 'post',
     data
+  })
+  
+}
+// 新增：Token验证API
+export function checkTokenApi(token: string): Promise<CheckTokenResponse> {
+  return service({
+    url: '/user/checkToken',
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${token}`  // token 在 header 中
+    }
   })
 }
 

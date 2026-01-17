@@ -56,6 +56,7 @@
           placeholder="请再次输入新密码"
           class="el-input"
           @input="clearErrors"
+          @keyup.enter="handleSubmit"
         />
         <div v-if="errors.confirmPassword" class="error-message">
           {{ errors.confirmPassword }}

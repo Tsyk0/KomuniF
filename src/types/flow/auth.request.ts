@@ -9,6 +9,11 @@ export interface LoginRequest {
   userPwd: string   // 密码
 }
 
+export interface CheckTokenRequest {
+  userId: string
+  token: string
+}
+
 // 原文件中的 RegisterRequest 定义
 export interface RegisterRequest {
   userNickname: string    // 昵称（必填）

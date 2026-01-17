@@ -1,38 +1,87 @@
 // src/stores/auth.ts
 import { defineStore } from 'pinia'
-// 改为从新位置导入 API 函数
-import { loginApi, registerApi } from '@/apis/auth'
+import { loginApi, checkTokenApi } from '@/apis/auth'
+import type { User } from '@/entity/user'
+import type { LoginRequest } from '@/types/flow/auth.request'
+import type { LoginResponse } from '@/types/flow/auth.response'
+import type { CheckTokenResponse } from '@/types/flow/auth.response'
+
+
+// 记住我数据结构
+export interface RememberMeData {
+  userId: string
+  token: string
+}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: sessionStorage.getItem('token') || '',
-    user: JSON.parse(sessionStorage.getItem('user') || 'null')
+    user: JSON.parse(sessionStorage.getItem('user') || 'null') as User | null,
+    rememberMe: false as boolean
   }),
   
   getters: {
-    isAuthenticated: (state) => !!state.token,
-    currentUser: (state) => state.user
+    isAuthenticated: (state): boolean => {
+      return !!state.token && !!state.user
+    },
+    
+    currentUser: (state): User | null => {
+      return state.user
+    },
+    
+    // 检查是否有记住我的账户
+    hasRememberedAccount: (): boolean => {
+      return !!localStorage.getItem('rememberMeData')
+    }
   },
   
   actions: {
-    async login(userId: string, userPwd: string) {
+    /**
+     * 正常登录方法
+     */
+    async login(
+      userId: string, 
+      userPwd: string, 
+      rememberMe: boolean = false
+    ): Promise<{
+      success: boolean
+      message?: string
+      data?: any
+    }> {
       try {
-        console.log('🔄 调用后端登录接口...')
+        console.log('🔄 调用登录接口...', { userId, rememberMe })
         
-        // 使用新的 API 函数
-        const response = await loginApi({
+        const loginRequest: LoginRequest = {
           userId: userId,
           userPwd: userPwd
-        })
+        }
+        
+        const response = await loginApi(loginRequest) as LoginResponse
         
         console.log('✅ 后端响应:', response)
         
         if (response.code === 200) {
+          // 1. 总是保存到 sessionStorage
           sessionStorage.setItem('token', response.data.token)
           sessionStorage.setItem('user', JSON.stringify(response.data.user))
           
+          // 2. 更新 store 状态
           this.token = response.data.token
           this.user = response.data.user
+          this.rememberMe = rememberMe
+          
+          // 3. 根据 rememberMe 处理 localStorage
+          if (rememberMe) {
+            const rememberMeData: RememberMeData = {
+              userId: userId,
+              token: response.data.token
+            }
+            localStorage.setItem('rememberMeData', JSON.stringify(rememberMeData))
+            console.log('💾 已保存记住我数据')
+          } else {
+            localStorage.removeItem('rememberMeData')
+            console.log('🗑️ 未保存记住我数据')
+          }
           
           return {
             success: true,
@@ -49,9 +98,11 @@ export const useAuthStore = defineStore('auth', {
         
         let errorMessage = '登录失败'
         if (error.response) {
-          errorMessage = error.response.data?.message || `服务器错误`
+          errorMessage = error.response.data?.message || '服务器错误'
         } else if (error.request) {
           errorMessage = '无法连接到服务器'
+        } else {
+          errorMessage = error.message || '登录失败'
         }
         
         return {
@@ -61,45 +112,80 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     
-    async register(userData: any) {
+    /**
+     * 免密登录（使用记住我的 token）
+     */
+    async autoLogin(): Promise<{
+      success: boolean
+      message?: string
+      data?: any
+    }> {
       try {
-        console.log('📤 调用后端注册接口...')
+        console.log('🚀 尝试免密登录...')
         
-        // 使用新的 API 函数
-        const response = await registerApi({
-          userNickname: userData.userNickname,
-          userPassword: userData.userPassword,
-          userAvatar: userData.userAvatar || null,
-          userGender: userData.userGender || 0,
-          userBirthday: userData.userBirthday || null,
-          userLocation: userData.userLocation || null,
-          userSignature: userData.userSignature || null,
-          userPhone: userData.userPhone || null,
-          userEmail: userData.userEmail || null
-        })
-        
-        console.log('✅ 注册响应:', response)
-        
-        if (response.code === 200) {
-          return {
-            success: true,
-            message: response.message,
-            userId: response.data
-          }
-        } else {
+        // 1. 获取记住我数据
+        const savedDataStr = localStorage.getItem('rememberMeData')
+        if (!savedDataStr) {
           return {
             success: false,
-            message: response.message || '注册失败'
+            message: '未找到记住的账户'
+          }
+        }
+        
+        const rememberMeData: RememberMeData = JSON.parse(savedDataStr)
+        console.log('🔑 找到记住的账户:', rememberMeData.userId)
+        
+        // 2. 调用 checkToken API（返回完整用户信息）
+        const response: CheckTokenResponse = await checkTokenApi(rememberMeData.token)
+        console.log('🔍 Token验证结果:', response)
+        
+        if (response.code === 200) {
+          if (response.data.valid && response.data.user) {
+            // 3. Token有效，直接登录
+            this.token = rememberMeData.token
+            this.user = response.data.user  // ✅ 使用checkToken返回的完整user信息
+            this.rememberMe = true
+            
+            // 4. 保存到 sessionStorage
+            sessionStorage.setItem('token', rememberMeData.token)
+            sessionStorage.setItem('user', JSON.stringify(response.data.user))
+            
+            console.log('✅ 免密登录成功')
+            
+            return {
+              success: true,
+              data: {
+                token: rememberMeData.token,
+                user: response.data.user,
+                fromAutoLogin: true
+              }
+            }
+          } else {
+            // Token无效或过期
+            localStorage.removeItem('rememberMeData')
+            return {
+              success: false,
+              message: response.message || '登录凭证已过期，请重新登录'
+            }
+          }
+        } else {
+          localStorage.removeItem('rememberMeData')
+          return {
+            success: false,
+            message: response.message || '登录验证失败'
           }
         }
       } catch (error: any) {
-        console.error('❌ 注册失败:', error)
+        console.error('❌ 免密登录失败:', error)
+        localStorage.removeItem('rememberMeData')
         
-        let errorMessage = '注册失败'
+        let errorMessage = '免密登录失败'
         if (error.response) {
-          errorMessage = error.response.data?.message || `服务器错误 (${error.response.status})`
+          errorMessage = error.response.data?.message || '服务器错误'
         } else if (error.request) {
-          errorMessage = '无法连接到服务器，请检查后端是否运行'
+          errorMessage = '无法连接到服务器'
+        } else {
+          errorMessage = error.message || '网络错误'
         }
         
         return {
@@ -109,11 +195,85 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     
-    logout() {
+    /**
+     * 检查是否可以免密登录
+     */
+    checkAutoLoginAvailable(currentUserId?: string): boolean {
+      const savedDataStr = localStorage.getItem('rememberMeData')
+      if (!savedDataStr) return false
+      
+      try {
+        const rememberMeData: RememberMeData = JSON.parse(savedDataStr)
+        
+        // 如果传入了当前用户ID，需要匹配
+        if (currentUserId && currentUserId !== rememberMeData.userId) {
+          return false
+        }
+        
+        return true
+      } catch {
+        localStorage.removeItem('rememberMeData')
+        return false
+      }
+    },
+    
+    /**
+     * 清除记住我的账户
+     */
+    clearRememberedAccount(): void {
+      localStorage.removeItem('rememberMeData')
+      this.rememberMe = false
+      console.log('🗑️ 已清除记住的账户')
+    },
+    
+    /**
+     * 清除所有认证信息
+     */
+    clearStorage(): void {
       sessionStorage.removeItem('token')
       sessionStorage.removeItem('user')
       this.token = ''
       this.user = null
+      this.rememberMe = false
+      console.log('🗑️ 已清除会话存储')
+    },
+    
+    /**
+     * 用户登出
+     */
+    logout(): void {
+      this.clearStorage()
+      console.log('👋 用户已登出')
+    },
+    
+    /**
+     * 初始化认证状态
+     */
+    initAuth(): void {
+      console.log('🔄 初始化认证状态...')
+      
+      const sessionToken = sessionStorage.getItem('token')
+      const sessionUser = sessionStorage.getItem('user')
+      
+      if (sessionToken && sessionUser) {
+        try {
+          this.token = sessionToken
+          this.user = JSON.parse(sessionUser)
+          this.rememberMe = false
+          console.log('✅ 从 sessionStorage 恢复登录状态')
+          return
+        } catch (error) {
+          console.error('解析 sessionStorage 用户数据失败:', error)
+          this.clearStorage()
+        }
+      }
+      
+      const hasRememberedAccount = localStorage.getItem('rememberMeData')
+      if (hasRememberedAccount) {
+        console.log('📋 发现记住的账户，等待用户选择是否免密登录')
+      } else {
+        console.log('📭 没有存储的登录状态')
+      }
     }
   }
 })

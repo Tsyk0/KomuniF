@@ -32,3 +32,22 @@ export interface RegisterResponse {
 
 // 注意：原文件中没有单独的 ApiResponse 接口定义
 // 所以这里也不应该添加
+
+export interface CheckTokenResponse {
+  code: number
+  message: string
+  data: {
+    valid: boolean
+    userId: string
+    user?: User  // 可选，有效时包含用户信息
+    tokenInfo?: {
+      expiration: string
+      issuedAt: string
+      expiresInSeconds: number
+    }
+    remainingSeconds?: number
+    originalExpiration?: string
+    expiredSecondsAgo?: number
+  }
+  timestamp: number
+}

@@ -57,6 +57,7 @@
               placeholder="请输入昵称"
               class="el-input"
               maxlength="20"
+              @keyup.enter="saveProfile"
             />
             <div class="char-count">
               {{ formData.userNickname?.length || 0 }}/20
@@ -127,6 +128,7 @@
               placeholder="请输入所在地"
               class="el-input"
               maxlength="50"
+              @keyup.enter="saveProfile"
             />
           </div>
 
@@ -139,6 +141,7 @@
               class="el-textarea"
               rows="3"
               maxlength="100"
+              @keyup.enter="saveProfile"
             ></textarea>
             <div class="char-count">
               {{ formData.userSignature?.length || 0 }}/100
@@ -154,6 +157,7 @@
               placeholder="请输入手机号"
               class="el-input"
               maxlength="11"
+              @keyup.enter="saveProfile"
             />
           </div>
 
@@ -166,6 +170,7 @@
               placeholder="请输入邮箱"
               class="el-input"
               maxlength="50"
+              @keyup.enter="saveProfile"
             />
           </div>
         </div>
