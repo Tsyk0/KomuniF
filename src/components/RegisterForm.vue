@@ -242,7 +242,7 @@ export default {
 
 .form-container {
   background: white;
-  padding: 25px;
+  /* padding: 25px; */
   border-radius: 12px;
 }
 

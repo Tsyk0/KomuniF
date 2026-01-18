@@ -1,22 +1,23 @@
-/* src/assets/styles/homeview.css */
+/* src/assets/styles/night/homeview-night.css */
 
 /* ========== 主布局容器 ========== */
-.homeview .home-container {
+html.night-mode .homeview .home-container {
   width: 100%;
   height: 100vh;
   overflow: hidden;
+  background: linear-gradient(135deg, #354660 0%, #291345 100%);
 }
 
-.homeview .main-content-wrapper {
+html.night-mode .homeview .main-content-wrapper {
   display: flex;
   height: 100%;
 }
 
 /* ========== 左侧竖向导航栏 ========== */
-.homeview .vertical-side-nav {
+html.night-mode .homeview .vertical-side-nav {
   width: 64px;
-  background: rgba(255, 255, 255, 0.9);
-  border-right: 1px solid #e0e0e0;
+  background: rgba(36, 36, 36, 0.95);
+  border-right: 1px solid #334155;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -26,7 +27,7 @@
 }
 
 /* 顶部功能按钮区域 */
-.homeview .nav-menu {
+html.night-mode .homeview .nav-menu {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -34,7 +35,7 @@
 }
 
 /* 底部设置按钮区域 */
-.homeview .nav-bottom-menu {
+html.night-mode .homeview .nav-bottom-menu {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -42,10 +43,10 @@
 }
 
 /* 导航按钮通用样式 */
-.homeview .nav-menu-item {
+html.night-mode .homeview .nav-menu-item {
   width: 48px;
   height: 48px;
-  background: none;
+  background: rgba(51, 65, 85, 0.5);
   border: none;
   border-radius: 8px;
   display: flex;
@@ -55,41 +56,46 @@
   transition: all 0.2s;
   position: relative;
   overflow: hidden;
+  color: #cbd5e1;
+  border: 1px solid #475569;
 }
 
-.homeview .nav-menu-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+html.night-mode .homeview .nav-menu-item:hover {
+  background: rgba(96, 165, 250, 0.2);
+  border-color: #60a5fa;
 }
 
-.homeview .menu-icon {
+html.night-mode .homeview .menu-icon {
   font-size: 24px;
   line-height: 1;
 }
 
 /* 退出按钮特殊样式 */
-.homeview .nav-menu-item.logout-btn:hover {
-  background: rgba(244, 67, 54, 0.1);
+html.night-mode .homeview .nav-menu-item.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
 }
 
 /* ========== 中间会话列表区域 ========== */
-.homeview .conversation-sidebar {
+html.night-mode .homeview .conversation-sidebar {
   width: 320px;
-  background: white;
-  border-right: 1px solid #f0f0f0;
+  background-color: rgba(30, 30, 30, 0.95);
+  border-right: 1px solid #334155;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   height: 100%;
 }
 
-.homeview .sidebar-header {
+html.night-mode .homeview .sidebar-header {
   padding: 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #334155;
+  cursor: pointer;
   transition: background-color 0.2s;
 }
 
 /* 用户资料区域 */
-.homeview .user-profile {
+html.night-mode .homeview .user-profile {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -101,30 +107,30 @@
   position: relative;
 }
 
-.homeview .user-profile:hover {
+html.night-mode .homeview .user-profile:hover {
   background: linear-gradient(
     135deg,
-    rgba(0, 122, 255, 0.08),
-    rgba(0, 122, 255, 0.12)
+    rgba(96, 165, 250, 0.15),
+    rgba(96, 165, 250, 0.2)
   );
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
 }
 
-.homeview .user-profile:hover .avatar-placeholder {
+html.night-mode .homeview .user-profile:hover .avatar-placeholder {
   transform: scale(1.05);
 }
 
-.homeview .user-profile:hover .user-name {
-  color: #007aff;
+html.night-mode .homeview .user-profile:hover .user-name {
+  color: #60a5fa;
 }
 
-.homeview .user-profile:active {
+html.night-mode .homeview .user-profile:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0, 122, 255, 0.1);
+  box-shadow: 0 2px 6px rgba(96, 165, 250, 0.2);
 }
 
-.homeview .user-profile::after {
+html.night-mode .homeview .user-profile::after {
   content: "✏️";
   position: absolute;
   right: 10px;
@@ -135,15 +141,15 @@
   font-size: 14px;
 }
 
-.homeview .user-profile:hover::after {
+html.night-mode .homeview .user-profile:hover::after {
   opacity: 1;
 }
 
-.homeview .avatar-placeholder {
+html.night-mode .homeview .avatar-placeholder {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #007aff, #0056cc);
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
   display: flex;
   align-items: center;
@@ -153,9 +159,10 @@
   transition: transform 0.3s ease;
   overflow: hidden;
   position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.homeview .avatar-placeholder img {
+html.night-mode .homeview .avatar-placeholder img {
   position: absolute;
   top: 0;
   left: 0;
@@ -164,81 +171,81 @@
   object-fit: cover;
 }
 
-.homeview .avatar-placeholder span {
+html.night-mode .homeview .avatar-placeholder span {
   position: relative;
   z-index: 1;
 }
 
-.homeview .avatar-img-small {
+html.night-mode .homeview .avatar-img-small {
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.homeview .user-info {
+html.night-mode .homeview .user-info {
   flex: 1;
 }
 
-.homeview .user-name {
+html.night-mode .homeview .user-name {
   font-weight: 600;
-  color: #333;
+  color: #e2e8f0;
   font-size: 16px;
   margin-bottom: 4px;
   transition: color 0.3s ease;
 }
 
-.homeview .user-status {
+html.night-mode .homeview .user-status {
   font-size: 12px;
-  color: #666;
+  color: #94a3b8;
 }
 
-.homeview .user-status.online {
-  color: #4cd964;
+html.night-mode .homeview .user-status.online {
+  color: #4ade80;
 }
 
-.homeview .conversation-list {
+html.night-mode .homeview .conversation-list {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
 }
 
-.homeview .section-title {
+html.night-mode .homeview .section-title {
   font-size: 12px;
   font-weight: 600;
-  color: #999;
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 20px;
 }
 
-.homeview .empty-conversation {
+html.night-mode .homeview .empty-conversation {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: #64748b;
 }
 
-.homeview .empty-icon {
+html.night-mode .homeview .empty-icon {
   font-size: 48px;
   margin-bottom: 16px;
   opacity: 0.5;
 }
 
-.homeview .empty-text {
+html.night-mode .homeview .empty-text {
   font-weight: 600;
   margin-bottom: 8px;
-  color: #666;
+  color: #cbd5e1;
 }
 
-.homeview .empty-hint {
+html.night-mode .homeview .empty-hint {
   font-size: 14px;
-  color: #999;
+  color: #94a3b8;
 }
 
 /* ========== 右侧聊天区域 ========== */
-.homeview .chat-main-area {
+html.night-mode .homeview .chat-main-area {
   flex: 1;
-  background: #f8f9fa;
+  background: #1d1d1d;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,7 +256,7 @@
 }
 
 /* 聊天区域标注 */
-.homeview .chat-area-label {
+html.night-mode .homeview .chat-area-label {
   max-width: 500px;
   text-align: center;
   padding: 40px;
@@ -262,7 +269,7 @@
   align-items: center;
 }
 
-.homeview .chat-label-header {
+html.night-mode .homeview .chat-label-header {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -270,38 +277,38 @@
   margin-bottom: 20px;
 }
 
-.homeview .chat-label-icon {
+html.night-mode .homeview .chat-label-icon {
   font-size: 36px;
-  color: #007aff;
+  color: #60a5fa;
 }
 
-.homeview .chat-label-text {
+html.night-mode .homeview .chat-label-text {
   font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: #e2e8f0;
 }
 
-.homeview .chat-label-content {
+html.night-mode .homeview .chat-label-content {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.homeview .chat-label-description {
-  color: #666;
+html.night-mode .homeview .chat-label-description {
+  color: #94a3b8;
   margin-bottom: 30px;
   font-size: 16px;
   text-align: center;
 }
 
-.homeview .chat-label-features {
+html.night-mode .homeview .chat-label-features {
   display: flex;
   justify-content: center;
   gap: 32px;
   margin-top: 24px;
 }
 
-.homeview .feature-item {
+html.night-mode .homeview .feature-item {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -310,21 +317,22 @@
   transition: transform 0.2s;
 }
 
-.homeview .feature-item:hover {
+html.night-mode .homeview .feature-item:hover {
   transform: translateY(-2px);
 }
 
-.homeview .feature-icon {
+html.night-mode .homeview .feature-icon {
   font-size: 24px;
+  color: #cbd5e1;
 }
 
-.homeview .feature-text {
+html.night-mode .homeview .feature-text {
   font-size: 12px;
-  color: #666;
+  color: #94a3b8;
 }
 
 /* ========== 成功提示 ========== */
-.homeview .success-toast {
+html.night-mode .homeview .success-toast {
   position: fixed;
   bottom: 80px;
   left: 50%;
@@ -333,7 +341,7 @@
   animation: slideUp 0.3s ease;
 }
 
-.homeview .toast-content {
+html.night-mode .homeview .toast-content {
   background: #10b981;
   color: white;
   padding: 12px 24px;
@@ -341,14 +349,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
-.homeview .toast-icon {
+html.night-mode .homeview .toast-icon {
   font-size: 18px;
 }
 
-.homeview .toast-text {
+html.night-mode .homeview .toast-text {
   font-size: 14px;
   font-weight: 500;
 }

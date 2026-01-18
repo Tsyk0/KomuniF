@@ -1,5 +1,6 @@
 <template>
-  <div class="more-options-container">
+  <!-- 在根元素上添加 more-options 类名 -->
+  <div class="more-options more-options-container">
     <div class="more-options-header">
       <button class="back-btn" @click="handleBack" v-ripple>
         <span>←</span> 返回
@@ -49,6 +50,7 @@
   </div>
 </template>
 
+<!-- script 部分保持不变 -->
 <script>
 import { ref, computed } from "vue";
 import toast from "@/commons/utils/toast";
@@ -64,11 +66,10 @@ export default {
       required: true,
     },
   },
-  emits: ["back", "showChangePassword"], // 添加showChangePassword事件
+  emits: ["back", "showChangePassword"],
   setup(props, { emit }) {
     const currentView = ref("main");
 
-    // 计算标题
     const headerTitle = computed(() => {
       switch (currentView.value) {
         case "main":
@@ -80,7 +81,6 @@ export default {
       }
     });
 
-    // 返回处理
     const handleBack = () => {
       if (currentView.value === "main") {
         emit("back");
@@ -89,13 +89,11 @@ export default {
       }
     };
 
-    // 显示各个菜单
     const showAccountSecurity = () => {
       currentView.value = "account";
     };
 
     const showChangePassword = () => {
-      // 触发事件，让父组件显示修改密码页面
       emit("showChangePassword");
     };
 

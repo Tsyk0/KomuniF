@@ -1,5 +1,6 @@
 <template>
-  <div class="login-container">
+  <!-- 确保选择器匹配：.loginview.login-container -->
+  <div class="loginview login-container">
     <div class="login-card">
       <!-- Logo区域 -->
       <div class="logo-section">

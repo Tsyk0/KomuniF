@@ -1,36 +1,61 @@
 <template>
-  <div class="home-container">
-    <!-- 顶部导航栏 -->
-    <div class="top-navbar">
-      <div class="nav-left">
-        <h1 class="app-title">Komuni</h1>
-      </div>
-      <div class="nav-center">
-        <span class="current-user">{{ userNickname }}</span>
-        <span class="status-indicator online">● 在线</span>
-      </div>
-      <div class="nav-right">
-        <!-- 添加更多按钮 -->
-        <button class="nav-btn" @click="showMoreOptions" v-ripple>
-          <span class="nav-icon">⋮</span> 更多
-        </button>
-        <!-- 原有的退出按钮 -->
-        <button class="nav-btn" @click="handleLogout" v-ripple>
-          <span class="nav-icon">🚪</span> 退出
-        </button>
-      </div>
-    </div>
-
+  <!-- 在根元素上添加 homeview 类名 -->
+  <div class="homeview home-container">
     <!-- 主内容区域 -->
     <div class="main-content-wrapper">
-      <!-- 左侧会话列表区域 -->
+      <!-- 左侧竖向导航栏 -->
+      <div class="vertical-side-nav">
+        <!-- 功能按钮区域 -->
+        <div class="nav-menu">
+          <button class="nav-menu-item" @click="goToChat" v-ripple title="聊天">
+            <span class="menu-icon">💬</span>
+          </button>
+          <button
+            class="nav-menu-item"
+            @click="startNewChat"
+            v-ripple
+            title="新聊天"
+          >
+            <span class="menu-icon">➕</span>
+          </button>
+        </div>
+
+        <!-- 设置按钮区域（底部） -->
+        <div class="nav-bottom-menu">
+          <!-- 修改这里：使用 themeStore -->
+          <button
+            class="nav-menu-item"
+            @click="toggleTheme"
+            v-ripple
+            :title="themeTitle"
+          >
+            <span class="menu-icon">{{ themeIcon }}</span>
+          </button>
+          <button
+            class="nav-menu-item"
+            @click="showMoreOptions"
+            v-ripple
+            title="更多设置"
+          >
+            <span class="menu-icon">⚙️</span>
+          </button>
+          <button
+            class="nav-menu-item logout-btn"
+            @click="handleLogout"
+            v-ripple
+            title="退出登录"
+          >
+            <span class="menu-icon">🚪</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 中间会话列表区域 -->
       <div class="conversation-sidebar">
-        <!-- 左侧会话列表区域 -->
         <div class="sidebar-header">
-          <div class="user-profile" @click="enterEditMode">
-            <!-- 修改这里：使用动态头像 -->
+          <!-- 可点击的用户资料区域 -->
+          <div class="user-profile" @click="enterEditMode" v-ripple>
             <div class="avatar-placeholder">
-              <!-- 如果有图片URL，显示图片 -->
               <img
                 v-if="
                   currentUserAvatar &&
@@ -42,7 +67,6 @@
                 class="avatar-img-small"
                 @error="handleAvatarError"
               />
-              <!-- 否则显示文字 -->
               <span v-else>
                 {{ userNickname.charAt(0) }}
               </span>
@@ -101,17 +125,23 @@
           </div>
           <div class="chat-label-content">
             <p class="chat-label-description">选择一个对话以开始</p>
+            <div class="chat-label-features">
+              <div class="feature-item">
+                <span class="feature-icon">🔍</span>
+                <span class="feature-text">搜索好友</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">👥</span>
+                <span class="feature-text">创建群聊</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">📎</span>
+                <span class="feature-text">发送文件</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- 底部信息栏 -->
-    <div class="bottom-info-bar">
-      <p>
-        用户ID: {{ userId }} | 最后登录: {{ lastLoginTime || "刚刚" }} | Komuni
-        © 2026
-      </p>
     </div>
 
     <!-- 成功提示 -->
@@ -124,21 +154,64 @@
   </div>
 </template>
 
+<!-- script 部分保持不变 -->
 <script>
+import { useThemeStore } from "@/stores/theme"; // 新增
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import { useAuthStore } from "@/stores/auth";
 import ProfileEdit from "@/components/ProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
-import ChangePassword from "@/components/ChangePassword.vue"; // 导入ChangePassword组件
+import ChangePassword from "@/components/ChangePassword.vue";
 
 export default {
   name: "HomeView",
   components: {
     ProfileEdit,
     MoreOptions,
-    ChangePassword, // 注册ChangePassword组件
+    ChangePassword,
   },
+
+  // 使用 Composition API 的 setup()
+  setup() {
+    // 获取所有 stores
+    const themeStore = useThemeStore();
+    const userStore = useUserStore();
+    const authStore = useAuthStore();
+    const router = useRouter();
+
+    // 主题相关计算属性
+    const themeIcon = () => (themeStore.isDarkMode ? "🌞" : "🌙");
+    const themeTitle = () =>
+      themeStore.isDarkMode ? "切换到日间模式" : "切换到夜间模式";
+
+    // 主题切换方法
+    const toggleTheme = () => {
+      themeStore.toggleTheme();
+    };
+
+    return {
+      themeStore,
+      userStore,
+      authStore,
+      router,
+      themeIcon,
+      themeTitle,
+      toggleTheme,
+    };
+  },
+  computed: {
+    // ✅ 修复：使用 computed 属性而不是函数
+    themeIcon() {
+      // themeStore.isDarkMode 应该是响应式的
+      return this.themeStore?.isDarkMode ? "🌞" : "🌙";
+    },
+
+    themeTitle() {
+      return this.themeStore?.isDarkMode ? "切换到日间模式" : "切换到夜间模式";
+    },
+  },
+
   data() {
     return {
       userId: "",
@@ -159,21 +232,17 @@ export default {
       },
       avatarLoadError: false,
       showMoreMenu: false,
-      showChangePasswordView: false, // 新增：控制是否显示修改密码页面
+      showChangePasswordView: false,
       showSuccessMessage: false,
       successMessage: "",
     };
   },
+
   mounted() {
     this.loadUserData();
     console.log("HomeView mounted, 当前用户头像:", this.currentUserAvatar);
   },
-  setup() {
-    const userStore = useUserStore();
-    const authStore = useAuthStore();
-    const router = useRouter();
-    return { userStore, authStore, router };
-  },
+
   methods: {
     // 头像加载失败处理
     handleAvatarError() {
@@ -290,29 +359,21 @@ export default {
 
     // 处理密码修改成功
     handlePasswordSuccess(message) {
-      // 返回更多菜单
       this.backToAccountSecurity();
-
-      // 显示成功消息
       this.showSuccessToast(message);
     },
 
     // 处理用户数据更新
     handleUserDataUpdate(updatedData) {
-      // 同步更新编辑表单
       Object.assign(this.editForm, updatedData);
-
-      // 更新主界面的显示
       this.userNickname = updatedData.userNickname;
 
-      // 更新sessionStorage
       const userStr = sessionStorage.getItem("user");
       if (userStr) {
         const user = JSON.parse(userStr);
         Object.assign(user, updatedData);
         sessionStorage.setItem("user", JSON.stringify(user));
 
-        // 更新头像显示
         const avatarUrl = this.processAvatarUrl(updatedData.userAvatar);
         this.currentUserAvatar = avatarUrl;
       }
@@ -324,23 +385,18 @@ export default {
     },
 
     showSuccessToast(message) {
-      // 创建提示框
       const toast = document.createElement("div");
       toast.className = "simple-toast";
       toast.textContent = message;
 
       document.body.appendChild(toast);
 
-      // 显示
       setTimeout(() => {
         toast.classList.add("show");
       }, 10);
 
-      // 2秒后渐隐
       setTimeout(() => {
         toast.classList.remove("show");
-
-        // 动画完成后移除
         setTimeout(() => {
           if (toast.parentNode) {
             toast.remove();
@@ -349,12 +405,20 @@ export default {
       }, 2000);
     },
 
+    // 开始新聊天
+    startNewChat() {
+      alert("开始新聊天功能开发中...");
+    },
+
+    // 前往聊天界面
+    goToChat() {
+      alert("聊天功能开发中...");
+    },
+
     // 登出方法
     handleLogout() {
       if (confirm("确定要退出登录吗？")) {
-        sessionStorage.removeItem("token");
-        sessionStorage.removeItem("user");
-        localStorage.removeItem("rememberMe");
+        this.authStore.logout();
         this.router.push("/");
       }
     },

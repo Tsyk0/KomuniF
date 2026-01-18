@@ -1,5 +1,6 @@
 <template>
-  <div class="profile-edit-container">
+  <!-- 在根元素上添加 profile-edit 类名 -->
+  <div class="profile-edit profile-edit-container">
     <div class="edit-header">
       <button class="back-btn" @click="$emit('back')" v-ripple>
         <span>←</span> 返回
@@ -186,6 +187,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import { ref, reactive, onMounted, watch } from "vue";

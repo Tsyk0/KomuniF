@@ -1,36 +1,34 @@
 /* src/assets/styles/profile-edit.css */
 
 /* ========== 用户资料编辑界面 ========== */
-.profile-edit-container {
+.profile-edit.profile-edit-container {
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.95);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.edit-header {
+.profile-edit .edit-header {
   padding: 20px 30px;
   border-bottom: 1px solid rgba(240, 240, 240, 0.8);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.95);
   flex-shrink: 0;
   min-height: 70px;
   box-sizing: border-box;
 }
 
-.edit-header h2 {
+.profile-edit .edit-header h2 {
   margin: 0;
   color: #333;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.edit-content {
+.profile-edit .edit-content {
   flex: 1;
   display: flex;
   padding: 0;
@@ -41,20 +39,20 @@
   overflow: hidden;
 }
 
-.avatar-section {
+.profile-edit .avatar-section {
   width: 280px;
   display: flex;
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
   padding: 30px;
-  background: rgba(255, 255, 255, 0.95);
   border-right: 1px solid rgba(240, 240, 240, 0.8);
   overflow-y: auto;
   height: 100%;
+  box-sizing: border-box;
 }
 
-.avatar-display {
+.profile-edit .avatar-display {
   width: 200px;
   height: 200px;
   border-radius: 50%;
@@ -64,26 +62,30 @@
   margin-bottom: 20px;
   transition: transform 0.3s ease;
   flex-shrink: 0;
+  border: 3px solid #e0e0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
-.avatar-display:hover {
+.profile-edit .avatar-display:hover {
   transform: scale(1.02);
+  border-color: #007aff;
 }
 
-.avatar-img-container {
+.profile-edit .avatar-img-container {
   width: 100%;
   height: 100%;
   position: relative;
   box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
-.avatar-img {
+.profile-edit .avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.avatar-overlay {
+.profile-edit .avatar-overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -100,11 +102,11 @@
   font-size: 16px;
 }
 
-.avatar-display:hover .avatar-overlay {
+.profile-edit .avatar-display:hover .avatar-overlay {
   opacity: 1;
 }
 
-.avatar-placeholder-large {
+.profile-edit .avatar-placeholder-large {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #007aff, #0056cc);
@@ -117,14 +119,14 @@
   font-weight: bold;
 }
 
-.upload-hint {
+.profile-edit .upload-hint {
   font-size: 14px;
   margin-top: 10px;
   color: rgba(255, 255, 255, 0.9);
-  font-weight: normal;
+  line-height: 1.4;
 }
 
-.avatar-info {
+.profile-edit .avatar-info {
   text-align: center;
   color: #666;
   font-size: 13px;
@@ -132,11 +134,13 @@
   flex-shrink: 0;
 }
 
-.avatar-hint {
+.profile-edit .avatar-hint {
   margin: 4px 0;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
-.form-section {
+.profile-edit .form-section {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -146,7 +150,7 @@
   width: 100%;
 }
 
-.form-content {
+.profile-edit .form-content {
   flex: 1;
   overflow-y: auto;
   padding: 30px 40px 30px 30px;
@@ -155,7 +159,7 @@
   box-sizing: border-box;
 }
 
-.form-section::before {
+.profile-edit .form-section::before {
   content: '';
   position: absolute;
   top: 0;
@@ -174,120 +178,117 @@
   pointer-events: none;
 }
 
-.el-textarea {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid rgba(224, 224, 224, 0.8);
-  border-radius: 8px;
-  font-size: 14px;
-  resize: vertical;
-  font-family: inherit;
-  box-sizing: border-box;
-  min-height: 100px;
-  background: rgba(255, 255, 255, 0.95);
+/* 恢复默认字体设置 */
+.profile-edit .form-group label {
+  display: block;
+  margin-bottom: 10px;
+  color: #374151;
+  line-height: 1.2;
 }
 
-.el-textarea:focus {
+/* 输入框使用默认字体设置 - 移除背景色 */
+.profile-edit input,
+.profile-edit textarea,
+.profile-edit .el-input,
+.profile-edit .el-textarea,
+.profile-edit input[type="date"] {
+  padding: 14px 16px;
+  height: auto;
+  min-height: 48px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  background: transparent !important; /* 强制透明背景 */
+  border: 1px solid rgba(224, 224, 224, 0.8);
+  border-radius: 8px;
+  color: #333 !important; /* 确保文本颜色 */
+}
+
+/* 特别针对输入框聚焦状态 */
+.profile-edit input:focus,
+.profile-edit textarea:focus,
+.profile-edit .el-input:focus,
+.profile-edit .el-textarea:focus,
+.profile-edit input[type="date"]:focus {
   outline: none;
   border-color: #007aff;
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
-.gender-options {
+/* 特别针对 textarea */
+.profile-edit .el-textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(224, 224, 224, 0.8);
+  border-radius: 8px;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+  min-height: 120px;
+  line-height: 1.5;
+  background: transparent !important;
+  color: #333 !important;
+}
+
+/* 性别选项 */
+.profile-edit .gender-options {
   display: flex;
   gap: 20px;
 }
 
-.gender-option {
+.profile-edit .gender-option {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: all 0.3s;
   user-select: none;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  min-width: 100px;
-  min-height: 40px;
+  min-width: 120px;
+  min-height: 48px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.8);
 }
 
-.gender-option:hover {
+.profile-edit .gender-option:hover {
   background: rgba(255, 255, 255, 0.9);
   color: #007aff;
+  border-color: #007aff;
 }
 
-.gender-option.active {
+.profile-edit .gender-option.active {
   background: rgba(0, 122, 255, 0.1);
   color: #007aff;
+  border-color: #007aff;
 }
 
-.gender-icon {
-  font-size: 18px;
+.profile-edit .gender-icon {
+  font-size: 20px;
 }
 
-.char-count {
+/* 提示文字 */
+.profile-edit .char-count {
   text-align: right;
-  font-size: 12px;
   color: #999;
-  margin-top: 4px;
-}
-
-/* 保存按钮 */
-.save-btn {
-  padding: 10px 24px;
-  background: linear-gradient(135deg, #66b3ff, #3399ff);
-  color: white;
-  border: none;
-  border-radius: 8px;
+  margin-top: 8px;
   font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-  min-width: 100px;
-  min-height: 36px;
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
-  justify-content: center;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.save-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #3399ff, #0077e6);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(51, 153, 255, 0.3);
-}
-
-.save-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.save-btn .vue-ripple-effect {
-  background-color: rgba(0, 119, 230, 0.3);
-}
-
-.save-btn .ripple {
-  background-color: rgba(0, 119, 230, 0.3);
+  line-height: 1.4;
 }
 
 /* 操作按钮区域 */
-.action-buttons {
+.profile-edit .action-buttons {
   display: flex;
   justify-content: center;
   gap: 20px;
-  padding: 20px 30px;
+  padding: 24px 30px;
   border-top: 1px solid rgba(240, 240, 240, 0.8);
-  background: rgba(255, 255, 255, 0.95);
   flex-shrink: 0;
   min-height: 80px;
   box-sizing: border-box;
@@ -295,149 +296,78 @@
   width: 100%;
 }
 
-/* 取消/重置按钮 */
-.cancel-btn {
-  padding: 12px 24px;
+/* 按钮样式 */
+.profile-edit .save-btn {
+  background: linear-gradient(135deg, #60b0ff, #4c81b6);
+  padding: 8px 16px;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 100px;
+  min-height: 44px;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  user-select: none;
+  box-sizing: border-box;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.profile-edit .save-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3399ff, #0077e6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(51, 153, 255, 0.3);
+}
+
+.profile-edit .save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* 取消/重置按钮 */
+.profile-edit .cancel-btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-weight: 500;
-  min-width: 120px;
-  min-height: 36px;
+  min-width: 140px;
+  min-height: 48px;
   transition: all 0.3s;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  color: #333;
+  border: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.8);
 }
 
-.cancel-btn:hover {
+.profile-edit .cancel-btn:hover {
   background: rgba(255, 255, 255, 0.9);
   color: #ff3b30;
+  border-color: #ff3b30;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
 }
 
-.btn-icon {
-  font-size: 16px;
+.profile-edit .cancel-btn:active {
+  transform: translateY(0);
 }
 
-/* ========== 响应式调整 ========== */
-@media (max-width: 1024px) {
-  .avatar-section {
-    width: 240px;
-    padding: 20px;
-  }
-  
-  .avatar-display {
-    width: 180px;
-    height: 180px;
-  }
-  
-  .form-content {
-    padding: 20px 30px 20px 20px;
-  }
-}
-
-@media (max-width: 768px) {
-  .edit-content {
-    flex-direction: column;
-  }
-  
-  .avatar-section {
-    width: 100%;
-    height: auto;
-    padding: 20px;
-    border-right: none;
-    border-bottom: 1px solid rgba(240, 240, 240, 0.8);
-    min-height: 200px;
-  }
-  
-  .avatar-display {
-    width: 150px;
-    height: 150px;
-  }
-  
-  .form-content {
-    padding: 20px;
-  }
-  
-  .gender-options {
-    flex-wrap: wrap;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-  }
-  
-  .cancel-btn {
-    width: 100%;
-    max-width: 200px;
-  }
-  
-  .save-btn,
-  .cancel-btn,
-  .gender-option {
-    padding: 6px 12px;
-    min-height: 32px;
-    min-width: 70px;
-  }
-  
-  .save-btn {
-    min-width: 80px;
-  }
-  
-  .cancel-btn {
-    min-width: 100px;
-  }
-}
-
-@media (max-width: 480px) {
-  .edit-header {
-    padding: 15px 20px;
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch;
-  }
-  
-  .edit-header h2 {
-    font-size: 18px;
-    text-align: center;
-  }
-  
-  .avatar-display {
-    width: 120px;
-    height: 120px;
-  }
-  
-  .gender-options {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .gender-option {
-    justify-content: center;
-  }
-  
-  .form-content {
-    padding: 15px;
-  }
-  
-  .action-buttons {
-    padding: 15px 20px;
-  }
-  
-  .save-btn,
-  .cancel-btn,
-  .gender-option {
-    padding: 5px 10px;
-    min-height: 30px;
-    min-width: 65px;
-    font-size: 13px;
-  }
+.profile-edit .btn-icon {
+  font-size: 18px;
 }

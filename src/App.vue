@@ -1,6 +1,6 @@
+<!-- App.vue -->
 <template>
   <div id="app">
-    <!-- 路由视图容器 -->
     <router-view />
   </div>
 </template>
@@ -11,25 +11,16 @@
 
 <style>
 /* 全局样式重置 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
-  color: #333;
-}
+/* 只导入日间基础样式，夜间样式通过动态加载 */
+@import "@/assets/styles/base.css";
+@import "@/assets/styles/homeview.css";
+@import "@/assets/styles/profile-edit.css";
+@import "@/assets/styles/more-options.css";
+@import "@/assets/styles/change-password.css";
+@import "@/assets/styles/loginview.css";
+@import "@/assets/styles/loginform.css";
+@import "@/assets/styles/scrollbar.css";
 
-#app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+/* ✅ 关键：不要在这里导入夜间样式，使用动态加载 */
 </style>

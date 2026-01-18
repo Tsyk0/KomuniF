@@ -1,14 +1,16 @@
-/* src/assets/styles/login.css */
+/* src/assets/styles/loginview.css */
 
 /* ========== 1. 全局滚动条隐藏 ========== */
+/* 注意：这个应该放在base.css中，这里注释掉
 html, body {
   overflow: hidden;
   height: 100%;
   margin: 0;
 }
+*/
 
 /* ========== 2. 主容器样式 ========== */
-.login-container {
+.loginview.login-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -18,7 +20,7 @@ html, body {
   overflow: hidden;
 }
 
-.login-card {
+.loginview .login-card {
   height: 80vh;
   width: 100%;
   max-width: 420px;
@@ -32,7 +34,7 @@ html, body {
 }
 
 /* ========== 3. Logo区域 ========== */
-.logo-section {
+.loginview .logo-section {
   text-align: center;
   padding: 40px 30px 20px;
   background: linear-gradient(135deg, #007aff 0%, #0056cc 100%);
@@ -40,19 +42,19 @@ html, body {
   flex-shrink: 0;
 }
 
-.logo {
+.loginview .logo {
   font-size: 48px;
   margin-bottom: 20px;
   line-height: 1;
 }
 
-.login-card h1 {
+.loginview .login-card h1 {
   font-size: 32px;
   font-weight: 700;
   margin: 0 0 8px 0;
 }
 
-.tagline {
+.loginview .tagline {
   opacity: 0.9;
   font-size: 14px;
   font-weight: 300;
@@ -60,7 +62,7 @@ html, body {
 }
 
 /* ========== 4. 表单区域 ========== */
-.form-section {
+.loginview .form-section {
   padding: 30px;
   flex: 1;
   display: flex;
@@ -69,14 +71,14 @@ html, body {
 }
 
 /* ========== 5. 标签页样式 ========== */
-.tabs {
+.loginview .tabs {
   display: flex;
   margin-bottom: 30px;
   border-bottom: 1px solid #f0f0f0;
   flex-shrink: 0;
 }
 
-.tab {
+.loginview .tab {
   flex: 1;
   padding: 12px 16px;
   background: none;
@@ -91,7 +93,7 @@ html, body {
   overflow: hidden;
 }
 
-.tab::after {
+.loginview .tab::after {
   content: '';
   position: absolute;
   bottom: -3px;
@@ -103,22 +105,22 @@ html, body {
   transition: transform 0.3s ease;
 }
 
-.tab:hover {
+.loginview .tab:hover {
   color: #007aff;
   background: rgba(0, 122, 255, 0.05);
 }
 
-.tab.active {
+.loginview .tab.active {
   color: #007aff;
   font-weight: 500;
 }
 
-.tab.active::after {
+.loginview .tab.active::after {
   transform: scaleX(1);
 }
 
 /* ========== 6. 表单内容区域（可滚动） ========== */
-.form-content {
+.loginview .form-content {
   flex: 1;
   overflow-y: auto;
   min-height: 300px;
@@ -127,7 +129,7 @@ html, body {
 }
 
 /* ========== 7. 忘记密码占位符 ========== */
-.forgot-password-placeholder {
+.loginview .forgot-password-placeholder {
   text-align: center;
   padding: 30px 20px;
   display: flex;
@@ -137,14 +139,14 @@ html, body {
   min-height: 300px;
 }
 
-.forgot-password-placeholder h3 {
+.loginview .forgot-password-placeholder h3 {
   margin: 0 0 10px 0;
   color: #333;
   font-size: 24px;
   font-weight: 600;
 }
 
-.forgot-password-placeholder p {
+.loginview .forgot-password-placeholder p {
   color: #666;
   margin: 0 0 30px 0;
   font-size: 15px;
@@ -152,8 +154,8 @@ html, body {
   line-height: 1.5;
 }
 
-.back-btn {
-  padding: 12px 28px;
+.loginview .back-btn {
+  padding: 8px 16px;
   background: #007aff;
   color: white;
   border: none;
@@ -165,264 +167,39 @@ html, body {
   box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
 }
 
-.back-btn:hover {
+.loginview .back-btn:hover {
   background: #0056cc;
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(0, 122, 255, 0.3);
 }
 
-.back-btn:active {
+.loginview .back-btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
 }
 
 /* ========== 8. 页脚样式 ========== */
-.footer {
+.loginview .footer {
   padding: 20px 30px;
   border-top: 1px solid #f0f0f0;
   text-align: center;
   flex-shrink: 0;
 }
 
-.footer p {
+.loginview .footer p {
   color: #666;
   font-size: 12px;
   margin: 0;
   line-height: 1.5;
 }
 
-/* ========== 9. 自定义透明滚动条 ========== */
-/* Webkit浏览器 (Chrome, Safari, Edge) */
-.form-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.form-content::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 4px;
-  margin: 5px 0;
-}
-
-.form-content::-webkit-scrollbar-thumb {
-  background: rgba(120, 120, 120, 0.1); /* 默认透明灰色 */
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-  transition: all 0.3s ease;
-}
-
-/* 悬停时变深（但仍透明） */
-.form-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(120, 120, 120, 0.25); /* 加深但仍透明 */
-  border-color: transparent;
-}
-
-/* 拖拽时更深（但仍透明） */
-.form-content::-webkit-scrollbar-thumb:active {
-  background: rgba(100, 100, 100, 0.35); /* 更深但仍透明 */
-  border-color: transparent;
-}
-
-/* Firefox浏览器 */
-@supports (scrollbar-width: thin) {
-  .form-content {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(120, 120, 120, 0.1) transparent;
-  }
-  
-  .form-content:hover {
-    scrollbar-color: rgba(120, 120, 120, 0.25) transparent;
-  }
-  
-  .form-content:active {
-    scrollbar-color: rgba(100, 100, 100, 0.35) transparent;
-  }
-}
-
 /* ========== 10. 平滑滚动 ========== */
-.form-content {
+.loginview .form-content {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
-/* ========== 11. 响应式设计 ========== */
-@media (max-width: 768px) {
-  .login-container {
-    padding: 15px;
-    background: white;
-  }
-  
-  .login-card {
-    max-height: 100vh;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  }
-  
-  .logo-section {
-    padding: 30px 20px 15px;
-  }
-  
-  .logo {
-    font-size: 40px;
-    margin-bottom: 15px;
-  }
-  
-  .login-card h1 {
-    font-size: 28px;
-  }
-  
-  .tagline {
-    font-size: 13px;
-  }
-  
-  .form-section {
-    padding: 25px;
-  }
-  
-  .tabs {
-    margin-bottom: 25px;
-  }
-  
-  .tab {
-    padding: 10px 12px;
-    font-size: 15px;
-  }
-  
-  .form-content {
-    min-height: 280px;
-  }
-  
-  .forgot-password-placeholder {
-    padding: 25px 15px;
-  }
-  
-  .forgot-password-placeholder h3 {
-    font-size: 22px;
-  }
-  
-  .forgot-password-placeholder p {
-    font-size: 14px;
-  }
-  
-  .back-btn {
-    padding: 10px 24px;
-    font-size: 14px;
-  }
-  
-  .footer {
-    padding: 15px 20px;
-  }
-  
-  .footer p {
-    font-size: 11px;
-  }
-  
-  /* 移动端滚动条更细 */
-  .form-content::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  .form-content::-webkit-scrollbar-thumb {
-    border-width: 1px;
-  }
-}
-
-@media (max-width: 480px) {
-  .login-container {
-    padding: 10px;
-  }
-  
-  .login-card {
-    max-width: 100%;
-    border-radius: 10px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-  }
-  
-  .logo-section {
-    padding: 25px 15px 10px;
-  }
-  
-  .logo {
-    font-size: 36px;
-    margin-bottom: 12px;
-  }
-  
-  .login-card h1 {
-    font-size: 24px;
-  }
-  
-  .tagline {
-    font-size: 12px;
-  }
-  
-  .form-section {
-    padding: 20px 15px;
-  }
-  
-  .tabs {
-    margin-bottom: 20px;
-  }
-  
-  .tab {
-    padding: 8px 10px;
-    font-size: 14px;
-  }
-  
-  .form-content {
-    min-height: 260px;
-  }
-  
-  .forgot-password-placeholder {
-    padding: 20px 10px;
-  }
-  
-  .forgot-password-placeholder h3 {
-    font-size: 20px;
-  }
-  
-  .forgot-password-placeholder p {
-    font-size: 13px;
-    margin-bottom: 25px;
-  }
-  
-  .back-btn {
-    padding: 10px 20px;
-    font-size: 14px;
-  }
-  
-  .footer {
-    padding: 12px 15px;
-  }
-  
-  .footer p {
-    font-size: 10px;
-  }
-  
-  /* 更窄的滚动条 */
-  .form-content::-webkit-scrollbar {
-    width: 4px;
-  }
-}
-
 /* ========== 12. 动画效果 ========== */
-.tab,
-.back-btn,
-.forgot-password-placeholder {
-  animation: fadeInUp 0.5s ease forwards;
-}
-
-.forgot-password-placeholder h3 {
-  animation-delay: 0.1s;
-}
-
-.forgot-password-placeholder p {
-  animation-delay: 0.2s;
-}
-
-.forgot-password-placeholder .back-btn {
-  animation-delay: 0.3s;
-}
-
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -434,13 +211,31 @@ html, body {
   }
 }
 
+.loginview .tab,
+.loginview .back-btn,
+.loginview .forgot-password-placeholder {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.loginview .forgot-password-placeholder h3 {
+  animation-delay: 0.1s;
+}
+
+.loginview .forgot-password-placeholder p {
+  animation-delay: 0.2s;
+}
+
+.loginview .forgot-password-placeholder .back-btn {
+  animation-delay: 0.3s;
+}
+
 /* ========== 13. 涟漪效果样式 ========== */
-.tab {
+.loginview .tab {
   position: relative;
   overflow: hidden;
 }
 
-.tab::before {
+.loginview .tab::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -453,7 +248,7 @@ html, body {
   transition: width 0.6s, height 0.6s;
 }
 
-.tab:active::before {
+.loginview .tab:active::before {
   width: 300px;
   height: 300px;
 }

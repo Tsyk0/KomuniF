@@ -1,3 +1,5 @@
+/* src/assets/styles/toast.css */
+
 /* Toast消息样式 - 防止滚动条出现 */
 .toast-message {
   position: fixed;
@@ -103,22 +105,4 @@ body.toast-active {
 /* 如果还想使用动画，可以这样 */
 .toast-message.show {
   animation: toastSlideUp 0.3s ease forwards;
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .toast-message {
-    min-width: 240px;
-    max-width: 90%;
-    padding: 14px 20px;
-    margin: 0 20px;
-  }
-  
-  .toast-message .toast-text {
-    font-size: 13px;
-  }
-  
-  .toast-message .toast-icon {
-    font-size: 18px;
-  }
 }

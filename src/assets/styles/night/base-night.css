@@ -1,28 +1,7 @@
-/* src/assets/styles/base.css */
+/* src/assets/styles/night/base-night.css */
 
 /* ========== 1. 基础重置与全局样式 ========== */
 /* 移除全局滚动条 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
-  color: #333;
-}
-
-#app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
 html, body {
   overflow: hidden;
   height: 100%;
@@ -31,9 +10,9 @@ html, body {
 
 /* ========== 2. 主容器样式 ========== */
 /* 整体容器 */
-.home-container {
+html.night-mode .home-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -42,11 +21,11 @@ html, body {
 
 /* ========== 3. 通用按钮样式 ========== */
 /* 按钮基础样式 */
-.btn-base {
+html.night-mode .btn-base {
   padding: 12px 24px;
-  border: none;
+  border: 2px solid #404040;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(40, 44, 52, 0.6);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -56,22 +35,22 @@ html, body {
   min-height: 44px;
   transition: all 0.2s ease;
   font-size: 16px;
-  color: #333;
+  color: #e0e0e0;
   position: relative;
   overflow: hidden;
   text-align: center;
   user-select: none;
   box-sizing: border-box;
   font-weight: 500;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* 导航按钮样式 */
-.nav-btn {
+html.night-mode .nav-btn {
   padding: 12px 24px;
-  border: none;
+  border: 2px solid #404040;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(40, 44, 52, 0.9);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -81,34 +60,35 @@ html, body {
   min-height: 44px;
   transition: all 0.2s ease;
   font-size: 16px;
-  color: #333;
+  color: #e0e0e0;
   position: relative;
   overflow: hidden;
   text-align: center;
   user-select: none;
   box-sizing: border-box;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.nav-btn:hover {
-  background: rgba(240, 240, 240, 0.95);
+html.night-mode .nav-btn:hover {
+  background: rgba(60, 64, 72, 0.95);
+  border-color: #60a5fa;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
 }
 
-.nav-btn:active {
-  background: rgba(230, 230, 230, 0.95);
+html.night-mode .nav-btn:active {
+  background: rgba(50, 54, 62, 0.95);
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* 返回按钮样式 */
-.back-btn {
+html.night-mode .back-btn {
   padding: 8px 16px;
   border: none;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(118, 118, 118, 0.8);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -118,149 +98,152 @@ html, body {
   min-height: 44px;
   transition: all 0.2s ease;
   font-size: 16px;
-  color: #333;
+  color: #ffffff;
   position: relative;
   overflow: hidden;
   text-align: center;
   user-select: none;
   box-sizing: border-box;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.back-btn:hover {
-  background: rgba(240, 240, 240, 0.95);
+html.night-mode .back-btn:hover {
+  background: rgba(60, 64, 72, 0.95);
+  border-color: #60a5fa;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
 }
 
-.back-btn:active {
-  background: rgba(230, 230, 230, 0.95);
+html.night-mode .back-btn:active {
+  background: rgba(50, 54, 62, 0.95);
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* 图标样式 */
-.nav-icon {
+html.night-mode .nav-icon {
   font-size: 20px;
 }
 
 /* 聚焦状态 */
-.nav-btn:focus,
-.back-btn:focus {
+html.night-mode .nav-btn:focus,
+html.night-mode .back-btn:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.4);
 }
 
 /* ========== 4. 导航栏样式 ========== */
-.app-title {
-  color: #007aff;
+html.night-mode .app-title {
+  color: #60a5fa;
   font-size: 24px;
   font-weight: 700;
   margin: 0;
 }
 
-.nav-center {
+html.night-mode .nav-center {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.current-user {
+html.night-mode .current-user {
   font-weight: 600;
-  color: #333;
+  color: #e0e0e0;
   font-size: 18px;
   line-height: 1.4;
 }
 
-.status-indicator {
+html.night-mode .status-indicator {
   font-size: 14px;
   padding: 6px 12px;
   border-radius: 12px;
-  background: rgba(76, 217, 100, 0.1);
+  background: rgba(76, 217, 100, 0.2);
   color: #4cd964;
   font-weight: 500;
   line-height: 1.4;
 }
 
-.nav-right {
+html.night-mode .nav-right {
   display: flex;
   gap: 16px;
 }
 
 /* ========== 5. 主内容区域 ========== */
-.main-content-wrapper {
+html.night-mode .main-content-wrapper {
   flex: 1;
   margin-left: 200px;
   margin-right: 200px;
   display: flex;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  background: rgba(30, 30, 30, 0.98);
   backdrop-filter: blur(10px);
   height: calc(100vh - 120px);
+  border: 2px solid #404040;
   border-radius: 12px;
 }
 
 /* ========== 6. 底部信息栏 ========== */
-.bottom-info-bar {
-  background: rgba(0, 0, 0, 0.25);
-  color: white;
+html.night-mode .bottom-info-bar {
+  background: rgba(0, 0, 0, 0.4);
+  color: #b0b0b0;
   padding: 16px 24px;
   text-align: center;
   font-size: 14px;
   backdrop-filter: blur(10px);
   flex-shrink: 0;
+  border-top: 2px solid #404040;
   line-height: 1.5;
 }
 
-.bottom-info-bar p {
+html.night-mode .bottom-info-bar p {
   margin: 0;
   opacity: 0.9;
 }
 
 /* ========== 7. 表单通用样式 ========== */
-.form-group {
+html.night-mode .form-group {
   margin-bottom: 24px;
 }
 
-.form-group label {
+html.night-mode .form-group label {
   display: block;
   margin-bottom: 12px;
   font-weight: 600;
-  color: #374151;
+  color: #ffffff;
   font-size: 16px;
   line-height: 1.4;
 }
 
-.el-input {
+html.night-mode .el-input {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #d1d5db;
+  border: 2px solid #4b5563;
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.2s;
   box-sizing: border-box;
-  background: white;
-  color: #374151;
+  background: #2f2f2f;
+  color: #e5e7eb;
   line-height: 1.5;
 }
 
-.el-input:focus {
+html.night-mode .el-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
 }
 
-.el-input.disabled {
-  background: #f3f4f6;
-  color: #6b7280;
+html.night-mode .el-input.disabled {
+  background: #4b5563;
+  color: #9ca3af;
   cursor: not-allowed;
-  border-color: #e5e7eb;
+  border-color: #6b7280;
 }
 
-.error-message {
-  color: #ef4444;
+html.night-mode .error-message {
+  color: #f87171;
   font-size: 14px;
   margin-top: 8px;
   min-height: 20px;
@@ -268,7 +251,7 @@ html, body {
 }
 
 /* 提交按钮样式 */
-.submit-btn {
+html.night-mode .submit-btn {
   width: 100%;
   padding: 16px;
   background: #3b82f6;
@@ -283,36 +266,37 @@ html, body {
   position: relative;
   overflow: hidden;
   min-height: 52px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   line-height: 1.4;
 }
 
-.submit-btn:hover:not(:disabled) {
+html.night-mode .submit-btn:hover:not(:disabled) {
   background: #2563eb;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
 }
 
-.submit-btn:active:not(:disabled) {
+html.night-mode .submit-btn:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
-.submit-btn:disabled {
-  background: #9ca3af;
+html.night-mode .submit-btn:disabled {
+  background: #6b7280;
+  color: #9ca3af;
   cursor: not-allowed;
   transform: none !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* ========== 8. 选项按钮样式 ========== */
-.option-btn {
+html.night-mode .option-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid transparent;
+  background: rgba(40, 44, 52, 0.9);
+  border: 2px solid #404040;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -320,45 +304,45 @@ html, body {
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  color: #374151;
+  color: #d1d5db;
   font-size: 18px;
   font-weight: 600;
   min-height: 56px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
   line-height: 1.4;
 }
 
-.option-btn:hover {
-  background: rgba(240, 240, 240, 0.95);
-  border-color: #3b82f6;
+html.night-mode .option-btn:hover {
+  background: rgba(60, 64, 72, 0.95);
+  border-color: #60a5fa;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 8px 24px rgba(96, 165, 250, 0.2);
 }
 
-.option-btn:active {
+html.night-mode .option-btn:active {
   transform: translateY(0);
-  background: rgba(230, 230, 230, 0.95);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: rgba(50, 54, 62, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.option-icon {
+html.night-mode .option-icon {
   font-size: 24px;
   margin-right: 16px;
   width: 28px;
   text-align: center;
-  color: #3b82f6;
+  color: #60a5fa;
 }
 
-.option-text {
+html.night-mode .option-text {
   flex: 1;
   font-size: 18px;
-  color: #374151;
+  color: #d1d5db;
   font-weight: 600;
   line-height: 1.4;
 }
 
-.option-arrow {
-  color: #6b7280;
+html.night-mode .option-arrow {
+  color: #9ca3af;
   font-size: 20px;
 }

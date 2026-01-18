@@ -1,166 +1,277 @@
-.login-form {
+/* src/assets/styles/loginform.css */
+.loginform .login-form {
+  width: 100%;
   max-width: 400px;
   margin: 0 auto;
   padding: 20px;
+  box-sizing: border-box;
 }
 
-.login-form h2 {
+.loginform .login-form h2 {
   text-align: center;
-  margin-bottom: 24px;
+  margin: 0 0 24px 0;
   color: #333;
+  font-size: 24px;
+  font-weight: 600;
 }
 
-.form-container {
+.loginform .form-container {
   background: white;
   padding: 25px;
   border-radius: 12px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
-.error-box {
+/* ========== 免密登录提示 ========== */
+.loginform .auto-login-hint {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  color: white;
+  box-sizing: border-box;
+}
+
+.loginform .hint-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.loginform .hint-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.loginform .hint-text {
+  flex: 1;
+}
+
+.loginform .hint-title {
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.loginform .hint-desc {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.loginform .hint-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.loginform .auto-login-btn,
+.loginform .normal-login-btn {
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  border: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.loginform .auto-login-btn {
+  flex: 2;
+  background: white;
+  color: #667eea;
+}
+
+.loginform .auto-login-btn:hover:not(:disabled) {
+  background: #f8f9fa;
+  transform: translateY(-1px);
+}
+
+.loginform .auto-login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loginform .normal-login-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.loginform .normal-login-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ========== 错误提示 ========== */
+.loginform .error-box {
   background: #ffebee;
   border: 1px solid #ffcdd2;
   border-radius: 8px;
-  padding: 12px;
+  padding: 12px 16px;
   margin-bottom: 20px;
   color: #c62828;
   font-size: 14px;
   display: flex;
   align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
 }
 
-.error-icon {
-  margin-right: 8px;
+.loginform .error-icon {
   font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
-.input-group {
+/* ========== 输入框组 ========== */
+.loginform .input-group {
   margin-bottom: 20px;
+  position: relative;
+  width: 100%;
 }
 
-.input-group label {
+.loginform .input-group label {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
   color: #2c3e50;
+  font-size: 14px;
+  line-height: 1.2;
 }
 
-.el-input {
+.loginform .el-input {
   width: 100%;
   padding: 12px 16px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   font-size: 14px;
-  transition: border-color 0.3s;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+  background: white;
+  color: #333;
+  line-height: 1.4;
 }
 
-.el-input:focus {
+.loginform .el-input:focus {
   outline: none;
   border-color: #007aff;
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
-.el-input.error {
+.loginform .el-input.error {
   border-color: #ff3b30;
 }
 
-.form-options {
+.loginform .el-input::placeholder {
+  color: #999;
+  opacity: 1;
+}
+
+/* 密码输入框包装器 - 为可能的密码显示切换按钮预留位置 */
+.loginform .password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* ========== 表单选项 ========== */
+.loginform .form-options {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  width: 100%;
 }
 
-.remember-me {
+.loginform .remember-me {
   display: flex;
   align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
   color: #2c3e50;
   font-size: 14px;
+  line-height: 1.4;
+}
+
+.loginform .remember-me input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
   cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
 }
 
-.remember-me input {
-  margin-right: 8px;
-}
-
-.forgot-password {
+.loginform .forgot-password {
   color: #007aff;
   text-decoration: none;
   font-size: 14px;
+  transition: color 0.3s ease;
+  line-height: 1.4;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.forgot-password:hover {
+.loginform .forgot-password:hover {
+  color: #0056cc;
   text-decoration: underline;
 }
 
-.button-group {
+/* ========== 按钮组 ========== */
+.loginform .button-group {
   display: flex;
-  flex-direction: row;
   gap: 12px;
   width: 100%;
 }
 
-.el-button {
+.loginform .el-button {
   flex: 1;
-  width: 100%;
-  padding: 14px;
+  padding: 12px;
   border: none;
   border-radius: 8px;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+  line-height: 1.4;
+  text-align: center;
+  min-height: 44px; /* 提高触摸友好性 */
 }
 
-.el-button:disabled {
+.loginform .el-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.el-button--primary {
+.loginform .el-button--primary {
   background: linear-gradient(135deg, #007aff, #0056cc);
   color: white;
 }
 
-.el-button--primary:hover:not(:disabled) {
+.loginform .el-button--primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #0056cc, #004099);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
 }
 
-.el-button--default {
+.loginform .el-button--default {
   background: #f0f0f0;
   color: #2c3e50;
   border: 1px solid #e0e0e0;
 }
 
-.el-button--default:hover {
+.loginform .el-button--default:hover {
   background: #e5e5e5;
+  border-color: #d0d0d0;
 }
-
-/* 在原有样式基础上添加 */
-
-.token-login-hint {
-  background: #e8f4ff;
-  border: 1px solid #b3d9ff;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 20px;
-  color: #0066cc;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.hint-icon {
-  font-size: 16px;
-}
-
-.token-login-btn {
-  background: linear-gradient(135deg, #4CAF50, #2E7D32) !important;
-}
-
-.token-login-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #43A047, #1B5E20) !important;
-}
-

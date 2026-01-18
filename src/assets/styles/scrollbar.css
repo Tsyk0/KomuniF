@@ -2,128 +2,66 @@
 
 /* ========== 滚动条样式 ========== */
 /* Webkit浏览器自定义滚动条 */
-.conversation-list::-webkit-scrollbar,
-.edit-content::-webkit-scrollbar,
-.more-options-content::-webkit-scrollbar,
+.homeview .conversation-list::-webkit-scrollbar,
+.profile-edit .edit-content::-webkit-scrollbar,
+.more-options .more-options-content::-webkit-scrollbar,
 .change-password-form::-webkit-scrollbar,
-.chat-area-label::-webkit-scrollbar,
-.form-content::-webkit-scrollbar {
+.homeview .chat-area-label::-webkit-scrollbar,
+.profile-edit .form-content::-webkit-scrollbar {
   width: 8px;
 }
 
-.conversation-list::-webkit-scrollbar-track,
-.edit-content::-webkit-scrollbar-track,
-.more-options-content::-webkit-scrollbar-track,
+.homeview .conversation-list::-webkit-scrollbar-track,
+.profile-edit .edit-content::-webkit-scrollbar-track,
+.more-options .more-options-content::-webkit-scrollbar-track,
 .change-password-form::-webkit-scrollbar-track,
-.chat-area-label::-webkit-scrollbar-track,
-.form-content::-webkit-scrollbar-track {
+.homeview .chat-area-label::-webkit-scrollbar-track,
+.profile-edit .form-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.conversation-list::-webkit-scrollbar-thumb,
-.edit-content::-webkit-scrollbar-thumb,
-.more-options-content::-webkit-scrollbar-thumb,
+.homeview .conversation-list::-webkit-scrollbar-thumb,
+.profile-edit .edit-content::-webkit-scrollbar-thumb,
+.more-options .more-options-content::-webkit-scrollbar-thumb,
 .change-password-form::-webkit-scrollbar-thumb,
-.chat-area-label::-webkit-scrollbar-thumb,
-.form-content::-webkit-scrollbar-thumb {
-  background: rgba(120, 120, 120, 0.1);
+.homeview .chat-area-label::-webkit-scrollbar-thumb,
+.profile-edit .form-content::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.2);
   border-radius: 4px;
-  transition: all 0.3s ease;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
-.conversation-list::-webkit-scrollbar-thumb:hover,
-.edit-content::-webkit-scrollbar-thumb:hover,
-.more-options-content::-webkit-scrollbar-thumb:hover,
-.change-password-form::-webkit-scrollbar-thumb:hover,
-.chat-area-label::-webkit-scrollbar-thumb:hover,
-.form-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(120, 120, 120, 0.25);
-  border-color: transparent;
-}
-
-.conversation-list::-webkit-scrollbar-thumb:active,
-.edit-content::-webkit-scrollbar-thumb:active,
-.more-options-content::-webkit-scrollbar-thumb:active,
-.change-password-form::-webkit-scrollbar-thumb:active,
-.chat-area-label::-webkit-scrollbar-thumb:active,
-.form-content::-webkit-scrollbar-thumb:active {
-  background: rgba(100, 100, 100, 0.35);
-  border-color: transparent;
-}
-
 /* 特别针对表单区域的滚动条样式 */
-.form-content::-webkit-scrollbar {
+.profile-edit .form-content::-webkit-scrollbar {
   width: 10px; /* 稍微宽一点 */
 }
 
-.form-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 122, 255, 0.15);
+.profile-edit .form-content::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.2);
   border: 2px solid #f8f9fa; /* 与背景色匹配的边框 */
 }
 
-.form-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 122, 255, 0.25);
-}
-
-.form-content::-webkit-scrollbar-thumb:active {
-  background: rgba(0, 122, 255, 0.35);
-}
-
 /* 平滑滚动增强 */
-.conversation-list,
-.edit-content,
-.more-options-content,
+.homeview .conversation-list,
+.profile-edit .edit-content,
+.more-options .more-options-content,
 .change-password-form,
-.chat-area-label,
-.form-content {
+.homeview .chat-area-label,
+.profile-edit .form-content {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
 /* Firefox兼容性优化 */
 @supports (scrollbar-width: thin) {
-  .conversation-list,
-  .edit-content,
-  .more-options-content,
+  .homeview .conversation-list,
+  .profile-edit .edit-content,
+  .more-options .more-options-content,
   .change-password-form,
-  .chat-area-label,
-  .form-content {
+  .homeview .chat-area-label,
+  .profile-edit .form-content {
     scrollbar-width: thin;
-    scrollbar-color: rgba(185, 185, 185, 0.1) transparent;
-  }
-  
-  .conversation-list:hover,
-  .edit-content:hover,
-  .more-options-content:hover,
-  .change-password-form:hover,
-  .chat-area-label:hover,
-  .form-content:hover {
-    scrollbar-color: rgba(185, 185, 185, 0.25) transparent;
-  }
-  
-  /* 特别针对表单区域的Firefox滚动条 */
-  .form-content {
-    scrollbar-color: rgba(0, 122, 255, 0.15) transparent;
-  }
-  
-  .form-content:hover {
-    scrollbar-color: rgba(0, 122, 255, 0.25) transparent;
-  }
-}
-
-/* 移动端滚动条更细 */
-@media (max-width: 768px) {
-  .conversation-list::-webkit-scrollbar,
-  .edit-content::-webkit-scrollbar,
-  .form-content::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  .conversation-list::-webkit-scrollbar-thumb,
-  .edit-content::-webkit-scrollbar-thumb,
-  .form-content::-webkit-scrollbar-thumb {
-    border-width: 1px;
+    scrollbar-color: rgba(120, 120, 120, 0.2) transparent;
   }
 }

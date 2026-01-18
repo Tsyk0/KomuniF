@@ -1,0 +1,287 @@
+/* src/assets/styles/night/loginform-night.css */
+html.night-mode .loginform .login-form {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+html.night-mode .loginform .login-form h2 {
+  text-align: center;
+  margin: 0 0 24px 0;
+  color: #e0e0e0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+html.night-mode .loginform .form-container {
+  background: #1e293b;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+}
+
+/* ========== 免密登录提示（添加缺失的部分） ========== */
+html.night-mode .loginform .auto-login-hint {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  color: white;
+  box-sizing: border-box;
+}
+
+html.night-mode .loginform .hint-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+html.night-mode .loginform .hint-icon {
+  font-size: 24px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+html.night-mode .loginform .hint-text {
+  flex: 1;
+}
+
+html.night-mode .loginform .hint-title {
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  line-height: 1.2;
+  color: white;
+}
+
+html.night-mode .loginform .hint-desc {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 0;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+html.night-mode .loginform .hint-actions {
+  display: flex;
+  gap: 10px;
+}
+
+html.night-mode .loginform .auto-login-btn,
+html.night-mode .loginform .normal-login-btn {
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  border: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  line-height: 1;
+}
+
+html.night-mode .loginform .auto-login-btn {
+  flex: 2;
+  background: rgba(255, 255, 255, 0.95);
+  color: #4f46e5;
+}
+
+html.night-mode .loginform .auto-login-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+}
+
+html.night-mode .loginform .auto-login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+html.night-mode .loginform .normal-login-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+html.night-mode .loginform .normal-login-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ========== 错误提示 ========== */
+html.night-mode .loginform .error-box {
+  background: #2a1f1f;
+  border: 1px solid #7f1d1d;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  color: #fca5a5;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+html.night-mode .loginform .error-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  color: #ef4444;
+}
+
+/* ========== 输入框组 ========== */
+html.night-mode .loginform .input-group {
+  margin-bottom: 20px;
+  position: relative;
+  width: 100%;
+}
+
+html.night-mode .loginform .input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+html.night-mode .loginform .el-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+  background: #374151;
+  color: #e5e7eb;
+  line-height: 1.4;
+}
+
+html.night-mode .loginform .el-input:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+html.night-mode .loginform .el-input.error {
+  border-color: #ef4444;
+  background: #2a1f1f;
+}
+
+html.night-mode .loginform .el-input::placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}
+
+/* 密码输入框包装器 */
+html.night-mode .loginform .password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* ========== 表单选项 ========== */
+html.night-mode .loginform .form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+html.night-mode .loginform .remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+html.night-mode .loginform .remember-me input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #60a5fa;
+}
+
+html.night-mode .loginform .forgot-password {
+  color: #60a5fa;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+  line-height: 1.4;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+html.night-mode .loginform .forgot-password:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* ========== 按钮组 ========== */
+html.night-mode .loginform .button-group {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+html.night-mode .loginform .el-button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+  line-height: 1.4;
+  text-align: center;
+  min-height: 44px;
+  border: 1px solid transparent;
+}
+
+html.night-mode .loginform .el-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #4b5563;
+  color: #9ca3af;
+}
+
+html.night-mode .loginform .el-button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+html.night-mode .loginform .el-button--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-1px);
+}
+
+html.night-mode .loginform .el-button--default {
+  background: #374151;
+  color: #cbd5e1;
+  border: 1px solid #4b5563;
+}
+
+html.night-mode .loginform .el-button--default:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+}

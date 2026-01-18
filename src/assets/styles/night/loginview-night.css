@@ -1,0 +1,301 @@
+/* src/assets/styles/night/loginview-night.css */
+
+/* ========== 1. 全局滚动条隐藏 ========== */
+/* 注意：这个应该放在base.css中，这里注释掉
+html, body {
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+}
+*/
+
+/* ========== 2. 主容器样式 ========== */
+html.night-mode .loginview.login-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #354660 0%, #291345 100%);
+  overflow: hidden;
+}
+
+html.night-mode .loginview .login-card {
+  height: 80vh;
+  width: 100%;
+  max-width: 420px;
+  background: #1e293b;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 95vh;
+  border: 1px solid #334155;
+}
+
+/* ========== 3. Logo区域 ========== */
+html.night-mode .loginview .logo-section {
+  text-align: center;
+  padding: 40px 30px 20px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  color: white;
+  flex-shrink: 0;
+  border-bottom: 1px solid #334155;
+}
+
+html.night-mode .loginview .logo {
+  font-size: 48px;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+html.night-mode .loginview .login-card h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+html.night-mode .loginview .tagline {
+  opacity: 0.9;
+  font-size: 14px;
+  font-weight: 300;
+  margin: 0;
+}
+
+/* ========== 4. 表单区域 ========== */
+html.night-mode .loginview .form-section {
+  padding: 30px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(30, 30, 30, 0.95);
+}
+
+/* ========== 5. 标签页样式 ========== */
+html.night-mode .loginview .tabs {
+  display: flex;
+  margin-bottom: 30px;
+  border-bottom: 1px solid #262626;
+  flex-shrink: 0;
+}
+
+html.night-mode .loginview .tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 16px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 400;
+  position: relative;
+  overflow: hidden;
+}
+
+html.night-mode .loginview .tab::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #60a5fa;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+html.night-mode .loginview .tab:hover {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.1);
+}
+
+html.night-mode .loginview .tab.active {
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+html.night-mode .loginview .tab.active::after {
+  transform: scaleX(1);
+}
+
+/* ========== 6. 表单内容区域（可滚动） ========== */
+html.night-mode .loginview .form-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 300px;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  background: rgba(30, 30, 30, 0.95);
+}
+
+/* ========== 7. 忘记密码占位符 ========== */
+html.night-mode .loginview .forgot-password-placeholder {
+  text-align: center;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: #1e293b;
+}
+
+html.night-mode .loginview .forgot-password-placeholder h3 {
+  margin: 0 0 10px 0;
+  color: #e2e8f0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+html.night-mode .loginview .forgot-password-placeholder p {
+  color: #94a3b8;
+  margin: 0 0 30px 0;
+  font-size: 15px;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+html.night-mode .loginview .back-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(118, 118, 118, 0.8);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 80px;
+  min-height: 36px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  user-select: none;
+  box-sizing: border-box;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+html.night-mode .loginview .back-btn:hover {
+  background: rgba(136, 136, 136, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(136, 136, 136, 0.4);
+}
+
+html.night-mode .loginview .back-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(125, 125, 125, 0.3);
+}
+
+/* ========== 8. 页脚样式 ========== */
+html.night-mode .loginview .footer {
+  padding: 20px 30px;
+  border-top: 1px solid #334155;
+  text-align: center;
+  flex-shrink: 0;
+  background: #1e293b;
+}
+
+html.night-mode .loginview .footer p {
+  color: #64748b;
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ========== 9. 自定义滚动条 ========== */
+/* Webkit浏览器 (Chrome, Safari, Edge) */
+html.night-mode .loginview .form-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+html.night-mode .loginview .form-content::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+  margin: 5px 0;
+}
+
+html.night-mode .loginview .form-content::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: all 0.3s ease;
+}
+
+html.night-mode .loginview .form-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.7);
+  border-color: transparent;
+}
+
+html.night-mode .loginview .form-content::-webkit-scrollbar-thumb:active {
+  background: rgba(75, 85, 99, 0.8);
+  border-color: transparent;
+}
+
+/* ========== 10. 平滑滚动 ========== */
+html.night-mode .loginview .form-content {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ========== 12. 动画效果 ========== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+html.night-mode .loginview .tab,
+html.night-mode .loginview .back-btn,
+html.night-mode .loginview .forgot-password-placeholder {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+html.night-mode .loginview .forgot-password-placeholder h3 {
+  animation-delay: 0.1s;
+}
+
+html.night-mode .loginview .forgot-password-placeholder p {
+  animation-delay: 0.2s;
+}
+
+html.night-mode .loginview .forgot-password-placeholder .back-btn {
+  animation-delay: 0.3s;
+}
+
+/* ========== 13. 涟漪效果样式 ========== */
+html.night-mode .loginview .tab {
+  position: relative;
+  overflow: hidden;
+}
+
+html.night-mode .loginview .tab::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(96, 165, 250, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+html.night-mode .loginview .tab:active::before {
+  width: 300px;
+  height: 300px;
+}
