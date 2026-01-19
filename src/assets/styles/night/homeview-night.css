@@ -90,7 +90,6 @@ html.night-mode .homeview .conversation-sidebar {
 html.night-mode .homeview .sidebar-header {
   padding: 20px;
   border-bottom: 1px solid #334155;
-  cursor: pointer;
   transition: background-color 0.2s;
 }
 
