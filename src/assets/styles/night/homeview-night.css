@@ -206,7 +206,6 @@ html.night-mode .homeview .user-status.online {
 html.night-mode .homeview .conversation-list {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
 }
 
 html.night-mode .homeview .section-title {
@@ -369,4 +368,350 @@ html.night-mode .homeview .toast-text {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+}
+
+/* 加载状态 - 夜晚模式 */
+html.night-mode .homeview .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  color: #94a3b8; /* 夜晚模式的次要文字颜色 */
+}
+
+html.night-mode .homeview .loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #334155; /* 夜晚模式的边框颜色 */
+  border-top-color: #60a5fa; /* 夜晚模式的主色调 */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 错误状态 - 夜晚模式 */
+html.night-mode .homeview .error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  color: #f87171; /* 夜晚模式的错误颜色 */
+  text-align: center;
+}
+
+html.night-mode .homeview .error-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+html.night-mode .homeview .retry-btn {
+  margin-top: 10px;
+  padding: 6px 16px;
+  background-color: #3b82f6; /* 夜晚模式的按钮背景色 */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+html.night-mode .homeview .retry-btn:hover {
+  background-color: #2563eb; /* 夜晚模式按钮悬停颜色 */
+}
+
+/* 会话容器 - 夜晚模式 */
+html.night-mode .homeview .conversations-container {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+/* 空状态 - 夜晚模式（覆盖已有样式） */
+html.night-mode .homeview .empty-conversation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  text-align: center;
+}
+
+html.night-mode .homeview .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+  color: #64748b; /* 夜晚模式的图标颜色 */
+}
+
+html.night-mode .homeview .empty-text {
+  font-size: 16px;
+  color: #cbd5e1; /* 夜晚模式的文字颜色 */
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+html.night-mode .homeview .empty-hint {
+  font-size: 14px;
+  color: #94a3b8; /* 夜晚模式的提示文字颜色 */
+}
+
+/* 会话项样式 - 夜晚模式 */
+html.night-mode .homeview .conversation-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #334155; /* 夜晚模式的边框颜色 */
+  background-color: transparent;
+}
+
+html.night-mode .homeview .conversation-item:hover {
+  background-color: rgba(51, 65, 85, 0.5); /* 夜晚模式的悬停背景色 */
+}
+
+html.night-mode .homeview .conversation-item.active {
+  background-color: rgba(96, 165, 250, 0.2); /* 夜晚模式的选中背景色 */
+  border-left: 3px solid #60a5fa; /* 夜晚模式的选中边框 */
+}
+
+/* 会话项左侧（头像） */
+html.night-mode .homeview .conversation-item .item-left {
+  margin-right: 12px;
+}
+
+html.night-mode .homeview .conversation-item .avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8); /* 夜晚模式的头像背景 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #e2e8f0; /* 夜晚模式的文字颜色 */
+  border: 2px solid #475569; /* 夜晚模式的边框 */
+}
+
+html.night-mode .homeview .conversation-item .avatar-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+html.night-mode .homeview .conversation-item .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #e2e8f0; /* 夜晚模式的文字颜色 */
+}
+
+/* 会话项中间（内容） */
+html.night-mode .homeview .conversation-item .item-middle {
+  flex: 1;
+  min-width: 0;
+}
+
+html.night-mode .homeview .conversation-item .name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+html.night-mode .homeview .conversation-item .display-name {
+  font-weight: 500;
+  font-size: 16px;
+  color: #e2e8f0; /* 夜晚模式的主要文字颜色 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.night-mode .homeview .conversation-item .time {
+  font-size: 12px;
+  color: #94a3b8; /* 夜晚模式的次要文字颜色 */
+}
+
+html.night-mode .homeview .conversation-item .message-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+html.night-mode .homeview .conversation-item .last-message {
+  font-size: 14px;
+  color: #94a3b8; /* 夜晚模式的次要文字颜色 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* 未读消息标记 - 夜晚模式 */
+html.night-mode .homeview .conversation-item .unread-badge {
+  background-color: #ef4444; /* 夜晚模式的未读标记颜色 */
+  color: white;
+  font-size: 12px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  margin-left: 8px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3); /* 夜晚模式的阴影 */
+}
+
+/* 会话项右侧 */
+html.night-mode .homeview .conversation-item .item-right {
+  margin-left: 8px;
+  color: #64748b; /* 夜晚模式的图标颜色 */
+}
+
+/* 滚动条样式 - 夜晚模式 */
+html.night-mode .homeview .conversations-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+html.night-mode .homeview .conversations-container::-webkit-scrollbar-track {
+  background: rgba(30, 30, 30, 0.3);
+  border-radius: 3px;
+}
+
+html.night-mode .homeview .conversations-container::-webkit-scrollbar-thumb {
+  background: #475569; /* 夜晚模式的滚动条颜色 */
+  border-radius: 3px;
+}
+
+html.night-mode .homeview .conversations-container::-webkit-scrollbar-thumb:hover {
+  background: #64748b; /* 夜晚模式的滚动条悬停颜色 */
+}
+
+/* ========== 搜索框样式（夜晚模式） ========== */
+html.night-mode .homeview .search-container {
+  padding: 16px 20px;
+  border-bottom: 1px solid #334155;
+  background: rgba(30, 30, 30, 0.95);
+}
+
+html.night-mode .homeview .search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(51, 65, 85, 0.5);
+  border-radius: 10px;
+  padding: 8px 12px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+html.night-mode .homeview .search-box:focus-within {
+  background: rgba(30, 30, 30, 0.9);
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+}
+
+html.night-mode .homeview .search-icon {
+  font-size: 16px;
+  color: #94a3b8;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+html.night-mode .homeview .search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: #e2e8f0;
+  font-family: inherit;
+}
+
+html.night-mode .homeview .search-input::placeholder {
+  color: #94a3b8;
+}
+
+html.night-mode .homeview .clear-search {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 2px;
+  margin-left: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+html.night-mode .homeview .clear-search:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+html.night-mode .homeview .clear-icon {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-block;
+  transform: translateY(-1px);
+}
+
+/* 搜索无结果样式 - 夜晚模式 */
+html.night-mode .homeview .no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+html.night-mode .homeview .no-results-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+  color: #64748b;
+}
+
+html.night-mode .homeview .no-results-text {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #cbd5e1;
+  font-size: 16px;
+}
+
+html.night-mode .homeview .no-results-hint {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* 调整夜晚模式现有样式以适应搜索框 */
+html.night-mode .homeview .conversation-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+html.night-mode .homeview .conversations-container {
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
 }

@@ -1,4 +1,4 @@
-// src/types/form/auth.request.ts
+// src/types/flow/auth.request.ts
 /**
  * 严格按照 services/auth.ts 中的定义迁移
  */

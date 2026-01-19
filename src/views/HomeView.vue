@@ -78,12 +78,77 @@
           </div>
         </div>
 
+        <!-- 修改会话列表区域 -->
         <div class="conversation-list">
-          <div class="section-title">会话列表</div>
-          <div class="empty-conversation">
+          <!-- 添加 Telegram 风格的搜索框 -->
+          <div class="search-container">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                v-model="searchKeyword"
+                placeholder="搜索会话..."
+                class="search-input"
+                @input="handleSearch"
+              />
+              <button
+                v-if="searchKeyword"
+                class="clear-search"
+                @click="clearSearch"
+                title="清除搜索"
+              >
+                <span class="clear-icon">×</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 加载状态 -->
+          <div v-if="isLoading" class="loading-state">
+            <div class="loading-spinner"></div>
+            <span>加载会话中...</span>
+          </div>
+
+          <!-- 错误状态 -->
+          <div v-else-if="loadError" class="error-state">
+            <div class="error-icon">❌</div>
+            <span>{{ loadError }}</span>
+            <button @click="retryLoad" class="retry-btn">重试</button>
+          </div>
+
+          <!-- 搜索无结果 -->
+          <div
+            v-else-if="searchKeyword && filteredConversations.length === 0"
+            class="no-results"
+          >
+            <div class="no-results-icon">🔍</div>
+            <p class="no-results-text">未找到匹配的会话</p>
+            <p class="no-results-hint">尝试其他搜索关键词</p>
+          </div>
+
+          <!-- 空状态 -->
+          <div
+            v-else-if="conversations.length === 0"
+            class="empty-conversation"
+          >
             <div class="empty-icon">💬</div>
             <p class="empty-text">暂无会话</p>
             <p class="empty-hint">开始新的对话或等待好友消息</p>
+          </div>
+
+          <!-- 会话列表 -->
+          <div v-else class="conversations-container">
+            <ConversationItem
+              v-for="conversation in filteredConversations"
+              :key="conversation.convId"
+              :conv-id="conversation.convId"
+              :display-name="conversation.displayName"
+              :avatar="conversation.avatar"
+              :last-message="conversation.lastMessage"
+              :last-message-time="conversation.lastMessageTime"
+              :unread-count="conversation.unreadCount"
+              :is-active="currentConversationId === conversation.convId"
+              @click="handleConversationClick"
+            />
           </div>
         </div>
       </div>
@@ -154,15 +219,17 @@
   </div>
 </template>
 
-<!-- script 部分保持不变 -->
 <script>
-import { useThemeStore } from "@/stores/theme"; // 新增
+// 导入部分
+import { useThemeStore } from "@/stores/theme";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import { useAuthStore } from "@/stores/auth";
+import { useConversationStore } from "@/stores/chat/show-conversation";
 import ProfileEdit from "@/components/ProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
+import ConversationItem from "@/components/ConversationItem.vue";
 
 export default {
   name: "HomeView",
@@ -170,22 +237,20 @@ export default {
     ProfileEdit,
     MoreOptions,
     ChangePassword,
+    ConversationItem,
   },
 
-  // 使用 Composition API 的 setup()
   setup() {
-    // 获取所有 stores
     const themeStore = useThemeStore();
     const userStore = useUserStore();
     const authStore = useAuthStore();
+    const conversationStore = useConversationStore();
     const router = useRouter();
 
-    // 主题相关计算属性
     const themeIcon = () => (themeStore.isDarkMode ? "🌞" : "🌙");
     const themeTitle = () =>
       themeStore.isDarkMode ? "切换到日间模式" : "切换到夜间模式";
 
-    // 主题切换方法
     const toggleTheme = () => {
       themeStore.toggleTheme();
     };
@@ -194,21 +259,66 @@ export default {
       themeStore,
       userStore,
       authStore,
+      conversationStore,
       router,
       themeIcon,
       themeTitle,
       toggleTheme,
     };
   },
+
   computed: {
-    // ✅ 修复：使用 computed 属性而不是函数
+    // 主题相关计算属性
     themeIcon() {
-      // themeStore.isDarkMode 应该是响应式的
       return this.themeStore?.isDarkMode ? "🌞" : "🌙";
     },
 
     themeTitle() {
       return this.themeStore?.isDarkMode ? "切换到日间模式" : "切换到夜间模式";
+    },
+
+    // 从 conversation store 获取数据
+    conversations() {
+      return this.conversationStore.conversationList || [];
+    },
+
+    isLoading() {
+      return this.conversationStore.isLoading || false;
+    },
+
+    loadError() {
+      return this.conversationStore.error || "";
+    },
+
+    currentConversationId() {
+      return this.conversationStore.currentConversationId || null;
+    },
+
+    // 过滤后的会话列表
+    filteredConversations() {
+      if (!this.searchKeyword.trim()) {
+        return this.conversations;
+      }
+
+      const keyword = this.searchKeyword.toLowerCase();
+      return this.conversations.filter((conversation) => {
+        // 搜索会话名称
+        if (conversation.displayName?.toLowerCase().includes(keyword)) {
+          return true;
+        }
+
+        // 搜索最后消息内容
+        if (conversation.lastMessage?.toLowerCase().includes(keyword)) {
+          return true;
+        }
+
+        // 搜索会话ID
+        if (conversation.convId.toString().includes(keyword)) {
+          return true;
+        }
+
+        return false;
+      });
     },
   },
 
@@ -235,12 +345,21 @@ export default {
       showChangePasswordView: false,
       showSuccessMessage: false,
       successMessage: "",
+      searchKeyword: "", // 搜索关键词
+      searchTimeout: null, // 搜索防抖定时器
     };
   },
 
   mounted() {
     this.loadUserData();
+    this.loadConversations();
     console.log("HomeView mounted, 当前用户头像:", this.currentUserAvatar);
+  },
+
+  beforeUnmount() {
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
   },
 
   methods: {
@@ -312,6 +431,73 @@ export default {
       if (!dateString) return "";
       const date = new Date(dateString);
       return date.toISOString().split("T")[0];
+    },
+
+    // 新增：加载会话列表
+    async loadConversations() {
+      try {
+        const userStr = sessionStorage.getItem("user");
+        if (!userStr) {
+          console.warn("用户未登录，跳过加载会话列表");
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+        const userId = user.userId;
+
+        if (!userId) {
+          console.warn("用户ID不存在，跳过加载会话列表");
+          return;
+        }
+
+        console.log("开始加载会话列表，userId:", userId);
+
+        // 使用 store 的方法加载会话
+        await this.conversationStore.fetchUserConversations(userId);
+
+        // 如果有数据，自动选择第一个会话
+        if (this.conversations.length > 0 && !this.currentConversationId) {
+          this.conversationStore.setCurrentConversation(
+            this.conversations[0].convId
+          );
+        }
+
+        console.log("会话列表加载完成");
+      } catch (error) {
+        console.error("加载会话列表失败:", error);
+      }
+    },
+
+    // 新增：重试加载
+    retryLoad() {
+      this.conversationStore.clearError();
+      this.loadConversations();
+    },
+
+    // 新增：处理会话点击
+    handleConversationClick(convId) {
+      console.log("点击会话:", convId);
+      this.conversationStore.setCurrentConversation(convId);
+      // 这里可以触发加载该会话的消息
+    },
+
+    // 处理搜索输入
+    handleSearch() {
+      // 清除之前的定时器
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+      }
+
+      // 设置新的定时器（300ms 防抖）
+      this.searchTimeout = setTimeout(() => {
+        console.log("执行搜索，关键词:", this.searchKeyword);
+        // 这里可以添加实际的搜索逻辑
+      }, 300);
+    },
+
+    // 清除搜索
+    clearSearch() {
+      this.searchKeyword = "";
     },
 
     // 进入编辑模式
@@ -418,6 +604,8 @@ export default {
     // 登出方法
     handleLogout() {
       if (confirm("确定要退出登录吗？")) {
+        // 重置会话状态
+        this.conversationStore.reset();
         this.authStore.logout();
         this.router.push("/");
       }
