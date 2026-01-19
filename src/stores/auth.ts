@@ -90,7 +90,7 @@ export const useAuthStore = defineStore('auth', {
         } else {
           return {
             success: false,
-            message: response.message || '登录失败'
+            message: response.message,
           }
         }
       } catch (error: any) {

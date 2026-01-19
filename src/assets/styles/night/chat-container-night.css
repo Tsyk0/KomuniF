@@ -1,0 +1,228 @@
+/* src/assets/styles/night/chat-container-night.css */
+html.night-mode .chat-container {
+  background: #1d1d1d;
+}
+
+/* 聊天头部样式 - 夜晚模式 */
+html.night-mode .chat-header {
+  border-bottom: 1px solid #334155;
+  background: rgba(30, 30, 30, 0.95);
+}
+
+html.night-mode .back-button {
+  color: #60a5fa;
+}
+
+html.night-mode .chat-avatar {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #e2e8f0;
+}
+
+html.night-mode .online-indicator {
+  border: 2px solid #1d1d1d;
+}
+
+html.night-mode .online-indicator.online {
+  background: #4ade80;
+}
+
+html.night-mode .chat-name {
+  color: #e2e8f0;
+}
+
+html.night-mode .chat-status {
+  color: #94a3b8;
+}
+
+html.night-mode .header-action {
+  color: #60a5fa;
+}
+
+/* 消息列表区域 - 夜晚模式 */
+html.night-mode .messages-container {
+  background: #1a1a1a;
+}
+
+html.night-mode .load-more-indicator {
+  color: #94a3b8;
+}
+
+/* 日期分隔线 - 夜晚模式 */
+html.night-mode .date-text {
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+/* 系统消息 - 夜晚模式 */
+html.night-mode .system-content {
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+/* 普通消息 - 夜晚模式 */
+html.night-mode .avatar-small {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #e2e8f0;
+}
+
+html.night-mode .sender-name {
+  color: #94a3b8;
+}
+
+html.night-mode .message-bubble.sent {
+  background: #3b82f6;
+  color: #f8fafc;
+}
+
+html.night-mode .message-bubble.received {
+  background: #334155;
+  color: #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+html.night-mode .text-message {
+  color: inherit;
+}
+
+html.night-mode .image-message img {
+  border: 1px solid #475569;
+}
+
+/* 文件消息样式 - 夜晚模式 */
+html.night-mode .file-message {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+html.night-mode .file-message:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+html.night-mode .file-size {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 音频消息样式 - 夜晚模式 */
+html.night-mode .audio-message {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+html.night-mode .audio-message:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+html.night-mode .audio-duration {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 视频消息样式 - 夜晚模式 */
+html.night-mode .video-message {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+html.night-mode .video-message:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+html.night-mode .video-duration {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 消息输入区域 - 夜晚模式 */
+html.night-mode .message-input-area {
+  border-top: 1px solid #334155;
+  background: rgba(30, 30, 30, 0.95);
+}
+
+html.night-mode .tool-button {
+  color: #60a5fa;
+}
+
+html.night-mode .message-input {
+  border: 1px solid #475569;
+  background: #1e1e1e;
+  color: #e2e8f0;
+}
+
+html.night-mode .message-input:focus {
+  border-color: #60a5fa;
+}
+
+html.night-mode .message-input::placeholder {
+  color: #94a3b8;
+}
+
+html.night-mode .send-button {
+  background: #3b82f6;
+}
+
+html.night-mode .send-button:disabled {
+  background: #475569;
+}
+
+html.night-mode .send-button:not(:disabled):hover {
+  background: #2563eb;
+}
+
+/* 加载状态 - 夜晚模式 */
+html.night-mode .chat-loading {
+  color: #94a3b8;
+}
+
+html.night-mode .loading-spinner {
+  border: 3px solid #334155;
+  border-top: 3px solid #60a5fa;
+}
+
+html.night-mode .loading-spinner.small {
+  border: 2px solid #334155;
+  border-top: 2px solid #60a5fa;
+}
+
+/* 空状态 - 夜晚模式 */
+html.night-mode .chat-empty {
+  color: #94a3b8;
+}
+
+html.night-mode .empty-icon {
+  color: #64748b;
+}
+
+html.night-mode .empty-text {
+  color: #cbd5e1;
+}
+
+html.night-mode .empty-hint {
+  color: #94a3b8;
+}
+
+/* 未选择会话状态 - 夜晚模式 */
+html.night-mode .no-conversation {
+  color: #94a3b8;
+}
+
+html.night-mode .placeholder-icon {
+  color: #64748b;
+}
+
+html.night-mode .placeholder-text {
+  color: #cbd5e1;
+}
+
+/* 滚动条样式 - 夜晚模式 */
+html.night-mode .messages-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html.night-mode .messages-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 动画 - 夜晚模式 */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

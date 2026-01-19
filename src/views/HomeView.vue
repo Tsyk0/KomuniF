@@ -137,6 +137,7 @@
 
           <!-- 会话列表 -->
           <div v-else class="conversations-container">
+            <!-- 修改这里：传递 convId 参数 -->
             <ConversationItem
               v-for="conversation in filteredConversations"
               :key="conversation.convId"
@@ -147,7 +148,7 @@
               :last-message-time="conversation.lastMessageTime"
               :unread-count="conversation.unreadCount"
               :is-active="currentConversationId === conversation.convId"
-              @click="handleConversationClick"
+              @click="handleConversationClick(conversation.convId)"
             />
           </div>
         </div>
@@ -182,7 +183,17 @@
           @success="handlePasswordSuccess"
         />
 
-        <!-- 聊天区域（当不在编辑模式时显示） -->
+        <!-- 聊天组件（当有选中会话且不在编辑模式时显示） -->
+        <ChatContainer
+          v-else-if="currentConversationId"
+          :conv-id="currentConversationId"
+          :conversation-name="currentConversationName"
+          :conversation-avatar="currentConversationAvatar"
+          :is-group="isGroupChat"
+          @back="clearCurrentConversation"
+        />
+
+        <!-- 聊天区域（当不在编辑模式且没有选中会话时显示） -->
         <div v-else class="chat-area-label">
           <div class="chat-label-header">
             <span class="chat-label-icon">💭</span>
@@ -230,6 +241,7 @@ import ProfileEdit from "@/components/ProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
 import ConversationItem from "@/components/ConversationItem.vue";
+import ChatContainer from "@/components/ChatContainer.vue";
 
 export default {
   name: "HomeView",
@@ -238,6 +250,7 @@ export default {
     MoreOptions,
     ChangePassword,
     ConversationItem,
+    ChatContainer,
   },
 
   setup() {
@@ -320,6 +333,29 @@ export default {
         return false;
       });
     },
+
+    // 当前会话名称
+    currentConversationName() {
+      if (!this.currentConversationId) return "";
+      const conversation = this.conversations.find(
+        (conv) => conv.convId === this.currentConversationId
+      );
+      return conversation?.displayName || `会话 ${this.currentConversationId}`;
+    },
+
+    // 当前会话头像
+    currentConversationAvatar() {
+      if (!this.currentConversationId) return "";
+      const conversation = this.conversations.find(
+        (conv) => conv.convId === this.currentConversationId
+      );
+      return conversation?.avatar || "";
+    },
+
+    // 是否为群聊
+    isGroupChat() {
+      return false;
+    },
   },
 
   data() {
@@ -345,8 +381,8 @@ export default {
       showChangePasswordView: false,
       showSuccessMessage: false,
       successMessage: "",
-      searchKeyword: "", // 搜索关键词
-      searchTimeout: null, // 搜索防抖定时器
+      searchKeyword: "",
+      searchTimeout: null,
     };
   },
 
@@ -433,7 +469,7 @@ export default {
       return date.toISOString().split("T")[0];
     },
 
-    // 新增：加载会话列表
+    // 加载会话列表
     async loadConversations() {
       try {
         const userStr = sessionStorage.getItem("user");
@@ -452,10 +488,8 @@ export default {
 
         console.log("开始加载会话列表，userId:", userId);
 
-        // 使用 store 的方法加载会话
         await this.conversationStore.fetchUserConversations(userId);
 
-        // 如果有数据，自动选择第一个会话
         if (this.conversations.length > 0 && !this.currentConversationId) {
           this.conversationStore.setCurrentConversation(
             this.conversations[0].convId
@@ -468,30 +502,46 @@ export default {
       }
     },
 
-    // 新增：重试加载
+    // 重试加载
     retryLoad() {
       this.conversationStore.clearError();
       this.loadConversations();
     },
 
-    // 新增：处理会话点击
+    // 处理会话点击 - 修改这里！
     handleConversationClick(convId) {
-      console.log("点击会话:", convId);
-      this.conversationStore.setCurrentConversation(convId);
-      // 这里可以触发加载该会话的消息
+      console.log(
+        "HomeView: 点击会话事件，参数:",
+        convId,
+        "类型:",
+        typeof convId
+      );
+
+      // 如果是事件对象，直接返回
+      if (typeof convId === "object" && convId !== null && "target" in convId) {
+        console.error("接收到事件对象而不是convId:", convId);
+        return;
+      }
+
+      // 确保convId是数字
+      const id = Number(convId);
+      if (isNaN(id)) {
+        console.error("无效的会话ID:", convId);
+        return;
+      }
+
+      console.log("HomeView: 设置当前会话ID:", id);
+      this.conversationStore.setCurrentConversation(id);
     },
 
     // 处理搜索输入
     handleSearch() {
-      // 清除之前的定时器
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
       }
 
-      // 设置新的定时器（300ms 防抖）
       this.searchTimeout = setTimeout(() => {
         console.log("执行搜索，关键词:", this.searchKeyword);
-        // 这里可以添加实际的搜索逻辑
       }, 300);
     },
 
@@ -591,6 +641,10 @@ export default {
       }, 2000);
     },
 
+    clearCurrentConversation() {
+      this.conversationStore.setCurrentConversation(null);
+    },
+
     // 开始新聊天
     startNewChat() {
       alert("开始新聊天功能开发中...");
@@ -604,30 +658,9 @@ export default {
     // 登出方法
     handleLogout() {
       if (confirm("确定要退出登录吗？")) {
-        // 重置会话状态
         this.conversationStore.reset();
         this.authStore.logout();
         this.router.push("/");
-      }
-    },
-
-    // 调试方法
-    debugAvatar() {
-      console.log("=== 调试信息 ===");
-      console.log("1. currentUserAvatar:", this.currentUserAvatar);
-      console.log("2. editForm.userAvatar:", this.editForm.userAvatar);
-      console.log("3. sessionStorage:", sessionStorage.getItem("user"));
-
-      const userStr = sessionStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        console.log("4. 数据库路径:", user.userAvatar);
-
-        if (user.userAvatar && user.userAvatar.startsWith("/")) {
-          const testUrl = "http://localhost:8081" + user.userAvatar;
-          console.log("5. 测试URL:", testUrl);
-          window.open(testUrl, "_blank");
-        }
       }
     },
   },

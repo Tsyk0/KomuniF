@@ -42,7 +42,8 @@ const loadNightStyles = () => {
     'loginform-night.css',
     'scrollbar-night.css',
     'toast-night.css',      // 添加toast夜间样式
-    'ripple-night.css'      // 添加ripple夜间样式
+    'ripple-night.css',     // 添加ripple夜间样式
+    'chat-container-night.css'
   ]
   
   // TypeScript安全的方式检查href
