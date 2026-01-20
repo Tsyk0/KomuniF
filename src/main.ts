@@ -43,7 +43,11 @@ const loadNightStyles = () => {
     'scrollbar-night.css',
     'toast-night.css',      // 添加toast夜间样式
     'ripple-night.css',     // 添加ripple夜间样式
-    'chat-container-night.css'
+    'chat-container-night.css',
+    'conversationlist-night.css',
+    'messageitem-night.css',
+    'conversationitem-night.css',
+
   ]
   
   // TypeScript安全的方式检查href

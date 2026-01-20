@@ -43,7 +43,9 @@ export const authResponseInterceptor = {
     if (import.meta.env.DEV) {
       console.log('✅ 收到响应:', {
         url: response.config.url,
-        status: response.status
+        status: response.status,
+        data: response.data
+
       })
     }
     return response.data

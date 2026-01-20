@@ -22,6 +22,7 @@
 @import "@/assets/styles/loginform.css";
 @import "@/assets/styles/scrollbar.css";
 @import "@/assets/styles/chat-container.css";
-
+@import "@/assets/styles/conversationlist.css";
+@import "@/assets/styles/conversationitem.css";
 /* ✅ 关键：不要在这里导入夜间样式，使用动态加载 */
 </style>

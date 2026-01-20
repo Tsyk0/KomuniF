@@ -78,80 +78,12 @@
           </div>
         </div>
 
-        <!-- 修改会话列表区域 -->
-        <div class="conversation-list">
-          <!-- 添加 Telegram 风格的搜索框 -->
-          <div class="search-container">
-            <div class="search-box">
-              <span class="search-icon">🔍</span>
-              <input
-                type="text"
-                v-model="searchKeyword"
-                placeholder="搜索会话..."
-                class="search-input"
-                @input="handleSearch"
-              />
-              <button
-                v-if="searchKeyword"
-                class="clear-search"
-                @click="clearSearch"
-                title="清除搜索"
-              >
-                <span class="clear-icon">×</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- 加载状态 -->
-          <div v-if="isLoading" class="loading-state">
-            <div class="loading-spinner"></div>
-            <span>加载会话中...</span>
-          </div>
-
-          <!-- 错误状态 -->
-          <div v-else-if="loadError" class="error-state">
-            <div class="error-icon">❌</div>
-            <span>{{ loadError }}</span>
-            <button @click="retryLoad" class="retry-btn">重试</button>
-          </div>
-
-          <!-- 搜索无结果 -->
-          <div
-            v-else-if="searchKeyword && filteredConversations.length === 0"
-            class="no-results"
-          >
-            <div class="no-results-icon">🔍</div>
-            <p class="no-results-text">未找到匹配的会话</p>
-            <p class="no-results-hint">尝试其他搜索关键词</p>
-          </div>
-
-          <!-- 空状态 -->
-          <div
-            v-else-if="conversations.length === 0"
-            class="empty-conversation"
-          >
-            <div class="empty-icon">💬</div>
-            <p class="empty-text">暂无会话</p>
-            <p class="empty-hint">开始新的对话或等待好友消息</p>
-          </div>
-
-          <!-- 会话列表 -->
-          <div v-else class="conversations-container">
-            <!-- 修改这里：传递 convId 参数 -->
-            <ConversationItem
-              v-for="conversation in filteredConversations"
-              :key="conversation.convId"
-              :conv-id="conversation.convId"
-              :display-name="conversation.displayName"
-              :avatar="conversation.avatar"
-              :last-message="conversation.lastMessage"
-              :last-message-time="conversation.lastMessageTime"
-              :unread-count="conversation.unreadCount"
-              :is-active="currentConversationId === conversation.convId"
-              @click="handleConversationClick(conversation.convId)"
-            />
-          </div>
-        </div>
+        <!-- 使用 ConversationList 组件 -->
+        <ConversationList
+          :current-conversation-id="currentConversationId"
+          @conversation-click="handleConversationClick"
+          @retry-load="retryLoad"
+        />
       </div>
 
       <!-- 右侧聊天区域 -->
@@ -240,8 +172,8 @@ import { useConversationStore } from "@/stores/chat/show-conversation";
 import ProfileEdit from "@/components/ProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
-import ConversationItem from "@/components/ConversationItem.vue";
 import ChatContainer from "@/components/ChatContainer.vue";
+import ConversationList from "@/components/ConversationList.vue";
 
 export default {
   name: "HomeView",
@@ -249,8 +181,8 @@ export default {
     ProfileEdit,
     MoreOptions,
     ChangePassword,
-    ConversationItem,
     ChatContainer,
+    ConversationList,
   },
 
   setup() {
@@ -290,66 +222,23 @@ export default {
       return this.themeStore?.isDarkMode ? "切换到日间模式" : "切换到夜间模式";
     },
 
-    // 从 conversation store 获取数据
-    conversations() {
-      return this.conversationStore.conversationList || [];
-    },
-
-    isLoading() {
-      return this.conversationStore.isLoading || false;
-    },
-
-    loadError() {
-      return this.conversationStore.error || "";
-    },
-
+    // 从 conversation store 获取当前会话ID
     currentConversationId() {
       return this.conversationStore.currentConversationId || null;
-    },
-
-    // 过滤后的会话列表
-    filteredConversations() {
-      if (!this.searchKeyword.trim()) {
-        return this.conversations;
-      }
-
-      const keyword = this.searchKeyword.toLowerCase();
-      return this.conversations.filter((conversation) => {
-        // 搜索会话名称
-        if (conversation.displayName?.toLowerCase().includes(keyword)) {
-          return true;
-        }
-
-        // 搜索最后消息内容
-        if (conversation.lastMessage?.toLowerCase().includes(keyword)) {
-          return true;
-        }
-
-        // 搜索会话ID
-        if (conversation.convId.toString().includes(keyword)) {
-          return true;
-        }
-
-        return false;
-      });
     },
 
     // 当前会话名称
     currentConversationName() {
       if (!this.currentConversationId) return "";
-      const conversation = this.conversations.find(
-        (conv) => conv.convId === this.currentConversationId
-      );
-      return conversation?.displayName || `会话 ${this.currentConversationId}`;
+      const currentConv = this.conversationStore.currentConversation;
+      return currentConv?.displayName || `会话 ${this.currentConversationId}`;
     },
 
     // 当前会话头像
     currentConversationAvatar() {
       if (!this.currentConversationId) return "";
-      const conversation = this.conversations.find(
-        (conv) => conv.convId === this.currentConversationId
-      );
-      return conversation?.avatar || "";
+      const currentConv = this.conversationStore.currentConversation;
+      return currentConv?.avatar || "";
     },
 
     // 是否为群聊
@@ -381,21 +270,12 @@ export default {
       showChangePasswordView: false,
       showSuccessMessage: false,
       successMessage: "",
-      searchKeyword: "",
-      searchTimeout: null,
     };
   },
 
   mounted() {
     this.loadUserData();
-    this.loadConversations();
-    console.log("HomeView mounted, 当前用户头像:", this.currentUserAvatar);
-  },
-
-  beforeUnmount() {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-    }
+    console.log("HomeView mounted");
   },
 
   methods: {
@@ -469,49 +349,10 @@ export default {
       return date.toISOString().split("T")[0];
     },
 
-    // 加载会话列表
-    async loadConversations() {
-      try {
-        const userStr = sessionStorage.getItem("user");
-        if (!userStr) {
-          console.warn("用户未登录，跳过加载会话列表");
-          return;
-        }
-
-        const user = JSON.parse(userStr);
-        const userId = user.userId;
-
-        if (!userId) {
-          console.warn("用户ID不存在，跳过加载会话列表");
-          return;
-        }
-
-        console.log("开始加载会话列表，userId:", userId);
-
-        await this.conversationStore.fetchUserConversations(userId);
-
-        if (this.conversations.length > 0 && !this.currentConversationId) {
-          this.conversationStore.setCurrentConversation(
-            this.conversations[0].convId
-          );
-        }
-
-        console.log("会话列表加载完成");
-      } catch (error) {
-        console.error("加载会话列表失败:", error);
-      }
-    },
-
-    // 重试加载
-    retryLoad() {
-      this.conversationStore.clearError();
-      this.loadConversations();
-    },
-
-    // 处理会话点击 - 修改这里！
+    // 处理会话点击
     handleConversationClick(convId) {
       console.log(
-        "HomeView: 点击会话事件，参数:",
+        "HomeView: 收到会话点击事件，convId:",
         convId,
         "类型:",
         typeof convId
@@ -534,20 +375,10 @@ export default {
       this.conversationStore.setCurrentConversation(id);
     },
 
-    // 处理搜索输入
-    handleSearch() {
-      if (this.searchTimeout) {
-        clearTimeout(this.searchTimeout);
-      }
-
-      this.searchTimeout = setTimeout(() => {
-        console.log("执行搜索，关键词:", this.searchKeyword);
-      }, 300);
-    },
-
-    // 清除搜索
-    clearSearch() {
-      this.searchKeyword = "";
+    // 重试加载
+    retryLoad() {
+      console.log("HomeView: 收到重试加载事件");
+      // ConversationList 组件会自己处理重试，这里只需要通知即可
     },
 
     // 进入编辑模式
