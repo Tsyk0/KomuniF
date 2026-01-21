@@ -86,11 +86,11 @@
         />
       </div>
 
-      <!-- 右侧聊天区域 -->
+      <!-- 右侧聊天区域 (MCA - Main Chat Area) -->
       <div class="chat-main-area">
         <!-- 用户资料编辑组件 -->
         <ProfileEdit
-          v-if="isEditingProfile"
+          v-if="currentView === 'profile'"
           :user-data="editForm"
           @back="exitEditMode"
           @update:user-data="handleUserDataUpdate"
@@ -99,7 +99,7 @@
 
         <!-- 更多选项主菜单 -->
         <MoreOptions
-          v-else-if="showMoreMenu && !showChangePasswordView"
+          v-else-if="currentView === 'more'"
           :user-id="userId.toString()"
           :user-nickname="userNickname"
           @back="backToMainMenu"
@@ -108,16 +108,16 @@
 
         <!-- 修改密码组件 -->
         <ChangePassword
-          v-else-if="showChangePasswordView"
+          v-else-if="currentView === 'password'"
           :user-id="userId"
           :user-nickname="userNickname"
           @back="backToAccountSecurity"
           @success="handlePasswordSuccess"
         />
 
-        <!-- 聊天组件（当有选中会话且不在编辑模式时显示） -->
+        <!-- 聊天组件（当有选中会话且视图为chat时显示） -->
         <ChatContainer
-          v-else-if="currentConversationId"
+          v-else-if="currentView === 'chat' && currentConversationId"
           :conv-id="currentConversationId"
           :conversation-name="currentConversationName"
           :conversation-avatar="currentConversationAvatar"
@@ -125,8 +125,8 @@
           @back="clearCurrentConversation"
         />
 
-        <!-- 聊天区域（当不在编辑模式且没有选中会话时显示） -->
-        <div v-else class="chat-area-label">
+        <!-- 默认聊天区域（当视图为chat但没有选中会话时显示） -->
+        <div v-else-if="currentView === 'chat'" class="chat-area-label">
           <div class="chat-label-header">
             <span class="chat-label-icon">💭</span>
             <span class="chat-label-text">聊天区域</span>
@@ -249,11 +249,17 @@ export default {
 
   data() {
     return {
+      // 用户数据
       userId: "",
       userNickname: "用户",
       lastLoginTime: "",
-      isEditingProfile: false,
       currentUserAvatar: "",
+      avatarLoadError: false,
+
+      // 视图状态管理
+      currentView: "chat", // 当前MCA显示的视图，可选值：'chat', 'profile', 'more', 'password'
+
+      // 编辑表单数据
       editForm: {
         userId: "",
         userNickname: "",
@@ -265,9 +271,8 @@ export default {
         userPhone: "",
         userEmail: "",
       },
-      avatarLoadError: false,
-      showMoreMenu: false,
-      showChangePasswordView: false,
+
+      // 提示消息
       showSuccessMessage: false,
       successMessage: "",
     };
@@ -275,15 +280,88 @@ export default {
 
   mounted() {
     this.loadUserData();
-    console.log("HomeView mounted");
+    console.log("HomeView mounted, initial view:", this.currentView);
   },
 
   methods: {
+    // ==================== 视图切换方法 ====================
+
+    /**
+     * 前往聊天界面
+     * 核心功能：无论当前显示什么，都切换到聊天视图
+     */
+    goToChat() {
+      console.log("点击聊天按钮，切换到聊天视图");
+      this.currentView = "chat";
+      // 注意：这里不需要修改conversationStore，保持原有的会话状态
+    },
+
+    /**
+     * 进入编辑模式（用户资料）
+     */
+    enterEditMode() {
+      console.log("进入用户资料编辑模式");
+      this.currentView = "profile";
+      this.loadUserData(); // 重新加载用户数据确保最新
+    },
+
+    /**
+     * 退出编辑模式
+     */
+    exitEditMode() {
+      console.log("退出用户资料编辑模式，返回聊天视图");
+      this.currentView = "chat";
+    },
+
+    /**
+     * 显示更多选项
+     */
+    showMoreOptions() {
+      console.log("显示更多设置");
+      this.currentView = "more";
+    },
+
+    /**
+     * 显示修改密码页面
+     */
+    showChangePassword() {
+      console.log("显示修改密码页面");
+      this.currentView = "password";
+    },
+
+    /**
+     * 返回主菜单（从更多设置返回）
+     */
+    backToMainMenu() {
+      console.log("从更多设置返回聊天视图");
+      this.currentView = "chat";
+    },
+
+    /**
+     * 返回账号安全菜单（从修改密码返回更多设置）
+     */
+    backToAccountSecurity() {
+      console.log("从修改密码返回更多设置");
+      this.currentView = "more";
+    },
+
+    /**
+     * 重置视图到聊天（错误恢复）
+     */
+    resetViewToChat() {
+      console.warn("视图状态异常，重置到聊天视图");
+      this.currentView = "chat";
+    },
+
+    // ==================== 头像相关方法 ====================
+
     // 头像加载失败处理
     handleAvatarError() {
       console.log("头像加载失败，使用默认头像");
       this.avatarLoadError = true;
     },
+
+    // ==================== 用户数据方法 ====================
 
     // 加载用户数据
     loadUserData() {
@@ -349,6 +427,8 @@ export default {
       return date.toISOString().split("T")[0];
     },
 
+    // ==================== 会话相关方法 ====================
+
     // 处理会话点击
     handleConversationClick(convId) {
       console.log(
@@ -373,6 +453,9 @@ export default {
 
       console.log("HomeView: 设置当前会话ID:", id);
       this.conversationStore.setCurrentConversation(id);
+
+      // 点击会话时自动切换到聊天视图
+      this.currentView = "chat";
     },
 
     // 重试加载
@@ -381,48 +464,16 @@ export default {
       // ConversationList 组件会自己处理重试，这里只需要通知即可
     },
 
-    // 进入编辑模式
-    enterEditMode() {
-      this.isEditingProfile = true;
-      this.showMoreMenu = false;
-      this.showChangePasswordView = false;
-      console.log("进入编辑模式");
-      this.loadUserData();
+    // 清除当前会话
+    clearCurrentConversation() {
+      this.conversationStore.setCurrentConversation(null);
+      // 清除会话后，如果当前是聊天视图，则显示默认聊天区域
+      if (this.currentView === "chat") {
+        // 视图会自动更新，因为currentConversationId变为null
+      }
     },
 
-    // 退出编辑模式
-    exitEditMode() {
-      this.isEditingProfile = false;
-      console.log("退出编辑模式");
-    },
-
-    // 显示更多选项
-    showMoreOptions() {
-      this.showMoreMenu = true;
-      this.showChangePasswordView = false;
-      this.isEditingProfile = false;
-    },
-
-    // 显示修改密码页面
-    showChangePassword() {
-      this.showChangePasswordView = true;
-      this.showMoreMenu = false;
-      this.isEditingProfile = false;
-    },
-
-    // 返回主菜单
-    backToMainMenu() {
-      this.showMoreMenu = false;
-      this.showChangePasswordView = false;
-      this.isEditingProfile = false;
-    },
-
-    // 返回账号安全菜单
-    backToAccountSecurity() {
-      this.showChangePasswordView = false;
-      this.showMoreMenu = true;
-      this.isEditingProfile = false;
-    },
+    // ==================== 事件处理方法 ====================
 
     // 处理密码修改成功
     handlePasswordSuccess(message) {
@@ -449,7 +500,11 @@ export default {
     // 处理编辑成功
     handleEditSuccess(message) {
       this.showSuccessToast(message);
+      // 编辑成功后自动返回聊天视图
+      this.currentView = "chat";
     },
+
+    // ==================== 工具方法 ====================
 
     showSuccessToast(message) {
       const toast = document.createElement("div");
@@ -472,18 +527,9 @@ export default {
       }, 2000);
     },
 
-    clearCurrentConversation() {
-      this.conversationStore.setCurrentConversation(null);
-    },
-
     // 开始新聊天
     startNewChat() {
       alert("开始新聊天功能开发中...");
-    },
-
-    // 前往聊天界面
-    goToChat() {
-      alert("聊天功能开发中...");
     },
 
     // 登出方法

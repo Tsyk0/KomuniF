@@ -98,7 +98,6 @@ html.night-mode .homeview .user-profile {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
   padding: 10px;
   border-radius: 12px;
   cursor: pointer;

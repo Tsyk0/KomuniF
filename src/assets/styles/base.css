@@ -199,7 +199,6 @@ html, body {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
   height: calc(100vh - 120px);
-  border-radius: 12px;
 }
 
 /* ========== 6. 底部信息栏 ========== */

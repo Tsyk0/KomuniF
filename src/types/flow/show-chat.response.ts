@@ -25,6 +25,17 @@ export interface GetConversationDetailResponse {
 }
 
 /**
+ * 批量获取会话详情的响应类型
+ * 对应后端接口：POST /conversation/selectConversationsBatch
+ */
+export interface GetConversationsBatchResponse {
+    code: number;
+    message: string;
+    data: Conversation[];  // 会话详情数组
+    timestamp?: number;
+}
+
+/**
  * 基础操作响应类型（标记已读、更新昵称、退出会话等）
  */
 export interface ConversationOperationResponse {

@@ -6,7 +6,7 @@ export interface ConversationMember {
     memberNickname: string | null;  // 群内昵称
     memberRole: number;             // 0-普通成员，1-管理员，2-群主
     memberStatus: number;           // 0-已退出，1-正常，2-禁言
-    privateDisplayName: string | null; // 单聊时的对方昵称
+    privateDisplayName: string | null; // 单聊时的对方昵称和多聊时的设置的群名称
     lastReadTime: string | null;    // 最后阅读时间
     lastSpeakTime: string | null;   // 最后发言时间
     joinTime: string;               // 加入时间

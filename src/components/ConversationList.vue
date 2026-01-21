@@ -194,6 +194,49 @@ export default {
       }
     },
 
+    // 加载会话列表
+    async loadConversations() {
+      try {
+        const userStr = sessionStorage.getItem("user");
+        if (!userStr) {
+          console.warn("用户未登录，跳过加载会话列表");
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+        const userId = user.userId;
+
+        if (!userId) {
+          console.warn("用户ID不存在，跳过加载会话列表");
+          return;
+        }
+
+        console.log("ConversationList: 开始加载会话列表，userId:", userId);
+
+        // 使用完整的数据获取方法
+        await this.conversationStore.fetchUserConversationsWithDetails(userId);
+
+        console.log(
+          "ConversationList: 会话列表加载完成，数量:",
+          this.conversations.length
+        );
+
+        // 验证显示逻辑
+        console.log("=== 会话显示验证 ===");
+        this.conversations.forEach((conv, index) => {
+          console.log(`会话 ${index + 1}:`, {
+            convId: conv.convId,
+            displayName: conv.displayName,
+            privateDisplayName: conv.privateDisplayName,
+            convName: conv.convName,
+            convType: conv.convType,
+          });
+        });
+      } catch (error) {
+        console.error("ConversationList: 加载会话列表失败:", error);
+      }
+    },
+
     // 重试加载
     retryLoad() {
       this.conversationStore.clearError();
