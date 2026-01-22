@@ -2,37 +2,35 @@
 <template>
   <div class="conversation-list">
     <!-- 搜索框 -->
-    <div class="search-container">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input
-          type="text"
-          v-model="searchKeyword"
-          placeholder="搜索会话..."
-          class="search-input"
-          @input="handleSearch"
-        />
-        <button
-          v-if="searchKeyword"
-          class="clear-search"
-          @click="clearSearch"
-          title="清除搜索"
-        >
-          <span class="clear-icon">×</span>
-        </button>
-      </div>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        v-model="searchKeyword"
+        placeholder="搜索会话..."
+        class="search-input"
+        @input="handleSearch"
+      />
+      <button
+        v-if="searchKeyword"
+        class="clear-search"
+        @click="clearSearch"
+        title="清除搜索"
+      >
+        <span class="clear-icon">×</span>
+      </button>
     </div>
 
     <!-- 加载状态 -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
-      <span>加载会话中...</span>
+      <span>加载中...</span>
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="error" class="error-state">
+    <div v-else-if="errorMessage" class="error-state">
       <div class="error-icon">❌</div>
-      <span>{{ error }}</span>
+      <span>{{ errorMessage }}</span>
       <button @click="retryLoad" class="retry-btn">重试</button>
     </div>
 
@@ -58,217 +56,168 @@
       <ConversationItem
         v-for="conversation in filteredConversations"
         :key="conversation.convId"
-        :conv-id="conversation.convId"
-        :display-name="conversation.displayName"
-        :avatar="conversation.avatar"
-        :last-message="conversation.lastMessage"
-        :last-message-time="conversation.lastMessageTime"
-        :unread-count="conversation.unreadCount"
-        :is-active="currentConversationId === conversation.convId"
-        @click="handleConversationClick"
+        :conversation="conversation"
+        :is-active="isActiveConversation(conversation.convId)"
+        @click="handleConversationClick(conversation.convId)"
       />
     </div>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from "vue";
 import { useConversationStore } from "@/stores/chat/show-conversation";
+import { useMessageStore } from "@/stores/chat/show-message";
+// @ts-ignore
 import ConversationItem from "./ConversationItem.vue";
+import type { ConversationDetailDTO } from "@/types/form/conversation-detail";
 
-export default {
-  name: "ConversationList",
+// Store
+const conversationStore = useConversationStore();
+const messageStore = useMessageStore();
 
-  components: {
-    ConversationItem,
-  },
+// 响应式数据
+const searchKeyword = ref("");
+const errorMessage = ref<string | null>(null);
+const searchTimeout = ref<number | null>(null);
 
-  props: {
-    currentConversationId: {
-      type: Number,
-      default: null,
-    },
-  },
+// 计算属性
+const conversations = computed(() => {
+  return conversationStore.conversations || [];
+});
 
-  emits: ["conversation-click", "retry-load"],
+const isLoading = computed(() => {
+  return conversationStore.isLoading || false;
+});
 
-  setup(props, { emit }) {
-    const conversationStore = useConversationStore();
+const filteredConversations = computed(() => {
+  if (!searchKeyword.value.trim()) {
+    return conversations.value;
+  }
 
-    return {
-      conversationStore,
-      emit,
-    };
-  },
-
-  data() {
-    return {
-      searchKeyword: "",
-      searchTimeout: null,
-    };
-  },
-
-  computed: {
-    // 从 store 获取数据
-    conversations() {
-      return this.conversationStore.conversationList || [];
-    },
-
-    isLoading() {
-      return this.conversationStore.isLoading || false;
-    },
-
-    error() {
-      return this.conversationStore.error || "";
-    },
-
-    // 过滤后的会话列表
-    filteredConversations() {
-      if (!this.searchKeyword.trim()) {
-        return this.conversations;
-      }
-
-      const keyword = this.searchKeyword.toLowerCase();
-      return this.conversations.filter((conversation) => {
-        // 搜索会话显示名称
-        if (conversation.displayName?.toLowerCase().includes(keyword)) {
-          return true;
-        }
-
-        // 搜索最后消息内容
-        if (conversation.lastMessage?.toLowerCase().includes(keyword)) {
-          return true;
-        }
-
-        // 搜索会话ID
-        if (conversation.convId.toString().includes(keyword)) {
-          return true;
-        }
-
-        return false;
-      });
-    },
-  },
-
-  mounted() {
-    this.loadConversations();
-  },
-
-  beforeUnmount() {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
+  const keyword = searchKeyword.value.toLowerCase();
+  return conversations.value.filter((conversation) => {
+    // 搜索会话名称
+    if (conversation.convName?.toLowerCase().includes(keyword)) {
+      return true;
     }
-  },
 
-  methods: {
-    // 加载会话列表
-    async loadConversations() {
-      try {
-        const userStr = sessionStorage.getItem("user");
-        if (!userStr) {
-          console.warn("用户未登录，跳过加载会话列表");
-          return;
-        }
+    // 搜索最后消息内容
+    const lastMsg = conversation.lastMessage;
+    if (lastMsg?.messageContent?.toLowerCase().includes(keyword)) {
+      return true;
+    }
 
-        const user = JSON.parse(userStr);
-        const userId = user.userId;
+    // 搜索发送者名称
+    if (lastMsg?.senderDisplayName?.toLowerCase().includes(keyword)) {
+      return true;
+    }
 
-        if (!userId) {
-          console.warn("用户ID不存在，跳过加载会话列表");
-          return;
-        }
+    // 搜索会话ID
+    if (conversation.convId.toString().includes(keyword)) {
+      return true;
+    }
 
-        console.log("ConversationList: 开始加载会话列表，userId:", userId);
-        await this.conversationStore.fetchUserConversations(userId);
-        console.log(
-          "ConversationList: 会话列表加载完成，数量:",
-          this.conversations.length
-        );
+    return false;
+  });
+});
 
-        // 调试：输出数据
-        console.log("ConversationList 中的 conversations:", this.conversations);
-        if (this.conversations.length > 0) {
-          console.log("第一个会话:", this.conversations[0]);
-        }
-      } catch (error) {
-        console.error("ConversationList: 加载会话列表失败:", error);
-      }
-    },
+const currentConversationId = computed(() => {
+  return conversationStore.currentConversation?.convId || null;
+});
 
-    // 加载会话列表
-    async loadConversations() {
-      try {
-        const userStr = sessionStorage.getItem("user");
-        if (!userStr) {
-          console.warn("用户未登录，跳过加载会话列表");
-          return;
-        }
-
-        const user = JSON.parse(userStr);
-        const userId = user.userId;
-
-        if (!userId) {
-          console.warn("用户ID不存在，跳过加载会话列表");
-          return;
-        }
-
-        console.log("ConversationList: 开始加载会话列表，userId:", userId);
-
-        // 使用完整的数据获取方法
-        await this.conversationStore.fetchUserConversationsWithDetails(userId);
-
-        console.log(
-          "ConversationList: 会话列表加载完成，数量:",
-          this.conversations.length
-        );
-
-        // 验证显示逻辑
-        console.log("=== 会话显示验证 ===");
-        this.conversations.forEach((conv, index) => {
-          console.log(`会话 ${index + 1}:`, {
-            convId: conv.convId,
-            displayName: conv.displayName,
-            privateDisplayName: conv.privateDisplayName,
-            convName: conv.convName,
-            convType: conv.convType,
-          });
-        });
-      } catch (error) {
-        console.error("ConversationList: 加载会话列表失败:", error);
-      }
-    },
-
-    // 重试加载
-    retryLoad() {
-      this.conversationStore.clearError();
-      this.loadConversations();
-      this.emit("retry-load");
-    },
-
-    // 处理会话点击
-    handleConversationClick(convId) {
-      console.log("ConversationList: 点击会话，convId:", convId);
-      this.emit("conversation-click", convId);
-    },
-
-    // 处理搜索输入
-    handleSearch() {
-      if (this.searchTimeout) {
-        clearTimeout(this.searchTimeout);
-      }
-
-      this.searchTimeout = setTimeout(() => {
-        console.log("执行搜索，关键词:", this.searchKeyword);
-      }, 300);
-    },
-
-    // 清除搜索
-    clearSearch() {
-      this.searchKeyword = "";
-    },
-  },
+// 检查是否为当前活跃会话
+const isActiveConversation = (convId: number) => {
+  return currentConversationId.value === convId;
 };
+
+// 方法
+const handleSearch = () => {
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value);
+  }
+
+  searchTimeout.value = window.setTimeout(() => {
+    // 搜索逻辑已经在过滤中实现
+    console.log("搜索关键词:", searchKeyword.value);
+  }, 300);
+};
+
+const clearSearch = () => {
+  searchKeyword.value = "";
+};
+
+const retryLoad = async () => {
+  errorMessage.value = null;
+  await loadConversations();
+};
+
+// 加载会话列表
+const loadConversations = async () => {
+  if (conversations.value.length === 0) {
+    try {
+      await conversationStore.loadConversations();
+    } catch (error) {
+      console.error("加载会话列表失败:", error);
+      errorMessage.value = "无法加载会话列表，请检查网络连接";
+    }
+  }
+};
+
+// 处理会话点击
+const handleConversationClick = async (convId: number) => {
+  try {
+    // 设置当前会话
+    conversationStore.setCurrentConversation(convId);
+
+    // 重置消息列表
+    messageStore.resetMessages();
+
+    // 加载消息
+    await messageStore.loadMessages(convId);
+
+    // 标记为已读
+    conversationStore.markAsRead(convId);
+
+    // 触发自定义事件
+    emit("conversation-click", convId);
+  } catch (error) {
+    console.error("切换会话失败:", error);
+    errorMessage.value = "无法加载会话消息";
+  }
+};
+
+// 监听搜索关键词变化
+watch(
+  () => conversationStore.searchKeyword,
+  (newKeyword) => {
+    if (searchKeyword.value !== newKeyword) {
+      searchKeyword.value = newKeyword;
+    }
+  }
+);
+
+// 生命周期
+onMounted(async () => {
+  await loadConversations();
+});
+
+// 清理定时器
+onUnmounted(() => {
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value);
+  }
+});
+
+// 定义事件
+const emit = defineEmits<{
+  (event: "conversation-click", convId: number): void;
+}>();
+
+import { onUnmounted } from "vue";
 </script>
 
 <style scoped>
-@import "@/assets/styles/conversationlist.css";
+/* 完全移除内联样式 */
+@import "@/assets/styles/conversation-list.css";
 </style>

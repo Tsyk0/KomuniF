@@ -1,12 +1,4 @@
-// src/types/flow/message.request.ts
-// 获取消息请求参数
-export interface GetMessagesRequest {
-    convId: number;
-    page?: number;
-    size?: number;
-    lastMessageId?: number;
-}
-// 发送消息请求
+// 修改后的 src/types/flow/message.request.ts
 export interface SendMessageRequest {
     convId: number;
     senderId: number;
@@ -16,3 +8,4 @@ export interface SendMessageRequest {
     replyToMessageId?: number;
     atUserIds?: number[];
 }
+// 删除其他接口

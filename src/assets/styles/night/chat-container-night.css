@@ -1,4 +1,4 @@
-/* src/assets/styles/night/chat-container-night.css */
+/* src/assets/styles/night/chat-container-night.css - 保持历史版本风格 */
 html.night-mode .chat-container {
   background: #1d1d1d;
 }
@@ -18,14 +18,6 @@ html.night-mode .chat-avatar {
   color: #e2e8f0;
 }
 
-html.night-mode .online-indicator {
-  border: 2px solid #1d1d1d;
-}
-
-html.night-mode .online-indicator.online {
-  background: #4ade80;
-}
-
 html.night-mode .chat-name {
   color: #e2e8f0;
 }
@@ -38,9 +30,24 @@ html.night-mode .header-action {
   color: #60a5fa;
 }
 
+html.night-mode .tool-button {
+  color: #60a5fa;
+}
+
 /* 消息列表区域 - 夜晚模式 */
 html.night-mode .messages-container {
   background: #1a1a1a;
+}
+
+/* 加载更多 - 夜晚模式 */
+html.night-mode .load-more button {
+  background: #333;
+  border-color: #444;
+  color: #94a3b8;
+}
+
+html.night-mode .load-more button:hover:not(:disabled) {
+  background: #444;
 }
 
 html.night-mode .load-more-indicator {
@@ -97,6 +104,10 @@ html.night-mode .file-message:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
+html.night-mode .file-icon {
+  color: #94a3b8;
+}
+
 html.night-mode .file-size {
   color: rgba(255, 255, 255, 0.6);
 }
@@ -108,6 +119,10 @@ html.night-mode .audio-message {
 
 html.night-mode .audio-message:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+html.night-mode .audio-icon {
+  color: #94a3b8;
 }
 
 html.night-mode .audio-duration {
@@ -123,18 +138,27 @@ html.night-mode .video-message:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
+html.night-mode .video-icon {
+  color: #94a3b8;
+}
+
 html.night-mode .video-duration {
   color: rgba(255, 255, 255, 0.6);
+}
+
+/* 消息元数据 - 夜晚模式 */
+html.night-mode .message-time {
+  opacity: 0.8;
+}
+
+html.night-mode .message-status {
+  color: #94a3b8;
 }
 
 /* 消息输入区域 - 夜晚模式 */
 html.night-mode .message-input-area {
   border-top: 1px solid #334155;
   background: rgba(30, 30, 30, 0.95);
-}
-
-html.night-mode .tool-button {
-  color: #60a5fa;
 }
 
 html.night-mode .message-input {
@@ -163,37 +187,7 @@ html.night-mode .send-button:not(:disabled):hover {
   background: #2563eb;
 }
 
-/* 加载状态 - 夜晚模式 */
-html.night-mode .chat-loading {
-  color: #94a3b8;
-}
 
-html.night-mode .loading-spinner {
-  border: 3px solid #334155;
-  border-top: 3px solid #60a5fa;
-}
-
-html.night-mode .loading-spinner.small {
-  border: 2px solid #334155;
-  border-top: 2px solid #60a5fa;
-}
-
-/* 空状态 - 夜晚模式 */
-html.night-mode .chat-empty {
-  color: #94a3b8;
-}
-
-html.night-mode .empty-icon {
-  color: #64748b;
-}
-
-html.night-mode .empty-text {
-  color: #cbd5e1;
-}
-
-html.night-mode .empty-hint {
-  color: #94a3b8;
-}
 
 /* 未选择会话状态 - 夜晚模式 */
 html.night-mode .no-conversation {
@@ -217,12 +211,27 @@ html.night-mode .messages-container::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* 动画 - 夜晚模式 */
+/* 加载状态 - 夜晚模式 */
+html.night-mode .chat-loading {
+  color: #94a3b8;
+}
+
+html.night-mode .loading-spinner {
+  border: 3px solid #334155;
+  border-top: 3px solid #60a5fa;
+}
+
+html.night-mode .loading-spinner.small {
+  border: 2px solid #334155;
+  border-top: 2px solid #60a5fa;
+}
+
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 最后调整确保完全一致 */
+html.night-mode .chat-container * {
+  box-sizing: border-box;
 }

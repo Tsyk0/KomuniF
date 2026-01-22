@@ -1,6 +1,4 @@
-/* src/assets/styles/conversationitem.css */
-
-/* ========== 会话项容器 ========== */
+/* src/assets/styles/conversationitem.css - 保持原风格白天模式 */
 .conversation-item {
   display: flex;
   align-items: center;
@@ -49,7 +47,7 @@
 }
 
 /* ========== 头像区域 ========== */
-.conversation-avatar {
+.avatar-container {
   flex-shrink: 0;
   margin-right: 12px;
   position: relative;
@@ -122,6 +120,27 @@
 .online-indicator.offline {
   background-color: #9e9e9e;
   animation: none;
+}
+
+/* 未读消息计数 */
+.unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background-color: #ff3b30;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 1;
 }
 
 /* ========== 会话信息区域 ========== */
@@ -211,115 +230,42 @@
   position: relative;
 }
 
-.last-message {
-  font-size: 14px;
+.message-preview {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sender-name {
+  font-size: 12px;
+  color: #0084ff;
+  flex-shrink: 0;
+}
+
+.message-content {
+  font-size: 13px;
   color: #666;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
   flex: 1;
   line-height: 1.4;
   transition: color 0.2s;
 }
 
-.conversation-item:hover .last-message {
+.conversation-item:hover .message-content {
   color: #333;
 }
 
-/* 消息类型图标 */
-.last-message::before {
-  content: '';
-  display: inline-block;
-  margin-right: 6px;
-  font-size: 12px;
-  vertical-align: middle;
-}
-
-.last-message.text::before {
-  content: '💬';
-}
-
-.last-message.image::before {
-  content: '🖼️';
-}
-
-.last-message.file::before {
-  content: '📎';
-}
-
-.last-message.audio::before {
-  content: '🎵';
-}
-
-.last-message.video::before {
-  content: '🎥';
-}
-
-/* ========== 未读消息标记 ========== */
-.unread-badge {
-  background: linear-gradient(135deg, #ff3b30, #d70015);
-  color: white;
-  font-size: 11px;
-  min-width: 20px;
-  height: 20px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 6px;
-  margin-left: 8px;
+/* 消息状态指示器 */
+.message-status {
   flex-shrink: 0;
-  font-weight: 700;
-  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.4);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.unread-badge::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
-  transform: rotate(45deg);
-  animation: shine 3s infinite;
-}
-
-@keyframes shine {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-  }
-}
-
-.conversation-item:hover .unread-badge {
-  transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.6);
-}
-
-.unread-badge.highlight {
-  animation: pulse-badge 1.5s infinite;
-}
-
-@keyframes pulse-badge {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 2px 6px rgba(255, 59, 48, 0.4);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.8);
-  }
+  margin-left: 4px;
+  color: #999;
+  font-size: 12px;
+  opacity: 0.7;
 }
 
 /* ========== 选中状态的样式增强 ========== */
@@ -333,7 +279,7 @@
   font-weight: 500;
 }
 
-.conversation-item.active .last-message {
+.conversation-item.active .message-content {
   color: #0084ff;
   font-weight: 500;
 }
@@ -372,6 +318,7 @@
   color: #999;
   font-size: 18px;
   transition: opacity 0.2s;
+  filter: brightness(0.8);
 }
 
 .conversation-item:hover::after {
@@ -381,5 +328,10 @@
 .conversation-item.active::after {
   color: #0084ff;
   opacity: 0.5;
+  filter: brightness(1);
 }
 
+/* 最后调整确保完全一致 */
+.conversation-item * {
+  box-sizing: border-box;
+}
