@@ -464,7 +464,7 @@ export default {
     // 处理密码修改成功
     handlePasswordSuccess(message) {
       this.backToAccountSecurity();
-      this.showSuccessToast(message);
+      // this.showSuccessToast(message);
     },
 
     // 处理用户数据更新
@@ -485,21 +485,21 @@ export default {
 
     // 处理编辑成功
     handleEditSuccess(message) {
-      this.showSuccessToast(message);
+      // this.showSuccessToast(message);
       // 编辑成功后自动返回聊天视图
       this.currentView = "chat";
     },
 
     // ==================== 工具方法 ====================
 
-    showSuccessToast(message) {
-      this.successMessage = message;
-      this.showSuccessMessage = true;
+    // showSuccessToast(message) {
+    //   this.successMessage = message;
+    //   this.showSuccessMessage = true;
 
-      setTimeout(() => {
-        this.showSuccessMessage = false;
-      }, 2000);
-    },
+    //   setTimeout(() => {
+    //     this.showSuccessMessage = false;
+    //   }, 2000);
+    // },
 
     // 开始新聊天
     startNewChat() {
