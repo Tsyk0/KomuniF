@@ -219,5 +219,5 @@ import { onUnmounted } from "vue";
 
 <style scoped>
 /* 完全移除内联样式 */
-@import "@/assets/styles/conversation-list.css";
+@import "@/assets/styles/conversationlist.css";
 </style>
