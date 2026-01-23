@@ -46,7 +46,7 @@ html.night-mode .profile-edit .avatar-section {
   align-items: center;
   flex-shrink: 0;
   padding: 30px;
-  border-right: 1px solid rgba(55, 65, 81, 0.8);
+  border: none;
   overflow-y: auto;
   height: 100%;
   box-sizing: border-box;
@@ -60,16 +60,16 @@ html.night-mode .profile-edit .avatar-display {
   cursor: pointer;
   position: relative;
   margin-bottom: 20px;
-  transition: transform 0.3s ease;
+  transition: border-color 0.3s ease; /* 只保留边框颜色过渡，移除transform过渡 */
   flex-shrink: 0;
-  border: 3px solid #4b5563;
+  border: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
 }
 
 html.night-mode .profile-edit .avatar-display:hover {
-  transform: scale(1.02);
-  border-color: #60a5fa;
+  border: none;
+
 }
 
 html.night-mode .profile-edit .avatar-img-container {
@@ -100,6 +100,8 @@ html.night-mode .profile-edit .avatar-overlay {
   color: #ffffff; /* 纯白色 */
   font-weight: bold;
   font-size: 16px;
+  border:none;
+
 }
 
 html.night-mode .profile-edit .avatar-display:hover .avatar-overlay {
@@ -117,6 +119,8 @@ html.night-mode .profile-edit .avatar-placeholder-large {
   color: #ffffff; /* 纯白色 */
   font-size: 60px;
   font-weight: bold;
+  border:none;
+
 }
 
 html.night-mode .profile-edit .upload-hint {
@@ -213,14 +217,19 @@ html.night-mode .profile-edit .el-textarea::placeholder {
   opacity: 1;
 }
 
-/* 特别针对输入框聚焦状态 */
+/* 特别针对输入框聚焦状态 - 修复选择器前缀 */
 html.night-mode .profile-edit input:focus,
+html.night-mode .profile-edit input:hover,
 html.night-mode .profile-edit textarea:focus,
+html.night-mode .profile-edit textarea:hover,
 html.night-mode .profile-edit .el-input:focus,
+html.night-mode .profile-edit .el-input:hover,
 html.night-mode .profile-edit .el-textarea:focus,
-html.night-mode .profile-edit input[type="date"]:focus {
+html.night-mode .profile-edit .el-textarea:hover,
+html.night-mode .profile-edit input[type="date"]:focus,
+html.night-mode .profile-edit input[type="date"]:hover {
   outline: none;
-  border-color: #60a5fa;
+  border-color: #60a5fa; /* 夜间模式使用浅蓝色 */
   box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
 }
 
@@ -250,7 +259,6 @@ html.night-mode .profile-edit .gender-option {
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
@@ -349,7 +357,6 @@ html.night-mode .profile-edit .action-buttons {
 /* 取消/重置按钮 */
 html.night-mode .profile-edit .cancel-btn {
   padding: 14px 28px;
-  border: none;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
@@ -363,18 +370,23 @@ html.night-mode .profile-edit .cancel-btn {
   position: relative;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  border: 1px solid #656565;
   color: #ffffff; /* 纯白色 */
-  border: 1px solid #4b5563;
   box-sizing: border-box;
   background: rgba(47, 47, 47, 0.7);
 }
 
+/* 修改这里：确保图标颜色也会在悬停时改变 */
 html.night-mode .profile-edit .cancel-btn:hover {
-  background: rgba(75, 85, 99, 0.7);
-  color: #ffffff; /* 纯白色 */
-  border-color: #f87171;
-  transform: translateY(-1px);
+  background: rgba(60, 60, 60, 0.7);
+  color: #ff3b30; /* 这个颜色会应用到按钮文本 */
+  border: 1px solid #f87171;
   box-shadow: 0 4px 12px rgba(248, 113, 113, 0.2);
+}
+
+/* 修改这里：确保图标也会继承悬停时的颜色 */
+html.night-mode .profile-edit .cancel-btn:hover .btn-icon {
+  color: inherit; /* 继承按钮的悬停颜色 */
 }
 
 html.night-mode .profile-edit .cancel-btn:active {
@@ -384,4 +396,5 @@ html.night-mode .profile-edit .cancel-btn:active {
 html.night-mode .profile-edit .btn-icon {
   font-size: 18px;
   color: #ffffff; /* 纯白色 */
+  transition: color 0.3s ease; /* 添加过渡效果 */
 }

@@ -40,13 +40,13 @@ const loadNightStyles = () => {
     'change-password-night.css',
     'loginview-night.css',
     'loginform-night.css',
-    'scrollbar-night.css',
     'toast-night.css',      // 添加toast夜间样式
     'ripple-night.css',     // 添加ripple夜间样式
     'chat-container-night.css',
     'conversationlist-night.css',
     'messageitem-night.css',
     'conversationitem-night.css',
+    'scrollbar-night.css',
 
   ]
   

@@ -68,7 +68,6 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useConversationStore } from "@/stores/chat/show-conversation";
 import { useMessageStore } from "@/stores/chat/show-message";
-// @ts-ignore
 import ConversationItem from "./ConversationItem.vue";
 import type { ConversationDetailDTO } from "@/types/form/conversation-detail";
 

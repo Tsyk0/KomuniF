@@ -88,8 +88,8 @@
   transition: background-color 0.2s;
 }
 
-/* 用户资料区域 */
-.homeview .user-profile {
+/* 用户资料区域 - 增加特异性 */
+.homeview .sidebar-header .user-profile {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -100,7 +100,7 @@
   position: relative;
 }
 
-.homeview .user-profile:hover {
+.homeview .sidebar-header .user-profile:hover {
   background: linear-gradient(
     135deg,
     rgba(0, 122, 255, 0.08),
@@ -110,20 +110,20 @@
   box-shadow: 0 4px 12px rgba(0, 122, 255, 0.1);
 }
 
-.homeview .user-profile:hover .avatar-placeholder {
+.homeview .sidebar-header .user-profile:hover .avatar-placeholder {
   transform: scale(1.05);
 }
 
-.homeview .user-profile:hover .user-name {
+.homeview .sidebar-header .user-profile:hover .user-name {
   color: #007aff;
 }
 
-.homeview .user-profile:active {
+.homeview .sidebar-header .user-profile:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(0, 122, 255, 0.1);
 }
 
-.homeview .user-profile::after {
+.homeview .sidebar-header .user-profile::after {
   content: "✏️";
   position: absolute;
   right: 10px;
@@ -134,11 +134,12 @@
   font-size: 14px;
 }
 
-.homeview .user-profile:hover::after {
+.homeview .sidebar-header .user-profile:hover::after {
   opacity: 1;
 }
 
-.homeview .avatar-placeholder {
+/* 关键修改：增加特异性，避免影响ConversationItem的avatar-placeholder */
+.homeview .sidebar-header .avatar-placeholder {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -152,9 +153,11 @@
   transition: transform 0.3s ease;
   overflow: hidden;
   position: relative;
+  /* 确保没有margin-bottom影响布局 */
+  margin-bottom: 0 !important;
 }
 
-.homeview .avatar-placeholder img {
+.homeview .sidebar-header .avatar-placeholder img {
   position: absolute;
   top: 0;
   left: 0;
@@ -163,23 +166,23 @@
   object-fit: cover;
 }
 
-.homeview .avatar-placeholder span {
+.homeview .sidebar-header .avatar-placeholder span {
   position: relative;
   z-index: 1;
 }
 
-.homeview .avatar-img-small {
+.homeview .sidebar-header .avatar-img-small {
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.homeview .user-info {
+.homeview .sidebar-header .user-info {
   flex: 1;
 }
 
-.homeview .user-name {
+.homeview .sidebar-header .user-name {
   font-weight: 600;
   color: #333;
   font-size: 16px;
@@ -187,12 +190,12 @@
   transition: color 0.3s ease;
 }
 
-.homeview .user-status {
+.homeview .sidebar-header .user-status {
   font-size: 12px;
   color: #666;
 }
 
-.homeview .user-status.online {
+.homeview .sidebar-header .user-status.online {
   color: #4cd964;
 }
 
@@ -362,20 +365,21 @@
   }
 }
 
-.loading-state {
+/* 加载状态 */
+.homeview .loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 40px 0;
-  color: var(--text-secondary, #666);
+  color: #666;
 }
 
-.loading-spinner {
+.homeview .loading-spinner {
   width: 30px;
   height: 30px;
-  border: 3px solid var(--border-color, #eee);
-  border-top-color: var(--primary-color, #007bff);
+  border: 3px solid #eee;
+  border-top-color: #007bff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 10px;
@@ -385,82 +389,26 @@
   to { transform: rotate(360deg); }
 }
 
-.error-state {
+/* 错误状态 */
+.homeview .error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 40px 0;
-  color: var(--error-color, #f44336);
-}
-
-.error-icon {
-  font-size: 32px;
-  margin-bottom: 10px;
-}
-
-.retry-btn {
-  margin-top: 10px;
-  padding: 6px 16px;
-  background-color: var(--primary-color, #007bff);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.retry-btn:hover {
-  opacity: 0.9;
-}
-
-.conversations-container {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-/* 新增样式 */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 0;
-  color: var(--text-secondary, #666);
-}
-
-.loading-spinner {
-  width: 30px;
-  height: 30px;
-  border: 3px solid var(--border-color, #eee);
-  border-top-color: var(--primary-color, #007bff);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 10px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 0;
-  color: var(--error-color, #f44336);
+  color: #f44336;
   text-align: center;
 }
 
-.error-icon {
+.homeview .error-icon {
   font-size: 32px;
   margin-bottom: 10px;
 }
 
-.retry-btn {
+.homeview .retry-btn {
   margin-top: 10px;
   padding: 6px 16px;
-  background-color: var(--primary-color, #007bff);
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
@@ -468,16 +416,17 @@
   font-size: 14px;
 }
 
-.retry-btn:hover {
+.homeview .retry-btn:hover {
   opacity: 0.9;
 }
 
-.conversations-container {
+.homeview .conversations-container {
   max-height: calc(100vh - 200px);
   overflow-y: auto;
 }
 
-.empty-conversation {
+/* 空状态 */
+.homeview .empty-conversation {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -486,21 +435,21 @@
   text-align: center;
 }
 
-.empty-icon {
+.homeview .empty-icon {
   font-size: 48px;
   margin-bottom: 16px;
   opacity: 0.5;
 }
 
-.empty-text {
+.homeview .empty-text {
   font-size: 16px;
-  color: var(--text-secondary, #666);
+  color: #666;
   margin-bottom: 8px;
 }
 
-.empty-hint {
+.homeview .empty-hint {
   font-size: 14px;
-  color: var(--text-tertiary, #999);
+  color: #999;
 }
 
 /* ========== 搜索框样式（白天模式） ========== */
@@ -611,10 +560,10 @@
 .homeview .conversation-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0; /* 去掉padding，因为搜索框有自己的padding */
+  padding: 0;
 }
 
 .homeview .conversations-container {
-  max-height: calc(100vh - 250px); /* 调整高度适应搜索框 */
+  max-height: calc(100vh - 250px);
   overflow-y: auto;
 }

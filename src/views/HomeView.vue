@@ -1,5 +1,3 @@
-//  src/views/HomeView.vue
-
 <template>
   <!-- 在根元素上添加 homeview 类名 -->
   <div class="homeview home-container">
@@ -24,7 +22,7 @@
 
         <!-- 设置按钮区域（底部） -->
         <div class="nav-bottom-menu">
-          <!-- 修改这里：使用 themeStore -->
+          <!-- 使用 themeStore -->
           <button
             class="nav-menu-item"
             @click="toggleTheme"
@@ -80,7 +78,7 @@
           </div>
         </div>
 
-        <!-- 使用 ConversationList 组件 - 修复导入 -->
+        <!-- 使用 ConversationList 组件 -->
         <ConversationList @conversation-click="handleConversationClick" />
       </div>
 
@@ -114,7 +112,6 @@
         />
 
         <!-- 聊天组件（当有选中会话且视图为chat时显示） -->
-        <!-- 修复：使用新的conversationStore -->
         <ChatContainer
           v-else-if="currentView === 'chat' && currentConversationId"
           :conv-id="currentConversationId"
@@ -161,378 +158,276 @@
   </div>
 </template>
 
-<script>
-// 导入部分 - 修复Store导入
-import { useThemeStore } from "@/stores/theme";
+<script setup>
+import { ref, computed, onMounted, reactive } from "vue";
 import { useRouter } from "vue-router";
+import { useThemeStore } from "@/stores/theme";
 import { useAuthStore } from "@/stores/auth";
-// 使用新的Store
 import { useConversationStore } from "@/stores/chat/show-conversation";
 import { useMessageStore } from "@/stores/chat/show-message";
 import ProfileEdit from "@/components/ProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
-// 修复组件导入 - 确保路径正确
 import ChatContainer from "@/components/ChatContainer.vue";
 import ConversationList from "@/components/ConversationList.vue";
 
-export default {
-  name: "HomeView",
-  components: {
-    ProfileEdit,
-    MoreOptions,
-    ChangePassword,
-    ChatContainer,
-    ConversationList,
-  },
+// 初始化 store 和 router
+const themeStore = useThemeStore();
+const authStore = useAuthStore();
+const conversationStore = useConversationStore();
+const messageStore = useMessageStore();
+const router = useRouter();
 
-  setup() {
-    const themeStore = useThemeStore();
-    const authStore = useAuthStore();
-    const conversationStore = useConversationStore();
-    const messageStore = useMessageStore();
-    const router = useRouter();
+// 响应式数据
+const userId = ref("");
+const userNickname = ref("用户");
+const currentUserAvatar = ref("");
+const avatarLoadError = ref(false);
+const currentView = ref("chat"); // 当前视图：'chat', 'profile', 'more', 'password'
+const showSuccessMessage = ref(false);
+const successMessage = ref("");
 
-    const themeIcon = () => (themeStore.isDarkMode ? "🌞" : "🌙");
-    const themeTitle = () =>
-      themeStore.isDarkMode ? "切换到日间模式" : "切换到夜间模式";
+// 编辑表单数据
+const editForm = reactive({
+  userId: "",
+  userNickname: "",
+  userAvatar: "",
+  userGender: 0,
+  userBirthday: "",
+  userLocation: "",
+  userSignature: "",
+  userPhone: "",
+  userEmail: "",
+});
 
-    const toggleTheme = () => {
-      themeStore.toggleTheme();
-    };
+// 计算属性
+const themeIcon = computed(() => (themeStore.isDarkMode ? "🌞" : "🌙"));
+const themeTitle = computed(() =>
+  themeStore.isDarkMode ? "切换到日间模式" : "切换到夜间模式"
+);
 
-    return {
-      themeStore,
-      authStore,
-      conversationStore,
-      messageStore,
-      router,
-      themeIcon,
-      themeTitle,
-      toggleTheme,
-    };
-  },
+const currentConversationId = computed(() => {
+  return conversationStore.currentConversation?.convId || null;
+});
 
-  computed: {
-    // 主题相关计算属性
-    themeIcon() {
-      return this.themeStore?.isDarkMode ? "🌞" : "🌙";
-    },
+const currentConversationName = computed(() => {
+  const currentConv = conversationStore.currentConversation;
+  return currentConv?.convName || `会话 ${currentConversationId.value}`;
+});
 
-    themeTitle() {
-      return this.themeStore?.isDarkMode ? "切换到日间模式" : "切换到夜间模式";
-    },
+const currentConversationAvatar = computed(() => {
+  const currentConv = conversationStore.currentConversation;
+  return currentConv?.convAvatar || "";
+});
 
-    // 从新的 conversation store 获取当前会话ID
-    currentConversationId() {
-      return this.conversationStore.currentConversation?.convId || null;
-    },
+const isGroupChat = computed(() => {
+  return conversationStore.currentConversation?.convType === 2;
+});
 
-    // 当前会话名称
-    currentConversationName() {
-      const currentConv = this.conversationStore.currentConversation;
-      return currentConv?.convName || `会话 ${this.currentConversationId}`;
-    },
-
-    // 当前会话头像
-    currentConversationAvatar() {
-      const currentConv = this.conversationStore.currentConversation;
-      return currentConv?.convAvatar || "";
-    },
-
-    // 是否为群聊
-    isGroupChat() {
-      return this.conversationStore.currentConversation?.convType === 2;
-    },
-  },
-
-  data() {
-    return {
-      // 用户数据
-      userId: "",
-      userNickname: "用户",
-      lastLoginTime: "",
-      currentUserAvatar: "",
-      avatarLoadError: false,
-
-      // 视图状态管理
-      currentView: "chat", // 当前MCA显示的视图，可选值：'chat', 'profile', 'more', 'password'
-
-      // 编辑表单数据
-      editForm: {
-        userId: "",
-        userNickname: "",
-        userAvatar: "",
-        userGender: 0,
-        userBirthday: "",
-        userLocation: "",
-        userSignature: "",
-        userPhone: "",
-        userEmail: "",
-      },
-
-      // 提示消息
-      showSuccessMessage: false,
-      successMessage: "",
-    };
-  },
-
-  mounted() {
-    this.loadUserData();
-    console.log("HomeView mounted, initial view:", this.currentView);
-
-    // 加载会话列表
-    this.loadConversations();
-  },
-
-  methods: {
-    // ==================== 会话加载 ====================
-    async loadConversations() {
-      try {
-        await this.conversationStore.loadConversations();
-        console.log("会话列表加载完成");
-      } catch (error) {
-        console.error("加载会话列表失败:", error);
-      }
-    },
-
-    // ==================== 视图切换方法 ====================
-
-    /**
-     * 前往聊天界面
-     * 核心功能：无论当前显示什么，都切换到聊天视图
-     */
-    goToChat() {
-      console.log("点击聊天按钮，切换到聊天视图");
-      this.currentView = "chat";
-    },
-
-    /**
-     * 进入编辑模式（用户资料）
-     */
-    enterEditMode() {
-      console.log("进入用户资料编辑模式");
-      this.currentView = "profile";
-      this.loadUserData(); // 重新加载用户数据确保最新
-    },
-
-    /**
-     * 退出编辑模式
-     */
-    exitEditMode() {
-      console.log("退出用户资料编辑模式，返回聊天视图");
-      this.currentView = "chat";
-    },
-
-    /**
-     * 显示更多选项
-     */
-    showMoreOptions() {
-      console.log("显示更多设置");
-      this.currentView = "more";
-    },
-
-    /**
-     * 显示修改密码页面
-     */
-    showChangePassword() {
-      console.log("显示修改密码页面");
-      this.currentView = "password";
-    },
-
-    /**
-     * 返回主菜单（从更多设置返回）
-     */
-    backToMainMenu() {
-      console.log("从更多设置返回聊天视图");
-      this.currentView = "chat";
-    },
-
-    /**
-     * 返回账号安全菜单（从修改密码返回更多设置）
-     */
-    backToAccountSecurity() {
-      console.log("从修改密码返回更多设置");
-      this.currentView = "more";
-    },
-
-    // ==================== 头像相关方法 ====================
-
-    // 头像加载失败处理
-    handleAvatarError() {
-      console.log("头像加载失败，使用默认头像");
-      this.avatarLoadError = true;
-    },
-
-    // ==================== 用户数据方法 ====================
-
-    // 加载用户数据
-    loadUserData() {
-      const userStr = sessionStorage.getItem("user");
-      console.log("loadUserData调用, sessionStorage:", userStr);
-
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          this.userId = user.userId || "";
-          this.userNickname = user.userNickname || "用户";
-          this.lastLoginTime = user.lastLoginTime || "";
-
-          // 处理头像URL
-          let avatarUrl = user.userAvatar || "";
-          avatarUrl = this.processAvatarUrl(avatarUrl);
-          this.currentUserAvatar = avatarUrl;
-
-          // 初始化编辑表单
-          this.editForm = {
-            userId: user.userId || "",
-            userNickname: user.userNickname || "",
-            userAvatar: avatarUrl,
-            userGender: user.userGender || 0,
-            userBirthday: this.formatDateForInput(user.userBirthday),
-            userLocation: user.userLocation || "",
-            userSignature: user.userSignature || "",
-            userPhone: user.userPhone || "",
-            userEmail: user.userEmail || "",
-          };
-
-          console.log("用户数据加载完成");
-        } catch (e) {
-          console.error("解析用户信息失败:", e);
-        }
-      } else {
-        console.log("sessionStorage中没有用户数据");
-      }
-    },
-
-    // 处理头像URL
-    processAvatarUrl(avatarUrl) {
-      if (!avatarUrl || avatarUrl === "") {
-        return "";
-      }
-
-      if (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:image/")) {
-        return avatarUrl;
-      }
-
-      avatarUrl = avatarUrl.trim();
-
-      if (!avatarUrl.startsWith("/")) {
-        avatarUrl = "/" + avatarUrl;
-      }
-
-      return "http://localhost:8081" + avatarUrl;
-    },
-
-    formatDateForInput(dateString) {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      return date.toISOString().split("T")[0];
-    },
-
-    // ==================== 会话相关方法 ====================
-
-    // 处理会话点击
-    handleConversationClick(convId) {
-      console.log("HomeView: 收到会话点击事件，convId:", convId);
-
-      // 确保convId是数字
-      const id = Number(convId);
-      if (isNaN(id)) {
-        console.error("无效的会话ID:", convId);
-        return;
-      }
-
-      console.log("HomeView: 设置当前会话ID:", id);
-      this.conversationStore.setCurrentConversation(id);
-
-      // 点击会话时自动切换到聊天视图
-      this.currentView = "chat";
-
-      // 重置消息列表
-      this.messageStore.resetMessages();
-    },
-
-    // 清除当前会话
-    clearCurrentConversation() {
-      this.conversationStore.clearCurrentConversation();
-      this.messageStore.resetMessages();
-    },
-
-    // ==================== 事件处理方法 ====================
-
-    // 处理密码修改成功
-    handlePasswordSuccess(message) {
-      this.backToAccountSecurity();
-      // this.showSuccessToast(message);
-    },
-
-    // 处理用户数据更新
-    handleUserDataUpdate(updatedData) {
-      Object.assign(this.editForm, updatedData);
-      this.userNickname = updatedData.userNickname;
-
-      const userStr = sessionStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        Object.assign(user, updatedData);
-        sessionStorage.setItem("user", JSON.stringify(user));
-
-        const avatarUrl = this.processAvatarUrl(updatedData.userAvatar);
-        this.currentUserAvatar = avatarUrl;
-      }
-    },
-
-    // 处理编辑成功
-    handleEditSuccess(message) {
-      // this.showSuccessToast(message);
-      // 编辑成功后自动返回聊天视图
-      this.currentView = "chat";
-    },
-
-    // ==================== 工具方法 ====================
-
-    // showSuccessToast(message) {
-    //   this.successMessage = message;
-    //   this.showSuccessMessage = true;
-
-    //   setTimeout(() => {
-    //     this.showSuccessMessage = false;
-    //   }, 2000);
-    // },
-
-    // 开始新聊天
-    startNewChat() {
-      alert("开始新聊天功能开发中...");
-    },
-
-    // 登出方法 - 修复
-    async handleLogout() {
-      if (confirm("确定要退出登录吗？")) {
-        try {
-          // 清除所有Store状态
-          this.conversationStore.resetConversations();
-          this.messageStore.resetMessages();
-          this.messageStore.clearAvatarCache();
-
-          // 调用authStore的登出方法
-          await this.authStore.logout();
-
-          // 跳转到登录页
-          this.router.push("/");
-        } catch (error) {
-          console.error("登出失败:", error);
-          alert("登出失败，请重试");
-        }
-      }
-    },
-  },
+// 主题切换
+const toggleTheme = () => {
+  themeStore.toggleTheme();
 };
+
+// 视图切换方法
+const goToChat = () => {
+  console.log("点击聊天按钮，切换到聊天视图");
+  currentView.value = "chat";
+};
+
+const enterEditMode = () => {
+  console.log("进入用户资料编辑模式");
+  currentView.value = "profile";
+  loadUserData();
+};
+
+const exitEditMode = () => {
+  console.log("退出用户资料编辑模式，返回聊天视图");
+  currentView.value = "chat";
+};
+
+const showMoreOptions = () => {
+  console.log("显示更多设置");
+  currentView.value = "more";
+};
+
+const showChangePassword = () => {
+  console.log("显示修改密码页面");
+  currentView.value = "password";
+};
+
+const backToMainMenu = () => {
+  console.log("从更多设置返回聊天视图");
+  currentView.value = "chat";
+};
+
+const backToAccountSecurity = () => {
+  console.log("从修改密码返回更多设置");
+  currentView.value = "more";
+};
+
+// 头像相关方法
+const handleAvatarError = () => {
+  console.log("头像加载失败，使用默认头像");
+  avatarLoadError.value = true;
+};
+
+// 用户数据方法
+const loadUserData = () => {
+  const userStr = sessionStorage.getItem("user");
+  console.log("loadUserData调用, sessionStorage:", userStr);
+
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      userId.value = user.userId || "";
+      userNickname.value = user.userNickname || "用户";
+
+      // 处理头像URL
+      let avatarUrl = user.userAvatar || "";
+      avatarUrl = processAvatarUrl(avatarUrl);
+      currentUserAvatar.value = avatarUrl;
+
+      // 初始化编辑表单
+      Object.assign(editForm, {
+        userId: user.userId || "",
+        userNickname: user.userNickname || "",
+        userAvatar: avatarUrl,
+        userGender: user.userGender || 0,
+        userBirthday: formatDateForInput(user.userBirthday),
+        userLocation: user.userLocation || "",
+        userSignature: user.userSignature || "",
+        userPhone: user.userPhone || "",
+        userEmail: user.userEmail || "",
+      });
+
+      console.log("用户数据加载完成");
+    } catch (e) {
+      console.error("解析用户信息失败:", e);
+    }
+  } else {
+    console.log("sessionStorage中没有用户数据");
+  }
+};
+
+const processAvatarUrl = (avatarUrl) => {
+  if (!avatarUrl || avatarUrl === "") {
+    return "";
+  }
+
+  if (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:image/")) {
+    return avatarUrl;
+  }
+
+  avatarUrl = avatarUrl.trim();
+
+  if (!avatarUrl.startsWith("/")) {
+    avatarUrl = "/" + avatarUrl;
+  }
+
+  return "http://localhost:8081" + avatarUrl;
+};
+
+const formatDateForInput = (dateString) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toISOString().split("T")[0];
+};
+
+// 会话相关方法
+const handleConversationClick = (convId) => {
+  console.log("HomeView: 收到会话点击事件，convId:", convId);
+
+  const id = Number(convId);
+  if (isNaN(id)) {
+    console.error("无效的会话ID:", convId);
+    return;
+  }
+
+  console.log("HomeView: 设置当前会话ID:", id);
+  conversationStore.setCurrentConversation(id);
+  currentView.value = "chat";
+  messageStore.resetMessages();
+};
+
+const clearCurrentConversation = () => {
+  conversationStore.clearCurrentConversation();
+  messageStore.resetMessages();
+};
+
+const loadConversations = async () => {
+  try {
+    await conversationStore.loadConversations();
+    console.log("会话列表加载完成");
+  } catch (error) {
+    console.error("加载会话列表失败:", error);
+  }
+};
+
+// 事件处理方法
+const handlePasswordSuccess = (message) => {
+  backToAccountSecurity();
+};
+
+const handleUserDataUpdate = (updatedData) => {
+  Object.assign(editForm, updatedData);
+  userNickname.value = updatedData.userNickname;
+
+  const userStr = sessionStorage.getItem("user");
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    Object.assign(user, updatedData);
+    sessionStorage.setItem("user", JSON.stringify(user));
+
+    const avatarUrl = processAvatarUrl(updatedData.userAvatar);
+    currentUserAvatar.value = avatarUrl;
+  }
+};
+
+const handleEditSuccess = (message) => {
+  currentView.value = "chat";
+};
+
+// 工具方法
+const startNewChat = () => {
+  alert("开始新聊天功能开发中...");
+};
+
+// 核心登出方法 - 使用 Composition API
+const handleLogout = async () => {
+  if (confirm("确定要退出登录吗？")) {
+    try {
+      console.log("🚪 开始登出流程...");
+
+      // 1. 清除会话和消息数据
+      console.log("🧹 清理会话数据...");
+      conversationStore.resetConversations();
+      messageStore.resetMessages();
+
+      // 2. 清除认证状态
+      console.log("🔐 清除认证状态...");
+      authStore.logout();
+
+      // 3. 跳转到登录页
+      console.log("🔄 跳转到登录页...");
+      router.push("/");
+    } catch (error) {
+      console.error("❌ 登出失败:", error);
+      alert("登出失败，请重试");
+    }
+  }
+};
+
+// 生命周期钩子
+onMounted(() => {
+  loadUserData();
+  console.log("HomeView mounted, initial view:", currentView.value);
+  loadConversations();
+});
 </script>
 
 <style scoped>
 /* 引入基础样式和组件专用样式 */
 @import "@/assets/styles/base.css";
 @import "@/assets/styles/homeview.css";
-@import "@/assets/styles/scrollbar.css";
 </style>

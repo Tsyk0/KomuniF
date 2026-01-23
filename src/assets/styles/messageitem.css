@@ -1,0 +1,217 @@
+/* MessageItem 组件样式 - 白天模式 */
+
+/* 消息项基础容器 */
+.message-item {
+  margin: 8px 0;
+  padding: 0 16px;
+  display: flex;
+}
+
+/* 消息包装器 */
+.message-wrapper {
+  display: flex;
+  align-items: flex-start;
+  max-width: 100%;
+  animation: messageAppear 0.3s ease-out;
+}
+
+/* 左侧布局 - 他人消息：左对齐 */
+.message-left {
+  justify-content: flex-start;
+}
+
+/* 右侧布局 - 我的消息：始终右对齐并顶贴右侧 */
+.message-right {
+  justify-content: flex-end;
+  width: 100%;
+}
+
+/* 头像区域 - 添加特异性标签避免与profile-edit冲突 */
+.message-item .avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 50px;
+  transition: transform 0.2s ease;
+}
+
+.message-item .avatar-section:hover {
+  transform: scale(1.05);
+}
+
+/* 他人消息：头像在左侧 */
+.message-item .avatar-section.left {
+  margin-right: 8px;
+}
+
+/* 我的消息：头像在右侧并顶贴 */
+.message-item .avatar-section.right {
+  margin-left: 8px;
+  order: 1; /* 确保头像在右侧 */
+}
+
+/* 圆形头像占位符 */
+.message-item .avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin-bottom: 4px;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.message-item .avatar-placeholder::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.message-item .avatar-placeholder:hover::after {
+  opacity: 1;
+}
+
+/* 自己发送的头像颜色 */
+.message-sent .avatar-placeholder {
+  background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
+  box-shadow: 0 4px 12px rgba(0, 132, 255, 0.3);
+}
+
+/* 显示名称 */
+.message-item .display-name {
+  font-size: 11px;
+  color: #666666;
+  text-align: center;
+  max-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+  transition: color 0.2s ease;
+  font-weight: 500;
+}
+
+/* 消息气泡 */
+.message-bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  word-break: break-word;
+  position: relative;
+  min-width: 60px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.message-bubble::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* 接收方气泡：宽度自适应，不超过70% */
+.received {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  border-top-left-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08),
+              0 1px 3px rgba(0, 0, 0, 0.1) inset,
+              1px 1px 0 rgba(255, 255, 255, 0.5) inset;
+  max-width: 70%;
+}
+
+.received:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12),
+              0 1px 3px rgba(0, 0, 0, 0.1) inset,
+              1px 1px 0 rgba(255, 255, 255, 0.5) inset;
+  transform: translateY(-1px);
+}
+
+/* 发送方气泡：始终顶贴右侧，宽度自适应 */
+.sent {
+  background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
+  color: white;
+  border-top-right-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 132, 255, 0.3),
+              0 1px 3px rgba(0, 0, 0, 0.1) inset,
+              -1px 1px 0 rgba(255, 255, 255, 0.3) inset;
+  margin-left: auto; /* 关键：确保气泡在容器内右对齐 */
+  margin-right: 0;
+}
+
+.sent:hover {
+  box-shadow: 0 4px 16px rgba(0, 132, 255, 0.4),
+              0 1px 3px rgba(0, 0, 0, 0.1) inset,
+              -1px 1px 0 rgba(255, 255, 255, 0.3) inset;
+  transform: translateY(-1px);
+}
+
+/* 消息文本 */
+.message-text {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+/* 发送方消息文本阴影 */
+.sent .message-text {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+/* 消息时间 */
+.message-time {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 11px;
+  opacity: 0.8;
+  font-weight: 400;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  transition: opacity 0.2s ease;
+}
+
+.message-bubble:hover .message-time {
+  opacity: 1;
+}
+
+/* 发送方时间颜色 */
+.sent .message-time {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+/* 接收方时间颜色 */
+.received .message-time {
+  color: #666666;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+/* 动画效果 */
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

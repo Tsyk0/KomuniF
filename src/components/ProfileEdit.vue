@@ -420,6 +420,5 @@ export default {
 /* 使用外部样式 */
 @import "@/assets/styles/base.css";
 @import "@/assets/styles/profile-edit.css";
-@import "@/assets/styles/scrollbar.css";
 /* 移除toast.css的导入，因为使用独立的toast服务 */
 </style>

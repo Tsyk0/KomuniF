@@ -93,8 +93,8 @@ html.night-mode .homeview .sidebar-header {
   transition: background-color 0.2s;
 }
 
-/* 用户资料区域 */
-html.night-mode .homeview .user-profile {
+/* 用户资料区域 - 增加特异性，避免影响ConversationItem */
+html.night-mode .homeview .sidebar-header .user-profile {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -105,7 +105,7 @@ html.night-mode .homeview .user-profile {
   position: relative;
 }
 
-html.night-mode .homeview .user-profile:hover {
+html.night-mode .homeview .sidebar-header .user-profile:hover {
   background: linear-gradient(
     135deg,
     rgba(96, 165, 250, 0.15),
@@ -115,20 +115,20 @@ html.night-mode .homeview .user-profile:hover {
   box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
 }
 
-html.night-mode .homeview .user-profile:hover .avatar-placeholder {
+html.night-mode .homeview .sidebar-header .user-profile:hover .avatar-placeholder {
   transform: scale(1.05);
 }
 
-html.night-mode .homeview .user-profile:hover .user-name {
+html.night-mode .homeview .sidebar-header .user-profile:hover .user-name {
   color: #60a5fa;
 }
 
-html.night-mode .homeview .user-profile:active {
+html.night-mode .homeview .sidebar-header .user-profile:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(96, 165, 250, 0.2);
 }
 
-html.night-mode .homeview .user-profile::after {
+html.night-mode .homeview .sidebar-header .user-profile::after {
   content: "✏️";
   position: absolute;
   right: 10px;
@@ -139,11 +139,12 @@ html.night-mode .homeview .user-profile::after {
   font-size: 14px;
 }
 
-html.night-mode .homeview .user-profile:hover::after {
+html.night-mode .homeview .sidebar-header .user-profile:hover::after {
   opacity: 1;
 }
 
-html.night-mode .homeview .avatar-placeholder {
+/* 关键修改：增加特异性，避免影响ConversationItem的avatar-placeholder */
+html.night-mode .homeview .sidebar-header .avatar-placeholder {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -158,9 +159,12 @@ html.night-mode .homeview .avatar-placeholder {
   overflow: hidden;
   position: relative;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: none;
+  /* 确保没有margin-bottom影响布局 */
+  margin-bottom: 0 !important;
 }
 
-html.night-mode .homeview .avatar-placeholder img {
+html.night-mode .homeview .sidebar-header .avatar-placeholder img {
   position: absolute;
   top: 0;
   left: 0;
@@ -169,23 +173,23 @@ html.night-mode .homeview .avatar-placeholder img {
   object-fit: cover;
 }
 
-html.night-mode .homeview .avatar-placeholder span {
+html.night-mode .homeview .sidebar-header .avatar-placeholder span {
   position: relative;
   z-index: 1;
 }
 
-html.night-mode .homeview .avatar-img-small {
+html.night-mode .homeview .sidebar-header .avatar-img-small {
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
 }
 
-html.night-mode .homeview .user-info {
+html.night-mode .homeview .sidebar-header .user-info {
   flex: 1;
 }
 
-html.night-mode .homeview .user-name {
+html.night-mode .homeview .sidebar-header .user-name {
   font-weight: 600;
   color: #e2e8f0;
   font-size: 16px;
@@ -193,12 +197,12 @@ html.night-mode .homeview .user-name {
   transition: color 0.3s ease;
 }
 
-html.night-mode .homeview .user-status {
+html.night-mode .homeview .sidebar-header .user-status {
   font-size: 12px;
   color: #94a3b8;
 }
 
-html.night-mode .homeview .user-status.online {
+html.night-mode .homeview .sidebar-header .user-status.online {
   color: #4ade80;
 }
 
@@ -376,14 +380,14 @@ html.night-mode .homeview .loading-state {
   align-items: center;
   justify-content: center;
   padding: 40px 0;
-  color: #94a3b8; /* 夜晚模式的次要文字颜色 */
+  color: #94a3b8;
 }
 
 html.night-mode .homeview .loading-spinner {
   width: 30px;
   height: 30px;
-  border: 3px solid #334155; /* 夜晚模式的边框颜色 */
-  border-top-color: #60a5fa; /* 夜晚模式的主色调 */
+  border: 3px solid #334155;
+  border-top-color: #60a5fa;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 10px;
@@ -400,7 +404,7 @@ html.night-mode .homeview .error-state {
   align-items: center;
   justify-content: center;
   padding: 40px 0;
-  color: #f87171; /* 夜晚模式的错误颜色 */
+  color: #f87171;
   text-align: center;
 }
 
@@ -412,7 +416,7 @@ html.night-mode .homeview .error-icon {
 html.night-mode .homeview .retry-btn {
   margin-top: 10px;
   padding: 6px 16px;
-  background-color: #3b82f6; /* 夜晚模式的按钮背景色 */
+  background-color: #3b82f6;
   color: white;
   border: none;
   border-radius: 4px;
@@ -422,7 +426,7 @@ html.night-mode .homeview .retry-btn {
 }
 
 html.night-mode .homeview .retry-btn:hover {
-  background-color: #2563eb; /* 夜晚模式按钮悬停颜色 */
+  background-color: #2563eb;
 }
 
 /* 会话容器 - 夜晚模式 */
@@ -431,7 +435,7 @@ html.night-mode .homeview .conversations-container {
   overflow-y: auto;
 }
 
-/* 空状态 - 夜晚模式（覆盖已有样式） */
+/* 空状态 - 夜晚模式 */
 html.night-mode .homeview .empty-conversation {
   display: flex;
   flex-direction: column;
@@ -445,41 +449,21 @@ html.night-mode .homeview .empty-icon {
   font-size: 48px;
   margin-bottom: 16px;
   opacity: 0.5;
-  color: #64748b; /* 夜晚模式的图标颜色 */
+  color: #64748b;
 }
 
 html.night-mode .homeview .empty-text {
   font-size: 16px;
-  color: #cbd5e1; /* 夜晚模式的文字颜色 */
+  color: #cbd5e1;
   margin-bottom: 8px;
   font-weight: 600;
 }
 
 html.night-mode .homeview .empty-hint {
   font-size: 14px;
-  color: #94a3b8; /* 夜晚模式的提示文字颜色 */
+  color: #94a3b8;
 }
 
-
-
-/* 滚动条样式 - 夜晚模式 */
-html.night-mode .homeview .conversations-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-html.night-mode .homeview .conversations-container::-webkit-scrollbar-track {
-  background: rgba(30, 30, 30, 0.3);
-  border-radius: 3px;
-}
-
-html.night-mode .homeview .conversations-container::-webkit-scrollbar-thumb {
-  background: #475569; /* 夜晚模式的滚动条颜色 */
-  border-radius: 3px;
-}
-
-html.night-mode .homeview .conversations-container::-webkit-scrollbar-thumb:hover {
-  background: #64748b; /* 夜晚模式的滚动条悬停颜色 */
-}
 
 /* ========== 搜索框样式（夜晚模式） ========== */
 html.night-mode .homeview .search-container {

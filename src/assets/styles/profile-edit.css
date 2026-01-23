@@ -46,7 +46,7 @@
   align-items: center;
   flex-shrink: 0;
   padding: 30px;
-  border-right: 1px solid rgba(240, 240, 240, 0.8);
+  border: none;
   overflow-y: auto;
   height: 100%;
   box-sizing: border-box;
@@ -62,14 +62,14 @@
   margin-bottom: 20px;
   transition: transform 0.3s ease;
   flex-shrink: 0;
-  border: 3px solid #e0e0e0;
+  border: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }
 
 .profile-edit .avatar-display:hover {
-  transform: scale(1.02);
-  border-color: #007aff;
+  border: none;
+
 }
 
 .profile-edit .avatar-img-container {
@@ -100,6 +100,7 @@
   color: white;
   font-weight: bold;
   font-size: 16px;
+  border:none;
 }
 
 .profile-edit .avatar-display:hover .avatar-overlay {
@@ -117,6 +118,8 @@
   color: white;
   font-size: 60px;
   font-weight: bold;
+  border:none;
+
 }
 
 .profile-edit .upload-hint {
@@ -204,16 +207,24 @@
 }
 
 /* 特别针对输入框聚焦状态 */
+/* 集中管理 focus 和 hover 状态 */
 .profile-edit input:focus,
+.profile-edit input:hover,
 .profile-edit textarea:focus,
+.profile-edit textarea:hover,
 .profile-edit .el-input:focus,
+.profile-edit .el-input:hover,
 .profile-edit .el-textarea:focus,
-.profile-edit input[type="date"]:focus {
+.profile-edit .el-textarea:hover,
+.profile-edit input[type="date"]:focus,
+.profile-edit input[type="date"]:hover,
+/* 原有的全局 hover 样式 */
+.el-input:hover,
+.el-textarea:hover {
   outline: none;
   border-color: #007aff;
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
-
 /* 特别针对 textarea */
 .profile-edit .el-textarea {
   width: 100%;
@@ -241,7 +252,6 @@
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
@@ -336,7 +346,6 @@
 /* 取消/重置按钮 */
 .profile-edit .cancel-btn {
   padding: 14px 28px;
-  border: none;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
@@ -350,7 +359,7 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  color: #333;
+  color: #333333;
   border: 1px solid #e0e0e0;
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.8);
@@ -359,8 +368,7 @@
 .profile-edit .cancel-btn:hover {
   background: rgba(255, 255, 255, 0.9);
   color: #ff3b30;
-  border-color: #ff3b30;
-  transform: translateY(-1px);
+  border: 1px solid #ff3b30;
   box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
 }
 

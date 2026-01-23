@@ -202,15 +202,6 @@ html.night-mode .placeholder-text {
   color: #cbd5e1;
 }
 
-/* 滚动条样式 - 夜晚模式 */
-html.night-mode .messages-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-html.night-mode .messages-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
 /* 加载状态 - 夜晚模式 */
 html.night-mode .chat-loading {
   color: #94a3b8;

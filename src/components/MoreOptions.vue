@@ -131,5 +131,4 @@ export default {
 <style scoped>
 @import "@/assets/styles/base.css";
 @import "@/assets/styles/more-options.css";
-@import "@/assets/styles/scrollbar.css";
 </style>

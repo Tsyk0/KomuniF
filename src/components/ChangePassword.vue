@@ -259,5 +259,4 @@ export default {
 <style scoped>
 @import "@/assets/styles/base.css";
 @import "@/assets/styles/change-password.css";
-@import "@/assets/styles/scrollbar.css";
 </style>

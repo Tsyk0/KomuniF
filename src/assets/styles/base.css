@@ -235,7 +235,7 @@ html, body {
 .el-input {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #d1d5db;
+  border: 1px solid rgba(224, 224, 224, 0.8);
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.2s;
@@ -256,6 +256,13 @@ html, body {
   color: #6b7280;
   cursor: not-allowed;
   border-color: #e5e7eb;
+}
+
+
+.el-input:hover {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .error-message {

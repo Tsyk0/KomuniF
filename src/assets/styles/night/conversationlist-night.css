@@ -5,6 +5,7 @@ html.night-mode .conversation-list {
   flex-direction: column;
   background: #1a1a1a;
   position: relative;
+  flex: 1;
 }
 
 /* 搜索框 - 修复：移除search-box的border，只保留input的border */
@@ -18,6 +19,7 @@ html.night-mode .conversation-list .search-box {
   box-sizing: border-box;
   /* 移除border-bottom，避免双层边框 */
   border: none;
+  flex-shrink: 0; /* 防止搜索框被压缩 */
 }
 
 html.night-mode .conversation-list .search-icon {
@@ -103,6 +105,7 @@ html.night-mode .conversation-list .loading-state {
   padding: 60px 20px;
   background: #1a1a1a;
   text-align: center;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 html.night-mode .conversation-list .loading-spinner {
@@ -140,6 +143,7 @@ html.night-mode .conversation-list .error-state {
   padding: 60px 20px;
   background: #1a1a1a;
   text-align: center;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 html.night-mode .conversation-list .error-icon {
@@ -191,6 +195,7 @@ html.night-mode .conversation-list .no-results {
   padding: 60px 20px;
   background: #1a1a1a;
   text-align: center;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 html.night-mode .conversation-list .no-results-icon {
@@ -224,6 +229,7 @@ html.night-mode .conversation-list .empty-conversation {
   padding: 60px 20px;
   background: #1a1a1a;
   text-align: center;
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 html.night-mode .conversation-list .empty-icon {
@@ -247,33 +253,17 @@ html.night-mode .conversation-list .empty-hint {
   max-width: 80%;
 }
 
-/* 会话列表容器 */
+/* 会话列表容器 - 关键修改：确保正确垂直滚动 */
 html.night-mode .conversation-list .conversations-container {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1; /* 关键：占据剩余空间 */
+  overflow-y: auto; /* 垂直滚动 */
+  overflow-x: hidden; /* 隐藏水平滚动 */
   padding: 0;
   background: #1a1a1a;
+  min-height: 0; /* 关键：允许在flex容器中滚动 */
+  height: 0; /* 关键：强制flex容器计算可用高度 */
 }
 
-/* 滚动条样式 */
-html.night-mode .conversation-list .conversations-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-html.night-mode .conversation-list .conversations-container::-webkit-scrollbar-track {
-  background: #2d2d2d;
-  border-radius: 3px;
-}
-
-html.night-mode .conversation-list .conversations-container::-webkit-scrollbar-thumb {
-  background: #555555;
-  border-radius: 3px;
-  transition: background 0.2s ease;
-}
-
-html.night-mode .conversation-list .conversations-container::-webkit-scrollbar-thumb:hover {
-  background: #666666;
-}
 
 /* 动画 */
 html.night-mode .conversation-list .fade-enter-active {

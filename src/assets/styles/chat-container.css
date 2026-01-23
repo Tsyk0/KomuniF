@@ -188,7 +188,6 @@
 /* 普通消息 */
 .message-item {
   display: flex;
-  margin-bottom: 4px;
 }
 
 .message-item.sent {
@@ -461,19 +460,7 @@
   font-weight: 500;
 }
 
-/* 滚动条样式 */
-.messages-container::-webkit-scrollbar {
-  width: 4px;
-}
 
-.messages-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 2px;
-}
 
 /* 工具按钮样式 */
 .tool-button {
