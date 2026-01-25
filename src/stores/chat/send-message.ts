@@ -8,6 +8,7 @@ import type { SendMessageResponseData } from '@/types/form/message-response-data
 import sendMessageApi from '@/apis/chat/message-send';
 import { ref } from 'vue';
 import { useWebSocketStore } from './websocket-store';
+import type { DisplayMessage } from '@/entity/message'; // 新增导入
 
 export const useSendMessageStore = defineStore('sendMessage', () => {
   const webSocketStore = useWebSocketStore();

@@ -4,7 +4,6 @@ export interface SendMessageRequest {
     senderId: number;
     messageType: string;
     messageContent: string;
-    receiverId?: number;
     replyToMessageId?: number;
     atUserIds?: number[];
 }

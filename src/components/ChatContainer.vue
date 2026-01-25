@@ -101,14 +101,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from "vue";
-import { useMessageStore } from "@/stores/chat/show-message";
-import { useSendMessageStore } from "@/stores/chat/send-message"; // 导入发送消息Store
+import { useShowMessageStore } from "@/stores/chat/show-message";
+import { useSendMessageStore } from "@/stores/chat/send-message";
 import { useAuthStore } from "@/stores/auth";
 import MessageItem from "./MessageItem.vue";
+import type { DisplayMessage } from "@/types/entity/message"; // 更新导入类型
 
 // Store
-const messageStore = useMessageStore();
-const sendMessageStore = useSendMessageStore(); // 发送消息Store
+const showMessageStore = useShowMessageStore();
+const sendMessageStore = useSendMessageStore();
 const authStore = useAuthStore();
 
 // Props
@@ -151,9 +152,9 @@ const canSend = computed(() => {
   );
 });
 
-// 直接使用Store的数据
-const messages = computed(() => messageStore.messages);
-const isLoading = computed(() => messageStore.loading);
+// 使用Store的数据
+const messages = computed(() => showMessageStore.messages);
+const isLoading = computed(() => showMessageStore.loading);
 
 /**
  * 加载消息
@@ -161,8 +162,8 @@ const isLoading = computed(() => messageStore.loading);
 const loadMessages = async () => {
   if (!props.convId) return;
 
-  console.log("触发加载消息，会话ID:", props.convId);
-  await messageStore.loadMessages(props.convId);
+  console.log("ChatContainer: 触发加载消息，会话ID:", props.convId);
+  await showMessageStore.loadMessages(props.convId);
 };
 
 /**
@@ -182,33 +183,65 @@ const sendMessage = async () => {
   try {
     console.log("发送消息:", { convId: props.convId, content });
 
-    // 调用发送消息Store
+    // 1. 创建临时消息
+    const tempMessage: DisplayMessage = {
+      // 数据库基础字段
+      messageId: Date.now(), // 临时ID
+      convId: props.convId,
+      senderId: currentUser.userId,
+      messageType: "text",
+      messageContent: content,
+      messageStatus: 0, // 发送中
+      sendTime: new Date().toISOString(),
+
+      // 显示字段
+      senderName: currentUser.nickname || currentUser.username,
+      senderAvatar: currentUser.avatar || null,
+      isSentByMe: true,
+    };
+
+    // 2. 添加到Store（使用addMessage方法）
+    showMessageStore.addMessage(tempMessage);
+
+    // 3. 清空输入框
+    messageText.value = "";
+    if (messageInputRef.value) {
+      messageInputRef.value.style.height = "auto";
+    }
+
+    // 4. 滚动到底部
+    scrollToBottom();
+
+    // 5. 发送到服务器
     const response = await sendMessageStore.sendTextMessage(
       props.convId,
       currentUser.userId,
       content
     );
 
-    console.log("消息发送成功:", response);
+    console.log("服务器响应:", response);
 
-    // 清空输入框
-    messageText.value = "";
+    // 6. 用服务器消息替换临时消息
+    const serverMessage: DisplayMessage = {
+      ...tempMessage,
+      messageId: response.messageId,
+      messageStatus: response.messageStatus,
+      sendTime: response.sendTime,
+    };
 
-    // 重置输入框高度
-    if (messageInputRef.value) {
-      messageInputRef.value.style.height = "auto";
-    }
+    showMessageStore.replaceTempMessage(tempMessage.messageId, serverMessage);
 
-    // 触发消息发送事件
+    // 7. 触发消息发送事件
     emit("message-sent", response);
-
-    // 可选：重新加载消息列表以显示最新消息
-    // await loadMessages();
-
-    // 可选：自动滚动到底部
-    scrollToBottom();
   } catch (error) {
     console.error("发送消息失败:", error);
+
+    // 标记临时消息为失败状态
+    const tempMessageId = tempMessage?.messageId;
+    if (tempMessageId) {
+      showMessageStore.updateMessageStatus(tempMessageId, 4);
+    }
+
     // TODO: 添加错误提示UI
   }
 };
@@ -217,12 +250,10 @@ const sendMessage = async () => {
  * 处理Enter键发送
  */
 const handleEnterKey = (event: KeyboardEvent) => {
-  // 如果是Enter键（没有Shift）且可以发送
   if (event.key === "Enter" && !event.shiftKey && canSend.value) {
-    event.preventDefault(); // 防止换行
+    event.preventDefault();
     sendMessage();
   }
-  // 如果Shift+Enter，允许换行（不做处理）
 };
 
 /**
@@ -231,9 +262,7 @@ const handleEnterKey = (event: KeyboardEvent) => {
 const handleInputResize = () => {
   nextTick(() => {
     if (messageInputRef.value) {
-      // 重置高度
       messageInputRef.value.style.height = "auto";
-      // 设置新高度（限制最大高度）
       const newHeight = Math.min(messageInputRef.value.scrollHeight, 120);
       messageInputRef.value.style.height = `${newHeight}px`;
     }
@@ -258,17 +287,21 @@ const handleBack = () => emit("back");
 const handleSearch = () => emit("search");
 const handleMenu = () => emit("menu");
 
-// 监听会话ID变化
+// 监听会话ID变化 - 关键修改点
 watch(
   () => props.convId,
-  (newConvId) => {
-    console.log("会话ID变化:", newConvId);
+  (newConvId, oldConvId) => {
+    console.log("ChatContainer: 会话ID变化:", {
+      旧ID: oldConvId,
+      新ID: newConvId,
+    });
+
     if (newConvId) {
       loadMessages();
-      // 清空输入框
       messageText.value = "";
     } else {
-      messageStore.clearMessages();
+      // 当没有会话时，清空消息
+      showMessageStore.clearMessages();
     }
   },
   { immediate: true }
@@ -276,7 +309,7 @@ watch(
 
 // 监听消息列表变化，自动滚动到底部
 watch(
-  () => messageStore.messages,
+  () => showMessageStore.messages,
   () => {
     nextTick(() => {
       scrollToBottom();

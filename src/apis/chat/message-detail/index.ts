@@ -23,8 +23,8 @@ export function getMessageDetailsByConvIdApi(
 export function getMessagesByConvIdApi(
     convId: number,
     currentUserId: number,
-    page: number = 1,
-    pageSize: number = 20
+    page: number = 10,
+    pageSize: number = 100
 ): Promise<GetMessageDetailsResponse> {
     return getMessageDetailsByConvIdApi({
         convId,

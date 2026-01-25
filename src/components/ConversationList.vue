@@ -67,13 +67,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { useConversationStore } from "@/stores/chat/show-conversation";
-import { useMessageStore } from "@/stores/chat/show-message";
+import { useShowMessageStore } from "@/stores/chat/show-message";
 import ConversationItem from "./ConversationItem.vue";
 import type { ConversationDetailDTO } from "@/types/form/conversation-detail";
 
 // Store
 const conversationStore = useConversationStore();
-const messageStore = useMessageStore();
+const showMessageStore = useShowMessageStore();
 
 // 响应式数据
 const searchKeyword = ref("");
@@ -163,22 +163,35 @@ const loadConversations = async () => {
   }
 };
 
-// 处理会话点击
+// 处理会话点击 - 关键修改点
 const handleConversationClick = async (convId: number) => {
   try {
-    // 设置当前会话
+    console.log("ConversationList: 处理会话点击，convId:", convId);
+    console.log("当前会话ID:", currentConversationId.value);
+
+    // 1. 检查是否是切换不同会话
+    const isSwitchingConversation = currentConversationId.value !== convId;
+
+    // 2. 设置当前会话
     conversationStore.setCurrentConversation(convId);
 
-    // 重置消息列表
-    messageStore.resetMessages();
+    // 3. 只有在切换不同会话时才清空消息
+    if (isSwitchingConversation) {
+      console.log("切换不同会话，清空消息");
+      showMessageStore.clearMessages();
+    } else {
+      console.log("点击相同会话，不清空消息");
+    }
 
-    // 加载消息
-    await messageStore.loadMessages(convId);
+    // 4. 加载消息
+    console.log("开始加载消息...");
+    await showMessageStore.loadMessages(convId);
+    console.log("消息加载完成");
 
-    // 标记为已读
+    // 5. 标记为已读
     conversationStore.markAsRead(convId);
 
-    // 触发自定义事件
+    // 6. 触发自定义事件
     emit("conversation-click", convId);
   } catch (error) {
     console.error("切换会话失败:", error);

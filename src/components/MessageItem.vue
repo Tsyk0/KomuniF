@@ -32,10 +32,10 @@
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { useThemeStore } from "@/stores/theme";
-import type { MessageDetailDTO } from "@/types/form/message-detail";
+import type { DisplayMessage } from "@/entity/message"; // 修改导入
 
 interface Props {
-  message: MessageDetailDTO;
+  message: DisplayMessage; // 修改类型
 }
 
 const props = defineProps<Props>();
@@ -48,8 +48,10 @@ const displayName = computed(() => {
   if (isSentByMe.value) {
     return authStore.user?.userNickname || "我";
   } else {
+    // 注意：这里需要根据您的实际字段名调整
+    // 原来的 memberNickname 可能需要映射到 senderName
     return (
-      props.message.memberNickname ||
+      props.message.senderName || // 使用 senderName
       props.message.displayName ||
       `用户${props.message.senderId}`
     );

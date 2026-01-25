@@ -164,7 +164,8 @@ import { useRouter } from "vue-router";
 import { useThemeStore } from "@/stores/theme";
 import { useAuthStore } from "@/stores/auth";
 import { useConversationStore } from "@/stores/chat/show-conversation";
-import { useMessageStore } from "@/stores/chat/show-message";
+import { useShowMessageStore } from "@/stores/chat/show-message";
+import { useSendMessageStore } from "@/stores/chat/send-message";
 import ProfileEdit from "@/components/ProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
@@ -175,7 +176,8 @@ import ConversationList from "@/components/ConversationList.vue";
 const themeStore = useThemeStore();
 const authStore = useAuthStore();
 const conversationStore = useConversationStore();
-const messageStore = useMessageStore();
+const showMessageStore = useShowMessageStore();
+const sendMessageStore = useSendMessageStore();
 const router = useRouter();
 
 // 响应式数据
@@ -183,7 +185,7 @@ const userId = ref("");
 const userNickname = ref("用户");
 const currentUserAvatar = ref("");
 const avatarLoadError = ref(false);
-const currentView = ref("chat"); // 当前视图：'chat', 'profile', 'more', 'password'
+const currentView = ref("chat");
 const showSuccessMessage = ref(false);
 const successMessage = ref("");
 
@@ -334,7 +336,7 @@ const formatDateForInput = (dateString) => {
   return date.toISOString().split("T")[0];
 };
 
-// 会话相关方法
+// 会话相关方法 - 关键修改点
 const handleConversationClick = (convId) => {
   console.log("HomeView: 收到会话点击事件，convId:", convId);
 
@@ -347,12 +349,14 @@ const handleConversationClick = (convId) => {
   console.log("HomeView: 设置当前会话ID:", id);
   conversationStore.setCurrentConversation(id);
   currentView.value = "chat";
-  messageStore.resetMessages();
+  // 重要：删除 resetMessages() 调用，让 ConversationList 统一管理消息
+  // 原本的 showMessageStore.resetMessages(); 已删除
 };
 
 const clearCurrentConversation = () => {
   conversationStore.clearCurrentConversation();
-  messageStore.resetMessages();
+  // 重要：删除 resetMessages() 调用
+  // 原本的 showMessageStore.resetMessages(); 已删除
 };
 
 const loadConversations = async () => {
@@ -393,7 +397,7 @@ const startNewChat = () => {
   alert("开始新聊天功能开发中...");
 };
 
-// 核心登出方法 - 使用 Composition API
+// 核心登出方法
 const handleLogout = async () => {
   if (confirm("确定要退出登录吗？")) {
     try {
@@ -402,7 +406,7 @@ const handleLogout = async () => {
       // 1. 清除会话和消息数据
       console.log("🧹 清理会话数据...");
       conversationStore.resetConversations();
-      messageStore.resetMessages();
+      showMessageStore.resetMessages();
 
       // 2. 清除认证状态
       console.log("🔐 清除认证状态...");
