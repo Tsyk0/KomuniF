@@ -10,8 +10,6 @@ export interface ChatMessage {
     messageStatus: number;         // 消息状态
     sendTime: string;              // 发送时间
     isSentByMe: boolean;           // 是否是我发送的消息（前端计算）
-    isFirstInGroup?: boolean;      // 是否是该发送者的第一条连续消息
-    isLastInGroup?: boolean;       // 是否是该发送者的最后一条连续消息
 }
 
 // 消息类型常量（可选，用于类型安全）

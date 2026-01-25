@@ -12,7 +12,6 @@ export interface ConversationMember {
     joinTime: string;               // 加入时间
     updateTime: string;             // 更新时间
     unreadCount: number;            // 未读消息数
-    lastReadMessageSeq: number | null; // 最后阅读的消息序列号
 }
 
 // 成员角色枚举

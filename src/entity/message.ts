@@ -12,7 +12,6 @@ export interface Message {
     atUserIds?: number[] | null;    // @的用户ID列表
     sendTime: string;               // 发送时间
     recallTime?: string | null;     // 撤回时间
-    convMsgSeq?: number | null;     // 会话内消息序列号
 }
 
 // 消息类型常量

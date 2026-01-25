@@ -22,7 +22,6 @@ export interface ConversationDetailDTO {
   currentMemberCount: number;
   maxMemberCount: number;
   convStatus: number;
-  currentMsgSeq: number;
   
   // 会话成员相关
   privateDisplayName: string | null; // 用户设置的私有显示名称

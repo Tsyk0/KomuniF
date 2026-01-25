@@ -12,7 +12,6 @@ export interface Conversation {
     createTime: string;               // 创建时间
     updateTime: string;               // 更新时间
     enableReadReceipt: number;        // 是否启用消息已读回执：0-禁用，1-启用
-    currentMsgSeq: number;            // 当前消息序列号
 }
 
 // 会话类型枚举

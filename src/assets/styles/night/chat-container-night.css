@@ -226,3 +226,194 @@ html.night-mode .loading-spinner.small {
 html.night-mode .chat-container * {
   box-sizing: border-box;
 }
+
+/* 
+ * chat-input-night.css
+ * 发送消息输入框样式 - 夜晚模式
+ * 注意：结构与行数与白天模式完全一致，只修改颜色
+ */
+
+/* 发送消息容器 */
+.message-input-container {
+  position: relative;
+  border-top: 1px solid #2d3748; /* 修改：夜晚边框色 */
+  background-color: #1a202c; /* 修改：夜晚背景色 */
+  padding: 16px 20px;
+  min-height: 60px;
+  box-sizing: border-box;
+}
+
+/* 输入框包装器 */
+.message-input-container .input-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background-color: #2d3748; /* 修改：夜晚背景色 */
+  border-radius: 24px;
+  padding: 8px 16px;
+  min-height: 44px;
+  border: 1px solid #4a5568; /* 修改：夜晚边框色 */
+  transition: border-color 0.2s ease;
+}
+
+.message-input-container .input-wrapper:focus-within {
+  border-color: #4299e1; /* 修改：夜晚焦点色 */
+  background-color: #2d3748; /* 修改：夜晚背景色 */
+}
+
+/* 左侧功能按钮 */
+.message-input-container .input-left-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 右侧发送按钮 */
+.message-input-container .input-right-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* 通用按钮样式 */
+.message-input-container .action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #a0aec0; /* 修改：夜晚文字色 */
+  font-size: 18px;
+  padding: 0;
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.message-input-container .action-button:hover {
+  background-color: rgba(255, 255, 255, 0.05); /* 修改：夜晚悬停色 */
+  color: #4299e1; /* 修改：夜晚悬停文字色 */
+}
+
+.message-input-container .action-button:active {
+  background-color: rgba(255, 255, 255, 0.1); /* 修改：夜晚点击色 */
+  transform: scale(0.95);
+}
+
+/* 附件按钮 */
+.message-input-container .attachment-button {
+  font-size: 16px;
+}
+
+/* 表情按钮 */
+.message-input-container .emoji-button {
+  font-size: 18px;
+}
+
+/* 发送按钮 */
+.message-input-container .send-button {
+  background-color: #4299e1; /* 修改：夜晚按钮色 */
+  color: white;
+  font-size: 16px;
+}
+
+.message-input-container .send-button:hover {
+  background-color: #3182ce; /* 修改：夜晚悬停色 */
+  color: white;
+}
+
+.message-input-container .send-button:active {
+  background-color: #2b6cb0; /* 修改：夜晚点击色 */
+  transform: scale(0.95);
+}
+
+/* 禁用状态的发送按钮 */
+.message-input-container .send-button.disabled {
+  background-color: #718096; /* 修改：夜晚禁用色 */
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.message-input-container .send-button.disabled:hover {
+  background-color: #718096; /* 修改：夜晚禁用色 */
+  transform: none;
+}
+
+/* 输入框包装器 */
+.message-input-container .message-input-wrapper {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* 文本输入框 */
+.message-input-container .message-input {
+  width: 100%;
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 15px;
+  line-height: 20px;
+  color: #e2e8f0; /* 修改：夜晚文字色 */
+  resize: none;
+  font-family: inherit;
+  padding: 6px 0;
+  max-height: 120px;
+  min-height: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* 修改：夜晚滚动条 */
+}
+
+.message-input-container .message-input::placeholder {
+  color: #a0aec0; /* 修改：夜晚占位符色 */
+}
+
+.message-input-container .message-input:focus {
+  outline: none;
+}
+
+/* 自定义滚动条 */
+.message-input-container .message-input::-webkit-scrollbar {
+  width: 4px;
+}
+
+.message-input-container .message-input::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-input-container .message-input::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2); /* 修改：夜晚滚动条 */
+  border-radius: 2px;
+}
+
+.message-input-container .message-input::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3); /* 修改：夜晚滚动条悬停 */
+}
+
+/* 加载图标 */
+.message-input-container .loading-icon {
+  display: inline-block;
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 发送图标 */
+.message-input-container .send-icon {
+  display: inline-block;
+  margin-left: 2px;
+}
