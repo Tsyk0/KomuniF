@@ -505,12 +505,6 @@
   box-sizing: border-box;
 }
 
-/* 
- * chat-input.css
- * 发送消息输入框样式 - 白天模式
- * 与 chat-container.css 分离，保持模块化
- */
-
 /* 发送消息容器 */
 .message-input-container {
   position: relative;
@@ -649,8 +643,6 @@
   min-height: 20px;
   box-sizing: border-box;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
 .message-input-container .message-input::placeholder {
@@ -661,23 +653,6 @@
   outline: none;
 }
 
-/* 自定义滚动条 */
-.message-input-container .message-input::-webkit-scrollbar {
-  width: 4px;
-}
-
-.message-input-container .message-input::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.message-input-container .message-input::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 2px;
-}
-
-.message-input-container .message-input::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.3);
-}
 
 /* 加载图标 */
 .message-input-container .loading-icon {

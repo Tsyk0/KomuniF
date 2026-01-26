@@ -127,8 +127,6 @@ html.night-mode .loginview .form-content {
   flex: 1;
   overflow-y: auto;
   min-height: 300px;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
   background: rgba(30, 30, 30, 0.95);
 }
 

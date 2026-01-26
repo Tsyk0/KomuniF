@@ -124,8 +124,6 @@ html, body {
   flex: 1;
   overflow-y: auto;
   min-height: 300px;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
 }
 
 /* ========== 7. 忘记密码占位符 ========== */

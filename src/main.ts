@@ -46,8 +46,6 @@ const loadNightStyles = () => {
     'conversationlist-night.css',
     'messageitem-night.css',
     'conversationitem-night.css',
-    'scrollbar-night.css',
-
   ]
   
   // TypeScript安全的方式检查href
