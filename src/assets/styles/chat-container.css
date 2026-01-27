@@ -1,4 +1,4 @@
-/* src/assets/styles/chat-container.css - 保持历史版本风格 */
+/* 白天模式 - ChatContainer样式 */
 .chat-container {
   display: flex;
   flex-direction: column;
@@ -100,12 +100,110 @@
   color: #007aff;
 }
 
+.header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.websocket-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 6px;
+  transition: all 0.3s ease;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: default;
+  user-select: none;
+}
+
+.websocket-status.connected {
+  background-color: rgba(76, 175, 80, 0.12);
+  color: #2e7d32;
+  border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.websocket-status.connecting {
+  background-color: rgba(255, 193, 7, 0.12);
+  color: #ff8f00;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  animation: pulse 1.5s infinite;
+}
+
+.websocket-status.disconnected {
+  background-color: rgba(244, 67, 54, 0.12);
+  color: #c62828;
+  border: 1px solid rgba(244, 67, 54, 0.2);
+}
+
+.status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.connected .status-icon {
+  background-color: #4caf50;
+  color: white;
+  border-radius: 50%;
+}
+
+.connecting .status-icon {
+  color: #ff8f00;
+}
+
+.disconnected .status-icon {
+  color: #f44336;
+}
+
+.status-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.error-text {
+  flex-shrink: 0;
+  opacity: 0.8;
+  font-size: 11px;
+  font-weight: normal;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 消息列表区域 */
 .messages-container {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
   background: #f2f2f7;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 16px;
+  color: #666;
+  font-size: 14px;
+}
+
+.no-messages {
+  text-align: center;
+  padding: 40px 16px;
+  color: #999;
+  font-size: 14px;
 }
 
 /* 加载更多 */
@@ -438,30 +536,6 @@
   transform: rotate(45deg);
 }
 
-
-/* 未选择会话状态 */
-.no-conversation {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  color: #8e8e93;
-}
-
-.placeholder-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.placeholder-text {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-
-
 /* 工具按钮样式 */
 .tool-button {
   background: none;
@@ -498,11 +572,6 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-/* 最后调整确保完全一致 */
-.chat-container * {
-  box-sizing: border-box;
 }
 
 /* 发送消息容器 */
@@ -653,6 +722,31 @@
   outline: none;
 }
 
+/* 发送方式提示 */
+.send-mode-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #ff9800;
+  background-color: rgba(255, 152, 0, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 152, 0, 0.15);
+  animation: fadeIn 0.3s ease;
+}
+
+.hint-icon {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.hint-text {
+  font-weight: 500;
+}
 
 /* 加载图标 */
 .message-input-container .loading-icon {
@@ -671,3 +765,49 @@
   margin-left: 2px;
 }
 
+/* 未选择会话状态 */
+.no-conversation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #8e8e93;
+}
+
+.placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.placeholder-text {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* 动画 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 最后调整确保完全一致 */
+.chat-container * {
+  box-sizing: border-box;
+}

@@ -1,169 +1,514 @@
-/* src/assets/styles/night/chat-container-night.css - 保持历史版本风格 */
+/* 夜晚模式 - ChatContainer样式 */
 html.night-mode .chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
   background: #1d1d1d;
 }
 
-/* 聊天头部样式 - 夜晚模式 */
+/* 聊天头部样式 */
 html.night-mode .chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
   border-bottom: 1px solid #334155;
   background: rgba(30, 30, 30, 0.95);
+  flex-shrink: 0;
+}
+
+html.night-mode .header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 html.night-mode .back-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
   color: #60a5fa;
+}
+
+html.night-mode .chat-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+html.night-mode .avatar-wrapper {
+  position: relative;
 }
 
 html.night-mode .chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+html.night-mode .chat-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+html.night-mode .chat-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 html.night-mode .chat-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
   color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 html.night-mode .chat-status {
+  margin: 0;
+  font-size: 12px;
   color: #94a3b8;
+}
+
+html.night-mode .header-right {
+  display: flex;
+  gap: 12px;
 }
 
 html.night-mode .header-action {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
   color: #60a5fa;
 }
 
-html.night-mode .tool-button {
-  color: #60a5fa;
+html.night-mode .header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
 }
 
-/* 消息列表区域 - 夜晚模式 */
+html.night-mode .websocket-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 6px;
+  transition: all 0.3s ease;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: default;
+  user-select: none;
+}
+
+html.night-mode .websocket-status.connected {
+  background-color: rgba(76, 175, 80, 0.18);
+  color: #81c784;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+html.night-mode .websocket-status.connecting {
+  background-color: rgba(255, 193, 7, 0.18);
+  color: #ffd54f;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  animation: pulse 1.5s infinite;
+}
+
+html.night-mode .websocket-status.disconnected {
+  background-color: rgba(244, 67, 54, 0.18);
+  color: #ef9a9a;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+html.night-mode .status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+html.night-mode .connected .status-icon {
+  background-color: #66bb6a;
+  color: #1a1a1a;
+  border-radius: 50%;
+}
+
+html.night-mode .connecting .status-icon {
+  color: #ffd54f;
+}
+
+html.night-mode .disconnected .status-icon {
+  color: #ef9a9a;
+}
+
+html.night-mode .status-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.night-mode .error-text {
+  flex-shrink: 0;
+  opacity: 0.7;
+  font-size: 11px;
+  font-weight: normal;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffab91;
+}
+
+/* 消息列表区域 */
 html.night-mode .messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
   background: #1a1a1a;
 }
 
-/* 加载更多 - 夜晚模式 */
+html.night-mode .loading-indicator {
+  text-align: center;
+  padding: 16px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+html.night-mode .no-messages {
+  text-align: center;
+  padding: 40px 16px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* 加载更多 */
+html.night-mode .load-more {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
 html.night-mode .load-more button {
   background: #333;
-  border-color: #444;
+  border: 1px solid #444;
   color: #94a3b8;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 html.night-mode .load-more button:hover:not(:disabled) {
   background: #444;
 }
 
-html.night-mode .load-more-indicator {
-  color: #94a3b8;
+html.night-mode .load-more button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* 日期分隔线 - 夜晚模式 */
+/* 消息列表 */
+html.night-mode .messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 日期分隔线 */
+html.night-mode .date-divider {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+}
+
 html.night-mode .date-text {
   background: rgba(255, 255, 255, 0.1);
   color: #94a3b8;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
 }
 
-/* 系统消息 - 夜晚模式 */
+/* 消息包装器 */
+html.night-mode .message-wrapper {
+  margin-bottom: 4px;
+}
+
+html.night-mode .message-wrapper.first-in-group {
+  margin-top: 8px;
+}
+
+html.night-mode .message-wrapper.last-in-group {
+  margin-bottom: 8px;
+}
+
+/* 系统消息 */
+html.night-mode .system-message {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+}
+
 html.night-mode .system-content {
   background: rgba(255, 255, 255, 0.1);
   color: #94a3b8;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  max-width: 80%;
+  text-align: center;
 }
 
-/* 普通消息 - 夜晚模式 */
+/* 普通消息 */
+html.night-mode .message-item {
+  display: flex;
+}
+
+html.night-mode .message-item.sent {
+  justify-content: flex-end;
+}
+
+html.night-mode .message-item.received {
+  justify-content: flex-start;
+}
+
+html.night-mode .message-avatar {
+  margin-right: 8px;
+  align-self: flex-end;
+  flex-shrink: 0;
+}
+
 html.night-mode .avatar-small {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+html.night-mode .avatar-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+html.night-mode .message-content-wrapper {
+  max-width: 70%;
+  min-width: 0;
 }
 
 html.night-mode .sender-name {
+  font-size: 12px;
   color: #94a3b8;
+  margin-bottom: 2px;
+  padding-left: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.night-mode .message-bubble {
+  padding: 8px 12px;
+  border-radius: 18px;
+  position: relative;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 html.night-mode .message-bubble.sent {
   background: #3b82f6;
   color: #f8fafc;
+  border-bottom-right-radius: 4px;
 }
 
 html.night-mode .message-bubble.received {
   background: #334155;
   color: #e2e8f0;
+  border-bottom-left-radius: 4px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 html.night-mode .text-message {
-  color: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
 }
 
 html.night-mode .image-message img {
-  border: 1px solid #475569;
+  max-width: 200px;
+  max-height: 300px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: block;
 }
 
-/* 文件消息样式 - 夜晚模式 */
+/* 文件消息样式 */
 html.night-mode .file-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.1);
-}
-
-html.night-mode .file-message:hover {
-  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 html.night-mode .file-icon {
+  font-size: 24px;
+  flex-shrink: 0;
   color: #94a3b8;
+}
+
+html.night-mode .file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+html.night-mode .file-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 html.night-mode .file-size {
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* 音频消息样式 - 夜晚模式 */
-html.night-mode .audio-message {
-  background: rgba(255, 255, 255, 0.1);
+html.night-mode .message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 11px;
 }
 
-html.night-mode .audio-message:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-html.night-mode .audio-icon {
-  color: #94a3b8;
-}
-
-html.night-mode .audio-duration {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* 视频消息样式 - 夜晚模式 */
-html.night-mode .video-message {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-html.night-mode .video-message:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-html.night-mode .video-icon {
-  color: #94a3b8;
-}
-
-html.night-mode .video-duration {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* 消息元数据 - 夜晚模式 */
 html.night-mode .message-time {
   opacity: 0.8;
 }
 
 html.night-mode .message-status {
+  font-size: 12px;
+  line-height: 1;
   color: #94a3b8;
 }
 
-/* 消息输入区域 - 夜晚模式 */
+/* 音频消息样式 */
+html.night-mode .audio-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+html.night-mode .audio-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+html.night-mode .audio-info {
+  flex: 1;
+  min-width: 0;
+}
+
+html.night-mode .audio-duration {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 视频消息样式 */
+html.night-mode .video-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+html.night-mode .video-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+html.night-mode .video-info {
+  flex: 1;
+  min-width: 0;
+}
+
+html.night-mode .video-duration {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 消息输入区域 */
 html.night-mode .message-input-area {
   border-top: 1px solid #334155;
   background: rgba(30, 30, 30, 0.95);
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+html.night-mode .input-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
 }
 
 html.night-mode .message-input {
+  flex: 1;
   border: 1px solid #475569;
-  background: #1e1e1e;
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: none;
+  max-height: 120px;
+  font-family: inherit;
+  outline: none;
+  min-height: 40px;
+  box-sizing: border-box;
   color: #e2e8f0;
 }
 
@@ -171,50 +516,62 @@ html.night-mode .message-input:focus {
   border-color: #60a5fa;
 }
 
-html.night-mode .message-input::placeholder {
-  color: #94a3b8;
-}
-
 html.night-mode .send-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   background: #3b82f6;
+  color: #f8fafc;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 html.night-mode .send-button:disabled {
   background: #475569;
+  cursor: not-allowed;
 }
 
-html.night-mode .send-button:not(:disabled):hover {
-  background: #2563eb;
+html.night-mode .send-icon {
+  font-size: 14px;
+  transform: rotate(45deg);
 }
 
-
-
-/* 未选择会话状态 - 夜晚模式 */
-html.night-mode .no-conversation {
-  color: #94a3b8;
+/* 工具按钮样式 */
+html.night-mode .tool-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  color: #60a5fa;
 }
 
-html.night-mode .placeholder-icon {
-  color: #64748b;
-}
-
-html.night-mode .placeholder-text {
-  color: #cbd5e1;
-}
-
-/* 加载状态 - 夜晚模式 */
+/* 加载状态 */
 html.night-mode .chat-loading {
+  text-align: center;
   color: #94a3b8;
+  padding: 40px 0;
 }
 
 html.night-mode .loading-spinner {
   border: 3px solid #334155;
   border-top: 3px solid #60a5fa;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
 }
 
 html.night-mode .loading-spinner.small {
-  border: 2px solid #334155;
-  border-top: 2px solid #60a5fa;
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
 }
 
 @keyframes spin {
@@ -222,18 +579,11 @@ html.night-mode .loading-spinner.small {
   100% { transform: rotate(360deg); }
 }
 
-/* 最后调整确保完全一致 */
-html.night-mode .chat-container * {
-  box-sizing: border-box;
-}
-
-
-
 /* 发送消息容器 */
 html.night-mode .message-input-container {
   position: relative;
-  border-top: 1px solid #2d3748; /* 修改：夜晚边框色 */
-  background-color: #171717; /* 修改：夜晚背景色 */
+  border-top: 1px solid #2d3748;
+  background-color: #171717;
   padding: 16px 20px;
   min-height: 60px;
   box-sizing: border-box;
@@ -244,17 +594,17 @@ html.night-mode .message-input-container .input-wrapper {
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  background-color: #2d3748; /* 修改：夜晚背景色 */
+  background-color: #2d3748;
   border-radius: 24px;
   padding: 8px 16px;
   min-height: 44px;
-  border: 1px solid #4a5568; /* 修改：夜晚边框色 */
+  border: 1px solid #4a5568;
   transition: border-color 0.2s ease;
 }
 
 html.night-mode .message-input-container .input-wrapper:focus-within {
-  border-color: #4299e1; /* 修改：夜晚焦点色 */
-  background-color: #2d3748; /* 修改：夜晚背景色 */
+  border-color: #4299e1;
+  background-color: #2d3748;
 }
 
 /* 左侧功能按钮 */
@@ -283,7 +633,7 @@ html.night-mode .message-input-container .action-button {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: #a0aec0; /* 修改：夜晚文字色 */
+  color: #a0aec0;
   font-size: 18px;
   padding: 0;
   transition: all 0.2s ease;
@@ -294,12 +644,12 @@ html.night-mode .message-input-container .action-button {
 }
 
 html.night-mode .message-input-container .action-button:hover {
-  background-color: rgba(255, 255, 255, 0.05); /* 修改：夜晚悬停色 */
-  color: #4299e1; /* 修改：夜晚悬停文字色 */
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #4299e1;
 }
 
 html.night-mode .message-input-container .action-button:active {
-  background-color: rgba(255, 255, 255, 0.1); /* 修改：夜晚点击色 */
+  background-color: rgba(255, 255, 255, 0.1);
   transform: scale(0.95);
 }
 
@@ -315,30 +665,30 @@ html.night-mode .message-input-container .emoji-button {
 
 /* 发送按钮 */
 html.night-mode .message-input-container .send-button {
-  background-color: #4299e1; /* 修改：夜晚按钮色 */
+  background-color: #4299e1;
   color: white;
   font-size: 16px;
 }
 
 html.night-mode .message-input-container .send-button:hover {
-  background-color: #3182ce; /* 修改：夜晚悬停色 */
+  background-color: #3182ce;
   color: white;
 }
 
 html.night-mode .message-input-container .send-button:active {
-  background-color: #2b6cb0; /* 修改：夜晚点击色 */
+  background-color: #2b6cb0;
   transform: scale(0.95);
 }
 
 /* 禁用状态的发送按钮 */
 html.night-mode .message-input-container .send-button.disabled {
-  background-color: #718096; /* 修改：夜晚禁用色 */
+  background-color: #718096;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 html.night-mode .message-input-container .send-button.disabled:hover {
-  background-color: #718096; /* 修改：夜晚禁用色 */
+  background-color: #718096;
   transform: none;
 }
 
@@ -359,7 +709,7 @@ html.night-mode .message-input-container .message-input {
   outline: none;
   font-size: 15px;
   line-height: 20px;
-  color: #e2e8f0; /* 修改：夜晚文字色 */
+  color: #e2e8f0;
   resize: none;
   font-family: inherit;
   padding: 6px 0;
@@ -370,14 +720,39 @@ html.night-mode .message-input-container .message-input {
 }
 
 html.night-mode .message-input-container .message-input::placeholder {
-  color: #a0aec0; /* 修改：夜晚占位符色 */
+  color: #a0aec0;
 }
 
 html.night-mode .message-input-container .message-input:focus {
   outline: none;
 }
 
-/* 
+/* 发送方式提示 */
+html.night-mode .send-mode-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #ffb74d;
+  background-color: rgba(255, 152, 0, 0.12);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 152, 0, 0.25);
+  animation: fadeIn 0.3s ease;
+}
+
+html.night-mode .hint-icon {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+html.night-mode .hint-text {
+  font-weight: 500;
+}
+
 /* 加载图标 */
 html.night-mode .message-input-container .loading-icon {
   display: inline-block;
@@ -394,3 +769,53 @@ html.night-mode .message-input-container .send-icon {
   display: inline-block;
   margin-left: 2px;
 }
+
+/* 未选择会话状态 */
+html.night-mode .no-conversation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #94a3b8;
+}
+
+html.night-mode .placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+  color: #64748b;
+}
+
+html.night-mode .placeholder-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+/* 动画 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 最后调整确保完全一致 */
+html.night-mode .chat-container * {
+  box-sizing: border-box;
+}
+

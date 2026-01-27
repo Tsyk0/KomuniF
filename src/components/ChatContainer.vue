@@ -18,6 +18,34 @@
           </div>
         </div>
       </div>
+
+      <!-- WebSocket状态显示 - 新增部分 -->
+      <div class="header-center" v-if="shouldShowWebSocketStatus">
+        <div class="websocket-status" :class="websocketStatus">
+          <span class="status-icon">
+            <span v-if="websocketStatus === 'connected'">✓</span>
+            <span v-if="websocketStatus === 'connecting'">⟳</span>
+            <span v-if="websocketStatus === 'disconnected'">⚠</span>
+          </span>
+          <span class="status-text">
+            <span v-if="websocketStatus === 'connected'">实时连接</span>
+            <span v-if="websocketStatus === 'connecting'">连接中...</span>
+            <span v-if="websocketStatus === 'disconnected'">离线</span>
+          </span>
+          <span
+            v-if="connectionError"
+            class="error-text"
+            :title="connectionError"
+          >
+            ({{
+              connectionError.length > 10
+                ? connectionError.substring(0, 10) + "..."
+                : connectionError
+            }})
+          </span>
+        </div>
+      </div>
+
       <div class="header-right">
         <button class="header-action" @click="handleSearch" title="搜索">
           <span class="action-icon">🔍</span>
@@ -49,7 +77,7 @@
       </div>
     </div>
 
-    <!-- 发送消息区域 - 新增部分 -->
+    <!-- 发送消息区域 -->
     <div class="message-input-container" v-if="convId">
       <div class="input-wrapper">
         <!-- 左侧功能按钮 -->
@@ -89,6 +117,12 @@
           </button>
         </div>
       </div>
+
+      <!-- 发送方式提示 - 新增部分 -->
+      <div class="send-mode-hint" v-if="!isUsingWebSocket">
+        <span class="hint-icon">⚠</span>
+        <span class="hint-text">使用HTTP发送（WebSocket不可用）</span>
+      </div>
     </div>
 
     <!-- 未选择会话状态 -->
@@ -100,17 +134,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
 import { useShowMessageStore } from "@/stores/chat/show-message";
 import { useSendMessageStore } from "@/stores/chat/send-message";
 import { useAuthStore } from "@/stores/auth";
+import {
+  useWebSocketStore,
+  type WebSocketMessage,
+} from "@/stores/chat/websocket-store";
 import MessageItem from "./MessageItem.vue";
-import type { DisplayMessage } from "@/types/entity/message"; // 更新导入类型
+import type { DisplayMessage } from "@/entity/message";
 
 // Store
 const showMessageStore = useShowMessageStore();
 const sendMessageStore = useSendMessageStore();
 const authStore = useAuthStore();
+const websocketStore = useWebSocketStore();
 
 // Props
 const props = defineProps({
@@ -140,15 +179,43 @@ const messageInputRef = ref<HTMLTextAreaElement>();
 const messageText = ref("");
 const isSending = computed(() => sendMessageStore.isSending);
 
+// WebSocket相关状态
+const websocketStatus = computed(() => {
+  return websocketStore.isConnected ? "connected" : "disconnected";
+});
+const connectionError = ref<string | null>(null);
+const isUsingWebSocket = ref(true);
+const webSocketListenersInitialized = ref(false);
+
+// 防止重复连接的标志
+const isWebSocketConnecting = ref(false);
+let globalWebSocketCleanup: (() => void) | null = null;
+
 // 计算属性
 const firstChar = computed(() => {
   return props.conversationName ? props.conversationName.charAt(0) : "";
 });
 
-// 发送条件
 const canSend = computed(() => {
   return (
     messageText.value.trim().length > 0 && props.convId && !isSending.value
+  );
+});
+
+const canUseWebSocket = computed(() => {
+  const user = authStore.user;
+  return (
+    websocketStore.isConnected &&
+    user?.userId !== undefined &&
+    props.convId !== null
+  );
+});
+
+const shouldShowWebSocketStatus = computed(() => {
+  return (
+    websocketStatus.value !== "connected" ||
+    connectionError.value !== null ||
+    websocketStore.connectionError !== null
   );
 });
 
@@ -157,17 +224,229 @@ const messages = computed(() => showMessageStore.messages);
 const isLoading = computed(() => showMessageStore.loading);
 
 /**
- * 加载消息
+ * 初始化WebSocket连接和监听器 - 修复重复连接问题
  */
-const loadMessages = async () => {
-  if (!props.convId) return;
+const initWebSocket = async () => {
+  if (!authStore.isAuthenticated || !props.convId) {
+    console.log("未登录或无会话ID，跳过WebSocket连接");
+    return;
+  }
 
-  console.log("ChatContainer: 触发加载消息，会话ID:", props.convId);
-  await showMessageStore.loadMessages(props.convId);
+  // 防止重复连接
+  if (isWebSocketConnecting.value || websocketStore.isConnected) {
+    console.log("WebSocket已经在连接或已连接，只设置监听器");
+    if (!webSocketListenersInitialized.value) {
+      const cleanup = setupWebSocketEventListeners();
+      if (cleanup) globalWebSocketCleanup = cleanup;
+    }
+    return;
+  }
+
+  const currentUser = authStore.user;
+  if (!currentUser?.userId) {
+    console.error("用户ID不存在，无法连接WebSocket");
+    return;
+  }
+
+  isWebSocketConnecting.value = true;
+
+  try {
+    console.log("正在建立WebSocket连接...", {
+      userId: currentUser.userId,
+      convId: props.convId,
+    });
+
+    await websocketStore.connect(currentUser.userId, props.convId);
+    console.log("WebSocket连接成功");
+    connectionError.value = null;
+    isUsingWebSocket.value = true;
+
+    const cleanup = setupWebSocketEventListeners();
+    if (cleanup) globalWebSocketCleanup = cleanup;
+  } catch (error) {
+    console.error("WebSocket连接失败:", error);
+    connectionError.value = "无法连接到实时消息服务器";
+    isUsingWebSocket.value = false;
+  } finally {
+    isWebSocketConnecting.value = false;
+  }
 };
 
 /**
- * 发送消息
+ * 设置WebSocket事件监听器 - 修复消息确认处理
+ */
+const setupWebSocketEventListeners = () => {
+  if (webSocketListenersInitialized.value) {
+    return;
+  }
+
+  console.log("设置WebSocket事件监听器");
+
+  // 监听新消息事件
+  const handleNewMessage = (event: CustomEvent) => {
+    console.log("收到WebSocket新消息事件:", event.detail);
+    const message = event.detail;
+
+    if (message.convId === props.convId) {
+      console.log("处理当前会话的新消息:", message);
+      handleIncomingWebSocketMessage(message);
+    } else {
+      console.log("收到其他会话的消息，忽略:", message.convId);
+    }
+  };
+
+  // 正确处理消息发送成功确认
+  const handleMessageSent = (event: CustomEvent) => {
+    console.log("消息发送成功确认:", event.detail);
+
+    const message = event.detail;
+    if (
+      message.convId === props.convId &&
+      message.success &&
+      message.messageId
+    ) {
+      console.log("当前会话消息发送成功，消息ID:", message.messageId);
+
+      // 找到所有状态为0（发送中）的消息
+      const sendingMessages = showMessageStore.messages.filter(
+        (msg) => msg.messageStatus === 0 && msg.isSentByMe
+      );
+
+      if (sendingMessages.length > 0) {
+        // 取最后一条发送中的消息（假设是最新发送的）
+        const tempMessage = sendingMessages[sendingMessages.length - 1];
+        console.log(
+          "更新临时消息状态:",
+          tempMessage.messageId,
+          "->",
+          message.messageId
+        );
+
+        // 用服务器消息替换临时消息
+        const serverMessage: DisplayMessage = {
+          ...tempMessage,
+          messageId: message.messageId,
+          messageStatus: 1, // 已发送
+          sendTime: new Date(message.timestamp || Date.now()).toISOString(),
+        };
+
+        showMessageStore.replaceTempMessage(
+          tempMessage.messageId,
+          serverMessage
+        );
+        console.log("临时消息已更新为服务器消息");
+      }
+    }
+  };
+
+  // 监听错误
+  const handleError = (event: CustomEvent) => {
+    console.error("WebSocket错误:", event.detail);
+    connectionError.value = event.detail || "WebSocket连接错误";
+  };
+
+  // 添加事件监听
+  window.addEventListener(
+    "websocket:newMessage",
+    handleNewMessage as EventListener
+  );
+  window.addEventListener(
+    "websocket:messageSent",
+    handleMessageSent as EventListener
+  );
+  window.addEventListener("websocket:error", handleError as EventListener);
+
+  webSocketListenersInitialized.value = true;
+
+  // 返回清理函数
+  return () => {
+    window.removeEventListener(
+      "websocket:newMessage",
+      handleNewMessage as EventListener
+    );
+    window.removeEventListener(
+      "websocket:messageSent",
+      handleMessageSent as EventListener
+    );
+    window.removeEventListener("websocket:error", handleError as EventListener);
+    webSocketListenersInitialized.value = false;
+  };
+};
+
+/**
+ * 处理从WebSocket接收到的消息
+ */
+const handleIncomingWebSocketMessage = (message: any) => {
+  const currentUser = authStore.user;
+  if (!currentUser?.userId) return;
+
+  // 检查是否已存在该消息（避免重复）
+  const existingMessage = showMessageStore.messages.find(
+    (msg) => msg.messageId === message.messageId
+  );
+
+  if (existingMessage) {
+    console.log("消息已存在，跳过:", message.messageId);
+    return;
+  }
+
+  // 构建完整的DisplayMessage对象
+  const displayMessage: DisplayMessage = {
+    messageId: message.messageId || Date.now(),
+    convId: message.convId,
+    senderId: message.senderId,
+    messageType: message.messageType || "text",
+    messageContent: message.messageContent || message.content || "",
+    messageStatus: message.messageStatus || 1,
+    sendTime: message.sendTime
+      ? new Date(message.sendTime).toISOString()
+      : new Date().toISOString(),
+    replyToMessageId: message.replyToMessageId || undefined,
+    isRecalled: message.isRecalled || 0,
+
+    // 显示字段
+    senderName: getSenderName(message.senderId),
+    senderAvatar: getSenderAvatar(message.senderId),
+    isSentByMe: message.senderId === currentUser.userId,
+  };
+
+  console.log("将WebSocket消息添加到Store:", displayMessage);
+  showMessageStore.addMessage(displayMessage);
+
+  // 如果是自己发送的消息，自动滚动到底部
+  if (displayMessage.isSentByMe) {
+    scrollToBottom();
+  }
+};
+
+/**
+ * 获取发送者名称
+ */
+const getSenderName = (senderId: number): string => {
+  const currentUser = authStore.user;
+  if (senderId === currentUser?.userId) {
+    return currentUser.nickname || currentUser.username || "我";
+  }
+
+  // TODO: 从联系人缓存中获取名称
+  return `用户${senderId}`;
+};
+
+/**
+ * 获取发送者头像
+ */
+const getSenderAvatar = (senderId: number): string | null => {
+  const currentUser = authStore.user;
+  if (senderId === currentUser?.userId) {
+    return currentUser.avatar || null;
+  }
+
+  // TODO: 从联系人缓存中获取头像
+  return null;
+};
+
+/**
+ * 发送消息（优先使用WebSocket）- 修复超时逻辑
  */
 const sendMessage = async () => {
   if (!canSend.value || !props.convId) return;
@@ -180,27 +459,27 @@ const sendMessage = async () => {
     return;
   }
 
+  let tempMessage: DisplayMessage;
+  let messageTimeoutId: number | null = null;
+
   try {
     console.log("发送消息:", { convId: props.convId, content });
 
     // 1. 创建临时消息
-    const tempMessage: DisplayMessage = {
-      // 数据库基础字段
-      messageId: Date.now(), // 临时ID
+    tempMessage = {
+      messageId: Date.now(),
       convId: props.convId,
       senderId: currentUser.userId,
       messageType: "text",
       messageContent: content,
       messageStatus: 0, // 发送中
       sendTime: new Date().toISOString(),
-
-      // 显示字段
       senderName: currentUser.nickname || currentUser.username,
       senderAvatar: currentUser.avatar || null,
       isSentByMe: true,
     };
 
-    // 2. 添加到Store（使用addMessage方法）
+    // 2. 添加到Store
     showMessageStore.addMessage(tempMessage);
 
     // 3. 清空输入框
@@ -212,16 +491,83 @@ const sendMessage = async () => {
     // 4. 滚动到底部
     scrollToBottom();
 
-    // 5. 发送到服务器
+    // 5. 优先尝试WebSocket发送
+    if (isUsingWebSocket.value) {
+      console.log("尝试使用WebSocket发送消息");
+
+      // 确保WebSocket连接
+      if (!websocketStore.isConnected) {
+        console.log("WebSocket未连接，尝试连接...");
+        await initWebSocket();
+      }
+
+      // 再次检查连接状态
+      if (websocketStore.isConnected) {
+        const success = websocketStore.sendTextMessage(props.convId, content);
+
+        if (success) {
+          console.log("WebSocket消息发送成功，等待服务器确认");
+
+          // 更智能的超时处理
+          messageTimeoutId = window.setTimeout(() => {
+            const sentMessage = showMessageStore.messages.find(
+              (msg) => msg.messageId === tempMessage.messageId
+            );
+            if (sentMessage && sentMessage.messageStatus === 0) {
+              console.log("WebSocket确认超时，降级到HTTP");
+              // 先清理定时器
+              if (messageTimeoutId) clearTimeout(messageTimeoutId);
+              fallbackToHttpSend(tempMessage, content);
+            }
+          }, 5000);
+
+          return;
+        } else {
+          console.log("WebSocket发送失败，降级到HTTP");
+          isUsingWebSocket.value = false;
+          fallbackToHttpSend(tempMessage, content);
+        }
+      } else {
+        console.log("WebSocket连接失败，降级到HTTP");
+        isUsingWebSocket.value = false;
+        fallbackToHttpSend(tempMessage, content);
+      }
+    } else {
+      // 6. 直接使用HTTP发送
+      console.log("WebSocket不可用，使用HTTP发送消息");
+      fallbackToHttpSend(tempMessage, content);
+    }
+  } catch (error) {
+    console.error("发送消息失败:", error);
+
+    if (tempMessage) {
+      showMessageStore.updateMessageStatus(tempMessage.messageId, 4);
+    }
+
+    connectionError.value = "消息发送失败，请检查网络连接";
+  } finally {
+    // 清理定时器
+    if (messageTimeoutId) clearTimeout(messageTimeoutId);
+  }
+};
+
+/**
+ * HTTP后备发送
+ */
+const fallbackToHttpSend = async (
+  tempMessage: DisplayMessage,
+  content: string
+) => {
+  try {
     const response = await sendMessageStore.sendTextMessage(
-      props.convId,
-      currentUser.userId,
+      props.convId!,
+      authStore.user!.userId,
       content
     );
 
-    console.log("服务器响应:", response);
+    console.log("HTTP服务器响应:", response);
 
-    // 6. 用服务器消息替换临时消息
+    // 用服务器消息替换临时消息
     const serverMessage: DisplayMessage = {
       ...tempMessage,
       messageId: response.messageId,
@@ -231,18 +577,36 @@ const sendMessage = async () => {
 
     showMessageStore.replaceTempMessage(tempMessage.messageId, serverMessage);
 
-    // 7. 触发消息发送事件
+    // 触发消息发送事件
     emit("message-sent", response);
   } catch (error) {
-    console.error("发送消息失败:", error);
+    console.error("HTTP发送失败:", error);
 
     // 标记临时消息为失败状态
-    const tempMessageId = tempMessage?.messageId;
-    if (tempMessageId) {
-      showMessageStore.updateMessageStatus(tempMessageId, 4);
-    }
+    showMessageStore.updateMessageStatus(tempMessage.messageId, 4);
 
-    // TODO: 添加错误提示UI
+    throw error;
+  }
+};
+
+/**
+ * 加载消息
+ */
+const loadMessages = async () => {
+  if (!props.convId) return;
+
+  console.log("ChatContainer: 触发加载消息，会话ID:", props.convId);
+
+  // 1. 使用HTTP获取历史消息
+  await showMessageStore.loadMessages(props.convId);
+
+  // 2. 只在需要时建立WebSocket连接
+  if (!websocketStore.isConnected && !isWebSocketConnecting.value) {
+    await initWebSocket();
+  } else if (!webSocketListenersInitialized.value) {
+    // 如果已连接但监听器未初始化，只设置监听器
+    const cleanup = setupWebSocketEventListeners();
+    if (cleanup) globalWebSocketCleanup = cleanup;
   }
 };
 
@@ -287,7 +651,24 @@ const handleBack = () => emit("back");
 const handleSearch = () => emit("search");
 const handleMenu = () => emit("menu");
 
-// 监听会话ID变化 - 关键修改点
+/**
+ * 清理WebSocket监听器
+ */
+const cleanupWebSocketListeners = () => {
+  console.log("ChatContainer: 清理WebSocket监听器");
+
+  // 只清理监听器，不断开全局WebSocket连接（除非明确需要）
+  if (globalWebSocketCleanup) {
+    globalWebSocketCleanup();
+    globalWebSocketCleanup = null;
+  }
+
+  isUsingWebSocket.value = false;
+  webSocketListenersInitialized.value = false;
+  connectionError.value = null;
+};
+
+// 监听会话ID变化
 watch(
   () => props.convId,
   (newConvId, oldConvId) => {
@@ -300,8 +681,9 @@ watch(
       loadMessages();
       messageText.value = "";
     } else {
-      // 当没有会话时，清空消息
+      // 当没有会话时，只清空消息，不断开WebSocket连接
       showMessageStore.clearMessages();
+      cleanupWebSocketListeners();
     }
   },
   { immediate: true }
@@ -318,16 +700,47 @@ watch(
   { deep: true }
 );
 
+// 监听认证状态变化
+watch(
+  () => authStore.isAuthenticated,
+  (isAuthenticated) => {
+    if (isAuthenticated && props.convId) {
+      console.log("用户已认证，准备连接WebSocket");
+      initWebSocket();
+    } else {
+      console.log("用户未认证或会话不存在，清理WebSocket监听器");
+      cleanupWebSocketListeners();
+    }
+  }
+);
+
+// 监听WebSocket连接错误
+watch(
+  () => websocketStore.connectionError,
+  (error) => {
+    if (error) {
+      console.error("WebSocket连接错误:", error);
+      connectionError.value = error;
+      isUsingWebSocket.value = false;
+    }
+  }
+);
+
 onMounted(() => {
   console.log("ChatContainer mounted");
   if (props.convId) {
     loadMessages();
   }
 });
-</script>
 
+onUnmounted(() => {
+  console.log("ChatContainer unmounted");
+  // 组件卸载时只清理监听器，不断开全局连接
+  cleanupWebSocketListeners();
+});
+</script>
 <style scoped>
-/* 使用现有样式 */
+/* 使用外部样式文件 */
 @import "@/assets/styles/chat-container.css";
 
 /* 加载状态和空消息提示样式 */
