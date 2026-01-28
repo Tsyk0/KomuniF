@@ -1,17 +1,17 @@
-/* src/assets/styles/conversationlist.css - 完全对应白天模式 */
-.conversation-list {
+/* src/assets/styles/night/conversation-list-night.css - 完全对应夜晚模式 */
+html.night-mode .conversation-list {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
+  background: #1a1a1a;
   position: relative;
   flex: 1;
 }
 
 /* 搜索框 - 修复：移除search-box的border，只保留input的border */
-.conversation-list .search-box {
+html.night-mode .conversation-list .search-box {
   padding: 16px;
-  background: #ffffff;
+  background: #1a1a1a;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -22,51 +22,51 @@
   flex-shrink: 0; /* 防止搜索框被压缩 */
 }
 
-.conversation-list .search-icon {
+html.night-mode .conversation-list .search-icon {
   position: absolute;
   left: 28px;
   top: 50%;
   transform: translateY(-50%);
-  color: #999999;
+  color: #888888;
   font-size: 16px;
   z-index: 1;
   pointer-events: none;
 }
 
-.conversation-list .search-input {
+html.night-mode .conversation-list .search-input {
   width: 100%;
   padding: 8px 36px 8px 36px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #444444;
   border-radius: 6px;
   font-size: 14px;
   line-height: 1.5;
-  background: #f5f5f5;
-  color: #333333;
+  background: #2d2d2d;
+  color: #e0e0e0;
   outline: none;
   font-family: inherit;
   transition: all 0.2s ease;
   box-sizing: border-box;
 }
 
-.conversation-list .search-input:focus {
-  background: #ffffff;
-  border-color: #0084ff;
-  box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.2);
+html.night-mode .conversation-list .search-input:focus {
+  background: #333333;
+  border-color: #3390ff;
+  box-shadow: 0 0 0 2px rgba(51, 144, 255, 0.3);
 }
 
-.conversation-list .search-input::placeholder {
-  color: #999999;
+html.night-mode .conversation-list .search-input::placeholder {
+  color: #888888;
   opacity: 1;
 }
 
-.conversation-list .clear-search {
+html.night-mode .conversation-list .clear-search {
   position: absolute;
   right: 24px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #999999;
+  color: #888888;
   font-size: 20px;
   cursor: pointer;
   padding: 2px;
@@ -80,47 +80,47 @@
   z-index: 2;
 }
 
-.conversation-list .clear-search:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #666666;
+html.night-mode .conversation-list .clear-search:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cccccc;
 }
 
-.conversation-list .clear-search:active {
+html.night-mode .conversation-list .clear-search:active {
   transform: translateY(-50%) scale(0.9);
 }
 
-.conversation-list .clear-icon {
+html.night-mode .conversation-list .clear-icon {
   font-size: 20px;
   line-height: 1;
   display: inline-block;
 }
 
 /* 加载状态 */
-.conversation-list .loading-state {
+html.night-mode .conversation-list .loading-state {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: #ffffff;
+  background: #1a1a1a;
   text-align: center;
   flex-shrink: 0; /* 防止被压缩 */
 }
 
-.conversation-list .loading-spinner {
+html.night-mode .conversation-list .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #0084ff;
+  border: 3px solid #333333;
+  border-top: 3px solid #3390ff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 12px;
 }
 
-.conversation-list .loading-state span {
+html.night-mode .conversation-list .loading-state span {
   font-size: 14px;
-  color: #666666;
+  color: #888888;
   font-weight: 400;
 }
 
@@ -134,37 +134,37 @@
 }
 
 /* 错误状态 */
-.conversation-list .error-state {
+html.night-mode .conversation-list .error-state {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: #ffffff;
+  background: #1a1a1a;
   text-align: center;
   flex-shrink: 0; /* 防止被压缩 */
 }
 
-.conversation-list .error-icon {
+html.night-mode .conversation-list .error-icon {
   font-size: 40px;
   margin-bottom: 16px;
-  color: #ff3b30;
+  color: #ff6b6b;
   opacity: 0.8;
 }
 
-.conversation-list .error-state span {
+html.night-mode .conversation-list .error-state span {
   font-size: 14px;
-  color: #ff3b30;
+  color: #ff6b6b;
   margin-bottom: 16px;
   font-weight: 500;
   max-width: 80%;
   line-height: 1.5;
 }
 
-.conversation-list .retry-btn {
+html.night-mode .conversation-list .retry-btn {
   padding: 8px 20px;
-  background: #0084ff;
+  background: #3390ff;
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -175,122 +175,122 @@
   margin-top: 8px;
 }
 
-.conversation-list .retry-btn:hover {
-  background: #0073e6;
+html.night-mode .conversation-list .retry-btn:hover {
+  background: #2878e6;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 132, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(51, 144, 255, 0.4);
 }
 
-.conversation-list .retry-btn:active {
+html.night-mode .conversation-list .retry-btn:active {
   transform: translateY(0);
 }
 
 /* 无结果状态 */
-.conversation-list .no-results {
+html.night-mode .conversation-list .no-results {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: #ffffff;
+  background: #1a1a1a;
   text-align: center;
   flex-shrink: 0; /* 防止被压缩 */
 }
 
-.conversation-list .no-results-icon {
+html.night-mode .conversation-list .no-results-icon {
   font-size: 48px;
   margin-bottom: 16px;
   opacity: 0.5;
-  color: #999999;
+  color: #666666;
 }
 
-.conversation-list .no-results-text {
+html.night-mode .conversation-list .no-results-text {
   font-size: 16px;
   font-weight: 600;
-  color: #333333;
+  color: #e0e0e0;
   margin-bottom: 8px;
 }
 
-.conversation-list .no-results-hint {
+html.night-mode .conversation-list .no-results-hint {
   font-size: 14px;
-  color: #666666;
+  color: #888888;
   line-height: 1.5;
   max-width: 80%;
 }
 
 /* 空状态 */
-.conversation-list .empty-conversation {
+html.night-mode .conversation-list .empty-conversation {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: #ffffff;
+  background: #1a1a1a;
   text-align: center;
   flex-shrink: 0; /* 防止被压缩 */
 }
 
-.conversation-list .empty-icon {
+html.night-mode .conversation-list .empty-icon {
   font-size: 48px;
   margin-bottom: 16px;
   opacity: 0.5;
-  color: #999999;
+  color: #666666;
 }
 
-.conversation-list .empty-text {
+html.night-mode .conversation-list .empty-text {
   font-size: 16px;
   font-weight: 600;
-  color: #333333;
+  color: #e0e0e0;
   margin-bottom: 8px;
 }
 
-.conversation-list .empty-hint {
+html.night-mode .conversation-list .empty-hint {
   font-size: 14px;
-  color: #666666;
+  color: #888888;
   line-height: 1.5;
   max-width: 80%;
 }
 
 /* 会话列表容器 - 关键修改：确保正确垂直滚动 */
-.conversation-list .conversations-container {
+html.night-mode .conversation-list .conversations-container {
   flex: 1; /* 关键：占据剩余空间 */
   overflow-y: auto; /* 垂直滚动 */
   overflow-x: hidden; /* 隐藏水平滚动 */
   padding: 0;
-  background: #ffffff;
+  background: #1a1a1a;
   min-height: 0; /* 关键：允许在flex容器中滚动 */
   height: 0; /* 关键：强制flex容器计算可用高度 */
 }
 
 
 /* 动画 */
-.conversation-list .fade-enter-active {
+html.night-mode .conversation-list .fade-enter-active {
   transition: opacity 0.3s ease;
 }
 
-.conversation-list .fade-leave-active {
+html.night-mode .conversation-list .fade-leave-active {
   transition: opacity 0.2s ease;
 }
 
-.conversation-list .fade-enter-from,
-.conversation-list .fade-leave-to {
+html.night-mode .conversation-list .fade-enter-from,
+html.night-mode .conversation-list .fade-leave-to {
   opacity: 0;
 }
 
 /* 空状态微调 */
-.conversation-list .empty-conversation p {
+html.night-mode .conversation-list .empty-conversation p {
   margin: 0;
   padding: 0;
 }
 
-.conversation-list .no-results p {
+html.night-mode .conversation-list .no-results p {
   margin: 0;
   padding: 0;
 }
 
 /* 最后调整确保完全一致 */
-.conversation-list * {
+html.night-mode .conversation-list * {
   box-sizing: border-box;
 }

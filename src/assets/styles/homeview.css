@@ -138,7 +138,7 @@
   opacity: 1;
 }
 
-/* 关键修改：增加特异性，避免影响ConversationItem的avatar-placeholder */
+/* 关键修改：增加特异性，避免影响conversation-item的avatar-placeholder */
 .homeview .sidebar-header .avatar-placeholder {
   width: 48px;
   height: 48px;
@@ -464,7 +464,6 @@
   display: flex;
   align-items: center;
   background: #f5f5f5;
-  border-radius: 10px;
   padding: 8px 12px;
   transition: all 0.2s;
   border: 1px solid transparent;

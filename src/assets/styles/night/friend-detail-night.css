@@ -1,0 +1,251 @@
+/* ==================== 好友详情样式 - 夜晚模式 ==================== */
+
+html.night-mode .friend-detail-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%);
+}
+
+html.night-mode .friend-detail-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: #252525;
+  border-bottom: 1px solid #334155;
+}
+
+html.night-mode .friend-detail-header .back-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-right: 12px;
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html.night-mode .friend-detail-header .back-icon {
+  font-size: 18px;
+  display: block;
+  line-height: 1;
+}
+
+html.night-mode .friend-detail-header .friend-detail-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+  margin-left: 12px;
+}
+
+html.night-mode .friend-detail-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 16px;
+}
+
+/* 好友头像区域 - 夜晚模式 */
+html.night-mode .friend-avatar-large {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+html.night-mode .avatar-large-default {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 500;
+  margin: 0 auto 12px;
+}
+
+html.night-mode .online-status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+html.night-mode .online-status-badge.online {
+  background-color: #4ade80;
+}
+
+html.night-mode .online-status-badge.away {
+  background-color: #fbbf24;
+}
+
+html.night-mode .online-status-badge.offline {
+  background-color: #6b7280;
+}
+
+/* 好友基本信息 - 夜晚模式 */
+html.night-mode .friend-basic-info {
+  margin-bottom: 24px;
+}
+
+html.night-mode .friend-name-large {
+  font-size: 24px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+html.night-mode .friend-remark,
+html.night-mode .friend-group {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+html.night-mode .friend-remark .remark-label,
+html.night-mode .friend-group .group-label {
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+html.night-mode .friend-more-info {
+  background-color: #252525;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+html.night-mode .section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 16px;
+}
+
+html.night-mode .info-row {
+  display: flex;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+html.night-mode .info-label {
+  color: #94a3b8;
+  min-width: 80px;
+}
+
+html.night-mode .info-value {
+  color: #e2e8f0;
+  flex: 1;
+}
+
+html.night-mode .friend-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+html.night-mode .action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+html.night-mode .action-btn.primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+html.night-mode .action-btn.primary:hover {
+  background-color: #2563eb;
+}
+
+html.night-mode .action-btn.secondary {
+  background-color: #252525;
+  color: #e2e8f0;
+  border: 1px solid #475569;
+}
+
+html.night-mode .action-btn.secondary:hover {
+  background-color: #374151;
+}
+
+html.night-mode .friend-actions .action-btn.secondary:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+html.night-mode .friend-actions .action-icon {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+html.night-mode .friend-actions .action-text {
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* 无好友选中状态 - 夜晚模式 */
+html.night-mode .friend-no-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+}
+
+html.night-mode .friend-no-selection-icon {
+  font-size: 72px;
+  margin-bottom: 24px;
+  color: #60a5fa;
+  opacity: 0.2;
+  animation: floatNight 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(96, 165, 250, 0.5));
+}
+
+@keyframes floatNight {
+  0%, 100% { 
+    transform: translateY(0);
+    filter: drop-shadow(0 0 20px rgba(96, 165, 250, 0.5));
+  }
+  50% { 
+    transform: translateY(-15px);
+    filter: drop-shadow(0 0 40px rgba(96, 165, 250, 0.8));
+  }
+}
+
+html.night-mode .friend-no-selection-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+html.night-mode .friend-no-selection-description {
+  font-size: 16px;
+  color: #94a3b8;
+  max-width: 400px;
+  line-height: 1.6;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}

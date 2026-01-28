@@ -93,7 +93,7 @@ html.night-mode .homeview .sidebar-header {
   transition: background-color 0.2s;
 }
 
-/* 用户资料区域 - 增加特异性，避免影响ConversationItem */
+/* 用户资料区域 - 增加特异性，避免影响conversation-item */
 html.night-mode .homeview .sidebar-header .user-profile {
   display: flex;
   align-items: center;
@@ -143,7 +143,7 @@ html.night-mode .homeview .sidebar-header .user-profile:hover::after {
   opacity: 1;
 }
 
-/* 关键修改：增加特异性，避免影响ConversationItem的avatar-placeholder */
+/* 关键修改：增加特异性，避免影响conversation-item的avatar-placeholder */
 html.night-mode .homeview .sidebar-header .avatar-placeholder {
   width: 48px;
   height: 48px;

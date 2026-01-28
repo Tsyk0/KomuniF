@@ -1,4 +1,4 @@
-<!-- src/components/ConversationList.vue -->
+<!-- src/components/conversation-list.vue -->
 <template>
   <div class="conversation-list">
     <!-- 搜索框 -->
@@ -53,7 +53,7 @@
 
     <!-- 会话列表 -->
     <div v-else class="conversations-container">
-      <ConversationItem
+      <conversationItem
         v-for="conversation in filteredConversations"
         :key="conversation.convId"
         :conversation="conversation"
@@ -68,7 +68,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useConversationStore } from "@/stores/chat/show-conversation";
 import { useShowMessageStore } from "@/stores/chat/show-message";
-import ConversationItem from "./ConversationItem.vue";
+import conversationItem from "./conversationItem.vue";
 import type { ConversationDetailDTO } from "@/types/form/conversation-detail";
 
 // Store
@@ -166,7 +166,7 @@ const loadConversations = async () => {
 // 处理会话点击 - 关键修改点
 const handleConversationClick = async (convId: number) => {
   try {
-    console.log("ConversationList: 处理会话点击，convId:", convId);
+    console.log("conversation-list: 处理会话点击，convId:", convId);
     console.log("当前会话ID:", currentConversationId.value);
 
     // 1. 检查是否是切换不同会话
@@ -231,5 +231,5 @@ import { onUnmounted } from "vue";
 
 <style scoped>
 /* 完全移除内联样式 */
-@import "@/assets/styles/conversationlist.css";
+@import "@/assets/styles/conversation-list.css";
 </style>

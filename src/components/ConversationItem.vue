@@ -189,5 +189,5 @@ import { useAuthStore } from "@/stores/auth";
 </script>
 
 <style scoped>
-@import "@/assets/styles/conversationitem.css";
+@import "@/assets/styles/conversation-item.css";
 </style>

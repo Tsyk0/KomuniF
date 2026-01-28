@@ -1,0 +1,132 @@
+/* ==================== 好友分组样式 ==================== */
+
+.friend-group-container {
+  margin-bottom: 4px;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0 4px 4px 4px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.group-header:hover {
+  background-color: rgba(0, 122, 255, 0.05);
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.toggle-icon {
+  color: #666;
+  font-size: 10px;
+  width: 12px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.group-count {
+  font-size: 13px;
+  color: #999;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.group-content {
+  background-color: #fafafa;
+}
+
+.friend-group-content.expanded {
+  max-height: 1000px;
+}
+
+.friend-group-items {
+  padding: 12px 0;
+}
+
+.friend-group-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.friend-group-empty-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  opacity: 0.3;
+}
+
+.friend-group-empty-text {
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+/* 特殊关心分组样式 */
+.friend-group-special-care {
+  border-color: #ff2d55;
+  box-shadow: 0 4px 12px rgba(255, 45, 85, 0.15);
+}
+
+.friend-group-special-care:hover {
+  box-shadow: 0 8px 24px rgba(255, 45, 85, 0.2);
+  border-color: #ff2d55;
+}
+
+.friend-group-special-care .friend-group-header {
+  background: linear-gradient(135deg, #fff5f7 0%, #ffeef1 100%);
+  border-bottom-color: #ffccd5;
+}
+
+.friend-group-special-care .friend-group-icon {
+  color: #ff2d55;
+  background: rgba(255, 45, 85, 0.1);
+}
+
+.friend-group-special-care .friend-group-count {
+  background: rgba(255, 45, 85, 0.1);
+  color: #ff2d55;
+}
+
+/* 同学分组样式 */
+.friend-group-classmates {
+  border-color: #34c759;
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.15);
+}
+
+.friend-group-classmates:hover {
+  box-shadow: 0 8px 24px rgba(52, 199, 89, 0.2);
+  border-color: #34c759;
+}
+
+.friend-group-classmates .friend-group-header {
+  background: linear-gradient(135deg, #f0fff4 0%, #e6fff0 100%);
+  border-bottom-color: #c6f6d5;
+}
+
+.friend-group-classmates .friend-group-icon {
+  color: #34c759;
+  background: rgba(52, 199, 89, 0.1);
+}
+
+.friend-group-classmates .friend-group-count {
+  background: rgba(52, 199, 89, 0.1);
+  color: #34c759;
+}

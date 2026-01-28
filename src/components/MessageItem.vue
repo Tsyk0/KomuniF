@@ -76,5 +76,5 @@ const formatTime = (timeStr: string) => {
 
 <style scoped>
 /* 导入对应主题的样式 */
-@import "@/assets/styles/messageitem.css";
+@import "@/assets/styles/message-item.css";
 </style>

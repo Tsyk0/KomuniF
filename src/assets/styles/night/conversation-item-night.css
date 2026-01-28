@@ -1,4 +1,4 @@
-/* src/assets/styles/night/conversationitem-night.css - 完全对应夜晚模式 */
+/* src/assets/styles/night/conversation-item-night.css - 完全对应夜晚模式 */
 html.night-mode .conversation-item {
   display: flex;
   align-items: center;

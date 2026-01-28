@@ -1,0 +1,239 @@
+/* ==================== 好友详情样式 ==================== */
+
+.friend-detail-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.friend-detail-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.friend-detail-header .back-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-right: 12px;
+  color: #007aff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.friend-detail-header .back-icon {
+  font-size: 18px;
+  display: block;
+  line-height: 1;
+}
+
+.friend-detail-header .friend-detail-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  margin-left: 12px;
+}
+
+.friend-detail-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 16px;
+}
+
+/* 好友头像区域 */
+.friend-avatar-large {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.avatar-large-default {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007aff, #0056cc);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 500;
+  margin: 0 auto 12px;
+}
+
+.online-status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.online-status-badge.online {
+  background-color: #4caf50;
+}
+
+.online-status-badge.away {
+  background-color: #ff9800;
+}
+
+.online-status-badge.offline {
+  background-color: #9e9e9e;
+}
+
+/* 好友基本信息 */
+.friend-basic-info {
+  margin-bottom: 24px;
+}
+
+.friend-name-large {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.friend-remark,
+.friend-group {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.friend-remark .remark-label,
+.friend-group .group-label {
+  font-weight: 500;
+}
+
+.friend-more-info {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: flex;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.info-label {
+  color: #666;
+  min-width: 80px;
+}
+
+.info-value {
+  color: #333;
+  flex: 1;
+}
+
+.friend-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn.primary {
+  background-color: #007aff;
+  color: white;
+}
+
+.action-btn.primary:hover {
+  background-color: #0056b3;
+}
+
+.action-btn.secondary {
+  background-color: white;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.action-btn.secondary:hover {
+  background-color: #f5f5f5;
+}
+
+.friend-actions .action-btn.secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.friend-actions .action-icon {
+  font-size: 20px;
+}
+
+.friend-actions .action-text {
+  letter-spacing: 0.5px;
+}
+
+/* 无好友选中状态 */
+.friend-no-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+}
+
+.friend-no-selection-icon {
+  font-size: 72px;
+  margin-bottom: 24px;
+  color: #007aff;
+  opacity: 0.3;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.friend-no-selection-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.friend-no-selection-description {
+  font-size: 16px;
+  color: #666;
+  max-width: 400px;
+  line-height: 1.6;
+}
