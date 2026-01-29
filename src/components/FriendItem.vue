@@ -1,57 +1,84 @@
-<!-- src/components/FriendItem.vue -->
 <template>
-  <div class="friend-item" @click="handleClick">
+  <div class="friend-item-container" @click="handleClick">
     <!-- 头像 -->
-    <div class="friend-avatar">
+    <div class="friend-item-avatar">
       <img
         v-if="friend.avatar"
         :src="friend.avatar"
         :alt="displayName"
-        class="avatar-img"
+        class="friend-item-avatar-img"
       />
-      <div v-else class="avatar-default">
+      <div v-else class="friend-item-avatar-default">
         {{ displayName.charAt(0) }}
       </div>
-      <span class="online-dot" :class="friend.onlineStatus"></span>
+      <span class="friend-item-online-dot" :class="friend.onlineStatus"></span>
     </div>
 
     <!-- 好友信息 -->
-    <div class="friend-info">
-      <div class="friend-name-row">
-        <span class="friend-name">{{ displayName }}</span>
-        <span v-if="friend.unreadCount" class="unread-badge">
+    <div class="friend-item-info">
+      <div class="friend-item-name-row">
+        <span class="friend-item-name">{{ displayName }}</span>
+        <span v-if="friend.unreadCount" class="friend-item-unread">
           {{ friend.unreadCount }}
         </span>
       </div>
-      <div class="friend-details">
-        <span class="friend-signature" v-if="friend.signature">
+      <div class="friend-item-details">
+        <span class="friend-item-signature" v-if="friend.signature">
           {{ friend.signature }}
         </span>
-        <span v-else-if="friend.lastSeen" class="last-seen">
+        <span v-else-if="friend.lastSeen" class="friend-item-last-seen">
           {{ friend.lastSeen }}
         </span>
-        <span v-else class="friend-nickname">
+        <span v-else class="friend-item-nickname">
           {{ friend.nickname }}
         </span>
       </div>
+    </div>
+
+    <!-- 操作按钮（悬停时显示） -->
+    <div class="friend-item-actions">
+      <button
+        class="friend-item-action-btn"
+        title="发送消息"
+        @click.stop="handleSendMessage"
+      >
+        💬
+      </button>
+      <button
+        class="friend-item-action-btn more"
+        title="更多操作"
+        @click.stop="handleMoreActions"
+      >
+        ⋯
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Friend } from "./FriendList.vue";
+import { computed } from "vue";
 
-interface Props {
-  friend: Friend;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  click: [friend: Friend];
+const props = defineProps<{
+  friend: {
+    id: number;
+    nickname: string;
+    remarkName?: string;
+    avatar?: string;
+    signature?: string;
+    lastSeen?: string;
+    onlineStatus: "online" | "away" | "offline";
+    unreadCount?: number;
+    isSpecialCare?: boolean;
+    isVip?: boolean;
+  };
 }>();
 
-// 计算显示名称：优先显示备注名
+const emit = defineEmits<{
+  click: [friend: any];
+  "send-message": [friend: any];
+  "more-actions": [friend: any];
+}>();
+
 const displayName = computed(() => {
   return props.friend.remarkName || props.friend.nickname;
 });
@@ -59,9 +86,18 @@ const displayName = computed(() => {
 const handleClick = () => {
   emit("click", props.friend);
 };
+
+const handleSendMessage = () => {
+  emit("send-message", props.friend);
+};
+
+const handleMoreActions = () => {
+  emit("more-actions", props.friend);
+};
 </script>
 
 <style scoped>
-@import "@/assets/styles/base.css";
+/* 这里不需要引入CSS，因为FriendList组件已经引入了 */
 @import "@/assets/styles/friend-item.css";
+@import "@/assets/styles/night/friend-item-night.css";
 </style>

@@ -172,8 +172,8 @@ html.night-mode .nav-right {
 /* ========== 5. 主内容区域 ========== */
 html.night-mode .main-content-wrapper {
   flex: 1;
-  margin-left: 200px;
-  margin-right: 200px;
+  margin-left: 100px;
+  margin-right: 100px;
   display: flex;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);

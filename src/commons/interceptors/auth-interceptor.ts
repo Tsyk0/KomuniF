@@ -14,7 +14,10 @@ export const authRequestInterceptor = {
   onFulfilled: (config: InternalAxiosRequestConfig) => {
     // 从 sessionStorage 获取 token
     const token = sessionStorage.getItem('token')
-    if (token && config.headers) {
+    const url = config.url || ''
+    const skipAuth =
+      url.includes('/friendRelationDetail/getFriendListbyUserId')
+    if (token && config.headers && !skipAuth) {
       config.headers.Authorization = `Bearer ${token}`
     }
     

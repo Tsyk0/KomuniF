@@ -191,6 +191,12 @@
   font-style: italic;
 }
 
+.friend-item-nickname {
+  font-size: 13px;
+  color: #999;
+  font-style: italic;
+}
+
 /* 操作按钮 */
 .friend-item-actions {
   display: flex;
@@ -217,6 +223,8 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  width: 32px;
+  height: 32px;
 }
 
 .friend-item-action-btn:hover {

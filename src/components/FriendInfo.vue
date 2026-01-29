@@ -1,4 +1,4 @@
-<!-- src/components/FriendDetail.vue -->
+<!-- src/components/FriendInfo.vue -->
 <template>
   <div class="friend-detail-container">
     <!-- 返回按钮和标题 -->
@@ -138,5 +138,5 @@ const handleMoreActions = () => {
 
 <style scoped>
 @import "@/assets/styles/base.css";
-@import "@/assets/styles/friend-detail.css";
+@import "@/assets/styles/friend-info.css";
 </style>

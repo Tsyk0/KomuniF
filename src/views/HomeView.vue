@@ -12,7 +12,7 @@
             @click="goToChat"
             v-ripple
             title="聊天"
-            :class="{ active: currentView === 'chat' }"
+            :class="{ active: currentListView === 'chat' }"
           >
             <span class="menu-icon">💬</span>
           </button>
@@ -23,7 +23,7 @@
             @click="goToFriends"
             v-ripple
             title="好友"
-            :class="{ active: currentView === 'friends' }"
+            :class="{ active: currentListView === 'friends' }"
           >
             <span class="menu-icon">👥</span>
           </button>
@@ -99,114 +99,16 @@
         <!-- 内容切换：会话列表或好友列表 -->
         <div class="sidebar-content">
           <!-- 会话列表（聊天视图时显示） -->
-          <div v-if="currentView === 'chat'" class="chat-list-container">
-            <conversationlist @conversation-click="handleConversationClick" />
+          <div v-if="currentListView === 'chat'" class="chat-list-container">
+            <ConversationList @conversation-click="handleConversationClick" />
           </div>
 
           <!-- 好友列表（好友视图时显示） -->
           <div
-            v-else-if="currentView === 'friends'"
+            v-else-if="currentListView === 'friends'"
             class="friend-list-container"
           >
-            <!-- 好友分组 -->
-            <div class="friends-groups">
-              <div class="friends-group">
-                <div class="group-header" @click="toggleGroup('specialCare')">
-                  <div class="group-title">
-                    <span class="toggle-icon">{{
-                      collapsedGroups.specialCare ? "▶" : "▼"
-                    }}</span>
-                    <span>特别关心</span>
-                  </div>
-                  <div class="group-count">1/1</div>
-                </div>
-                <div v-if="!collapsedGroups.specialCare" class="group-content">
-                  <div
-                    class="friend-item"
-                    :class="{ active: selectedFriendId === 1001 }"
-                    @click="selectFriend(specialCareFriends[0])"
-                  >
-                    <div class="friend-avatar">
-                      <div class="avatar-default">张</div>
-                      <span class="online-dot online"></span>
-                    </div>
-                    <div class="friend-info">
-                      <div class="friend-name">
-                        {{ specialCareFriends[0].displayName }}
-                      </div>
-                      <div class="friend-signature">
-                        {{ specialCareFriends[0].signature }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="friends-group">
-                <div class="group-header" @click="toggleGroup('myFriends')">
-                  <div class="group-title">
-                    <span class="toggle-icon">{{
-                      collapsedGroups.myFriends ? "▶" : "▼"
-                    }}</span>
-                    <span>我的好友</span>
-                  </div>
-                  <div class="group-count">0/5</div>
-                </div>
-                <div v-if="!collapsedGroups.myFriends" class="group-content">
-                  <div class="empty-group">
-                    <p>暂无好友</p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="friends-group">
-                <div class="group-header" @click="toggleGroup('classmates')">
-                  <div class="group-title">
-                    <span class="toggle-icon">{{
-                      collapsedGroups.classmates ? "▶" : "▼"
-                    }}</span>
-                    <span>同学</span>
-                  </div>
-                  <div class="group-count">20/24</div>
-                </div>
-                <div v-if="!collapsedGroups.classmates" class="group-content">
-                  <div
-                    v-for="friend in classmatesFriends"
-                    :key="friend.id"
-                    class="friend-item"
-                    :class="{ active: selectedFriendId === friend.id }"
-                    @click="selectFriend(friend)"
-                  >
-                    <div class="friend-avatar">
-                      <div class="avatar-default">
-                        {{ friend.displayName.charAt(0) }}
-                      </div>
-                      <span
-                        class="online-dot"
-                        :class="friend.onlineStatus"
-                      ></span>
-                    </div>
-                    <div class="friend-info">
-                      <div class="friend-name">{{ friend.displayName }}</div>
-                      <div v-if="friend.signature" class="friend-signature">
-                        {{ friend.signature }}
-                      </div>
-                      <div v-else-if="friend.lastSeen" class="friend-last-seen">
-                        {{ friend.lastSeen }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 添加好友按钮 -->
-            <div class="friend-list-footer">
-              <button class="add-friend-btn" @click="handleAddFriend">
-                <span class="add-icon">➕</span>
-                <span class="add-text">添加好友</span>
-              </button>
-            </div>
+            <FriendList @friend-click="handleFriendClick" />
           </div>
         </div>
       </div>
@@ -215,7 +117,7 @@
       <div class="chat-main-area">
         <!-- 用户资料编辑组件 -->
         <ProfileEdit
-          v-if="currentView === 'profile'"
+          v-if="currentMainView === 'profile'"
           :user-data="editForm"
           @back="exitEditMode"
           @update:user-data="handleUserDataUpdate"
@@ -224,7 +126,7 @@
 
         <!-- 更多选项主菜单 -->
         <MoreOptions
-          v-else-if="currentView === 'more'"
+          v-else-if="currentMainView === 'more'"
           :user-id="userId.toString()"
           :user-nickname="userNickname"
           @back="backToMainMenu"
@@ -233,7 +135,7 @@
 
         <!-- 修改密码组件 -->
         <ChangePassword
-          v-else-if="currentView === 'password'"
+          v-else-if="currentMainView === 'password'"
           :user-id="userId"
           :user-nickname="userNickname"
           @back="backToAccountSecurity"
@@ -241,17 +143,17 @@
         />
 
         <!-- 好友详情组件 -->
-        <FriendDetail
-          v-else-if="currentView === 'friends' && selectedFriend"
+        <FriendInfo
+          v-else-if="currentMainView === 'friends-detail' && selectedFriend"
           :friend="selectedFriend"
           @back="clearSelectedFriend"
           @send-message="handleSendMessageToFriend"
           @more-actions="handleFriendMoreActions"
         />
 
-        <!-- 聊天组件（当有选中会话且视图为chat时显示） -->
+        <!-- 聊天组件（当有选中会话时显示） -->
         <ChatContainer
-          v-else-if="currentView === 'chat' && currentConversationId"
+          v-else-if="currentConversationId"
           :conv-id="currentConversationId"
           :conversation-name="currentConversationName"
           :conversation-avatar="currentConversationAvatar"
@@ -259,8 +161,8 @@
           @back="clearCurrentConversation"
         />
 
-        <!-- 默认聊天区域（当视图为chat但没有选中会话时显示） -->
-        <div v-else-if="currentView === 'chat'" class="chat-area-label">
+        <!-- 默认聊天区域（当没有选中会话时显示） -->
+        <div v-else-if="currentListView === 'chat'" class="chat-area-label">
           <div class="chat-label-header">
             <span class="chat-label-icon">💭</span>
             <span class="chat-label-text">聊天区域</span>
@@ -285,8 +187,8 @@
         </div>
 
         <!-- 好友视图默认状态 -->
-        <!-- <div
-          v-else-if="currentView === 'friends' && !selectedFriend"
+        <div
+          v-else-if="currentListView === 'friends' && !selectedFriend"
           class="friend-default-view"
         >
           <div class="friend-default-content">
@@ -309,8 +211,8 @@
                 <span class="feature-text">管理分组</span>
               </div>
             </div>
-          </div> -->
-        <!-- </div> -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -336,8 +238,9 @@ import ProfileEdit from "@/components/ProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
 import ChatContainer from "@/components/ChatContainer.vue";
-import conversationlist from "@/components/conversationlist.vue";
-import FriendDetail from "@/components/FriendDetail.vue";
+import ConversationList from "@/components/ConversationList.vue";
+import FriendInfo from "@/components/FriendInfo.vue";
+import FriendList from "@/components/FriendList.vue";
 
 // 初始化 store 和 router
 const themeStore = useThemeStore();
@@ -352,69 +255,16 @@ const userId = ref("");
 const userNickname = ref("用户");
 const currentUserAvatar = ref("");
 const avatarLoadError = ref(false);
-const currentView = ref("chat");
+
+// 视图状态分离：
+const currentListView = ref("chat"); // 控制中间列表区域：'chat' | 'friends'
+const currentMainView = ref(null); // 控制右侧主区域：'profile' | 'more' | 'password' | 'friends-detail' | null
+
 const showSuccessMessage = ref(false);
 const successMessage = ref("");
 
 // 好友相关状态
-const searchKeyword = ref("");
 const selectedFriend = ref(null);
-const collapsedGroups = reactive({
-  specialCare: false,
-  myFriends: false,
-  classmates: false,
-});
-
-// 模拟好友数据
-const specialCareFriends = ref([
-  {
-    id: 1001,
-    nickname: "张三",
-    remarkName: "三哥",
-    displayName: "三哥",
-    group: "特别关心",
-    signature: "努力工作，快乐生活",
-    onlineStatus: "online",
-    lastSeen: "刚刚",
-    joinTime: "2023-10-01",
-  },
-]);
-
-const classmatesFriends = ref([
-  {
-    id: 2001,
-    nickname: "李四",
-    remarkName: "四哥",
-    displayName: "四哥",
-    group: "同学",
-    signature: "好好学习，天天向上",
-    onlineStatus: "online",
-    lastSeen: "刚刚",
-    joinTime: "2023-09-15",
-  },
-  {
-    id: 2002,
-    nickname: "王五",
-    remarkName: "",
-    displayName: "王五",
-    group: "同学",
-    signature: "",
-    onlineStatus: "offline",
-    lastSeen: "2小时前",
-    joinTime: "2023-09-20",
-  },
-  {
-    id: 2003,
-    nickname: "赵六",
-    remarkName: "六哥",
-    displayName: "六哥",
-    group: "同学",
-    signature: "前端开发工程师",
-    onlineStatus: "away",
-    lastSeen: "30分钟前",
-    joinTime: "2023-09-25",
-  },
-]);
 
 // 编辑表单数据
 const editForm = reactive({
@@ -453,10 +303,6 @@ const isGroupChat = computed(() => {
   return conversationStore.currentConversation?.convType === 2;
 });
 
-const selectedFriendId = computed(() => {
-  return selectedFriend.value?.id || null;
-});
-
 // 主题切换
 const toggleTheme = () => {
   themeStore.toggleTheme();
@@ -464,70 +310,60 @@ const toggleTheme = () => {
 
 // 视图切换方法
 const goToChat = () => {
-  console.log("点击聊天按钮，切换到聊天视图");
-  currentView.value = "chat";
+  console.log("点击聊天按钮，切换到聊天列表");
+  currentListView.value = "chat";
+  currentMainView.value = null; // 清空主视图
   selectedFriend.value = null; // 切换时清空选中的好友
+  conversationStore.clearCurrentConversation(); // 清空选中的会话
 };
 
 const goToFriends = () => {
-  console.log("切换到好友视图");
-  currentView.value = "friends";
-  conversationStore.clearCurrentConversation(); // 切换到好友视图时清空选中的会话
+  console.log("切换到好友列表");
+  currentListView.value = "friends";
+  currentMainView.value = null; // 清空主视图
+  conversationStore.clearCurrentConversation(); // 清空选中的会话
 };
 
 const enterEditMode = () => {
   console.log("进入用户资料编辑模式");
-  currentView.value = "profile";
+  currentMainView.value = "profile";
   loadUserData();
 };
 
 const exitEditMode = () => {
-  console.log("退出用户资料编辑模式，返回聊天视图");
-  currentView.value = "chat";
+  console.log("退出用户资料编辑模式");
+  currentMainView.value = null;
 };
 
 const showMoreOptions = () => {
   console.log("显示更多设置");
-  currentView.value = "more";
+  currentMainView.value = "more";
 };
 
 const showChangePassword = () => {
   console.log("显示修改密码页面");
-  currentView.value = "password";
+  currentMainView.value = "password";
 };
 
 const backToMainMenu = () => {
-  console.log("从更多设置返回聊天视图");
-  currentView.value = "chat";
+  console.log("从更多设置返回");
+  currentMainView.value = null;
 };
 
 const backToAccountSecurity = () => {
   console.log("从修改密码返回更多设置");
-  currentView.value = "more";
+  currentMainView.value = "more";
 };
 
 // 搜索相关方法
-const handleSearchInput = (event) => {
-  searchKeyword.value = event.target.value;
-  console.log("搜索关键词:", searchKeyword.value);
-};
-
-const clearSearch = () => {
-  searchKeyword.value = "";
-};
-
 // 好友相关方法
-const toggleGroup = (groupName) => {
-  collapsedGroups[groupName] = !collapsedGroups[groupName];
-};
-
-const selectFriend = (friend) => {
-  selectedFriend.value = { ...friend };
+const handleFriendClick = (friend) => {
   console.log("选择好友:", friend);
 };
 
 const clearSelectedFriend = () => {
   selectedFriend.value = null;
+  currentMainView.value = null; // 返回好友列表
 };
 
 const handleAddFriend = () => {
@@ -538,6 +374,10 @@ const handleAddFriend = () => {
 const handleSendMessageToFriend = (friend) => {
   console.log("发送消息给好友:", friend);
   // TODO: 实现与好友开始聊天
+  // 这里应该切换到聊天列表，并选择与该好友的会话
+  currentListView.value = "chat";
+  currentMainView.value = null;
+  // 然后查找或创建与该好友的会话
 };
 
 const handleFriendMoreActions = (friend) => {
@@ -625,12 +465,13 @@ const handleConversationClick = (convId) => {
 
   console.log("HomeView: 设置当前会话ID:", id);
   conversationStore.setCurrentConversation(id);
-  currentView.value = "chat";
+  currentMainView.value = null; // 清空其他视图，显示聊天
   selectedFriend.value = null; // 切换到聊天时清空选中的好友
 };
 
 const clearCurrentConversation = () => {
   conversationStore.clearCurrentConversation();
+  currentMainView.value = null; // 返回默认视图
 };
 
 const loadConversations = async () => {
@@ -663,7 +504,7 @@ const handleUserDataUpdate = (updatedData) => {
 };
 
 const handleEditSuccess = (message) => {
-  currentView.value = "chat";
+  exitEditMode();
 };
 
 // 工具方法
@@ -699,7 +540,7 @@ const handleLogout = async () => {
 // 生命周期钩子
 onMounted(() => {
   loadUserData();
-  console.log("HomeView mounted, initial view:", currentView.value);
+  console.log("HomeView mounted, initial list view:", currentListView.value);
   loadConversations();
 });
 </script>
@@ -711,5 +552,6 @@ onMounted(() => {
 
 /* 新增样式部分 */
 @import "@/assets/styles/friend-list.css";
-@import "@/assets/styles/friend-detail.css";
+@import "@/assets/styles/friend-info.css";
+@import "@/assets/styles/friend-item.css";
 </style>

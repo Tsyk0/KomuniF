@@ -40,8 +40,8 @@ const loadNightStyles = () => {
     'change-password-night.css',
     'loginview-night.css',
     'loginform-night.css',
-    'toast-night.css',      // 添加toast夜间样式
-    'ripple-night.css',     // 添加ripple夜间样式
+    'toast-night.css',      
+    'ripple-night.css',    
     'chat-container-night.css',
     'conversation-list-night.css',
     'message-item-night.css',

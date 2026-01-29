@@ -78,7 +78,8 @@ html.night-mode .homeview .nav-menu-item.logout-btn:hover {
 
 /* ========== 中间会话列表区域 ========== */
 html.night-mode .homeview .conversation-sidebar {
-  width: 320px;
+  width: 400px;
+   height: 100%;
   background-color: rgba(30, 30, 30, 0.95);
   border-right: 1px solid #334155;
   display: flex;
@@ -91,6 +92,14 @@ html.night-mode .homeview .sidebar-header {
   padding: 20px;
   border-bottom: 1px solid #334155;
   transition: background-color 0.2s;
+}
+
+
+.homeview .sidebar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* 用户资料区域 - 增加特异性，避免影响conversation-item */

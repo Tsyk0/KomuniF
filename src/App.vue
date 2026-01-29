@@ -24,7 +24,7 @@
 @import "@/assets/styles/conversation-list.css";
 @import "@/assets/styles/conversation-item.css";
 @import "@/assets/styles/friend-list.css";
-@import "@/assets/styles/friend-detail.css";
+@import "@/assets/styles/friend-info.css";
 @import "@/assets/styles/friend-group.css";
 @import "@/assets/styles/friend-item.css";
 
