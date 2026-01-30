@@ -34,11 +34,10 @@ const router = createRouter({
 
 // 路由守卫 - 检查登录状态
 router.beforeEach((to, from, next) => {
-  // 修改：从 sessionStorage 读取 token
-  const token = sessionStorage.getItem('token')
+  const user = sessionStorage.getItem('user')
   
   // 需要登录的页面
-  if (to.meta.requiresAuth && !token) {
+  if (to.meta.requiresAuth && !user) {
     next('/')  // 跳转到登录页
   } else {
     next()

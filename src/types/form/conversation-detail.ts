@@ -34,11 +34,6 @@ export interface ConversationDetailDTO {
   updateTime: string;
 }
 
-// 获取会话详情请求参数
-export interface GetConversationDetailsRequest {
-  userId: number;
-}
-
 // 获取会话详情响应
 export interface GetConversationDetailsResponse {
   code: number;

@@ -10,19 +10,17 @@ import type { CheckTokenResponse } from '@/types/flow/auth.response'
 // 记住我数据结构
 export interface RememberMeData {
   userId: string
-  token: string
 }
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: sessionStorage.getItem('token') || '',
     user: JSON.parse(sessionStorage.getItem('user') || 'null') as User | null,
     rememberMe: false as boolean
   }),
   
   getters: {
     isAuthenticated: (state): boolean => {
-      return !!state.token && !!state.user
+      return !!state.user
     },
     
     currentUser: (state): User | null => {
@@ -53,7 +51,8 @@ export const useAuthStore = defineStore('auth', {
         
         const loginRequest: LoginRequest = {
           userId: userId,
-          userPwd: userPwd
+          userPwd: userPwd,
+          rememberMe: rememberMe
         }
         
         const response = await loginApi(loginRequest) as LoginResponse
@@ -61,20 +60,17 @@ export const useAuthStore = defineStore('auth', {
         console.log('✅ 后端响应:', response)
         
         if (response.code === 200) {
-          // 1. 总是保存到 sessionStorage
-          sessionStorage.setItem('token', response.data.token)
+          // 1. 保存用户信息到 sessionStorage
           sessionStorage.setItem('user', JSON.stringify(response.data.user))
           
           // 2. 更新 store 状态
-          this.token = response.data.token
           this.user = response.data.user
           this.rememberMe = rememberMe
           
           // 3. 根据 rememberMe 处理 localStorage
           if (rememberMe) {
             const rememberMeData: RememberMeData = {
-              userId: userId,
-              token: response.data.token
+              userId: userId
             }
             localStorage.setItem('rememberMeData', JSON.stringify(rememberMeData))
             console.log('💾 已保存记住我数据')
@@ -136,18 +132,16 @@ export const useAuthStore = defineStore('auth', {
         console.log('🔑 找到记住的账户:', rememberMeData.userId)
         
         // 2. 调用 checkToken API（返回完整用户信息）
-        const response: CheckTokenResponse = await checkTokenApi(rememberMeData.token)
+        const response: CheckTokenResponse = await checkTokenApi(undefined)
         console.log('🔍 Token验证结果:', response)
         
         if (response.code === 200) {
           if (response.data.valid && response.data.user) {
             // 3. Token有效，直接登录
-            this.token = rememberMeData.token
             this.user = response.data.user  // ✅ 使用checkToken返回的完整user信息
             this.rememberMe = true
             
-            // 4. 保存到 sessionStorage
-            sessionStorage.setItem('token', rememberMeData.token)
+            // 4. 保存用户信息到 sessionStorage
             sessionStorage.setItem('user', JSON.stringify(response.data.user))
             
             console.log('✅ 免密登录成功')
@@ -155,7 +149,6 @@ export const useAuthStore = defineStore('auth', {
             return {
               success: true,
               data: {
-                token: rememberMeData.token,
                 user: response.data.user,
                 fromAutoLogin: true
               }
@@ -230,9 +223,7 @@ export const useAuthStore = defineStore('auth', {
      * 清除所有认证信息
      */
     clearStorage(): void {
-      sessionStorage.removeItem('token')
       sessionStorage.removeItem('user')
-      this.token = ''
       this.user = null
       this.rememberMe = false
       console.log('🗑️ 已清除会话存储')
@@ -252,12 +243,10 @@ export const useAuthStore = defineStore('auth', {
     initAuth(): void {
       console.log('🔄 初始化认证状态...')
       
-      const sessionToken = sessionStorage.getItem('token')
       const sessionUser = sessionStorage.getItem('user')
       
-      if (sessionToken && sessionUser) {
+      if (sessionUser) {
         try {
-          this.token = sessionToken
           this.user = JSON.parse(sessionUser)
           this.rememberMe = false
           console.log('✅ 从 sessionStorage 恢复登录状态')

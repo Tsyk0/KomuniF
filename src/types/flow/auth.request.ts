@@ -7,6 +7,7 @@
 export interface LoginRequest {
   userId: string    // 用户ID（字符串，后端会转换为Long）
   userPwd: string   // 密码
+  rememberMe?: boolean // 记住我
 }
 
 export interface CheckTokenRequest {

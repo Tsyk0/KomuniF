@@ -20,11 +20,6 @@ export interface FriendRelationDetailDTO {
   friendOnlineStatus?: number | null;
 }
 
-// 获取好友列表请求参数
-export interface GetFriendListRequest {
-  userId: number;
-}
-
 // 获取好友列表响应
 export type GetFriendListResponse = BaseResponse<FriendRelationDetailDTO[]>;
 

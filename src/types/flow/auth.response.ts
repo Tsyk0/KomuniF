@@ -12,12 +12,12 @@ export interface LoginResponse {
   data: {
     userId: number
     user: User
-    tokenInfo: {
+    tokenInfo?: {
       expiration: string
       issuedAt: string
       expiresInSeconds: number
     }
-    token: string
+    token?: string
   }
   timestamp: number
 }

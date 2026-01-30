@@ -1,5 +1,4 @@
 // src/services/websocket/websocket.service.ts
-import { useAuthStore } from '@/stores/auth';
 
 /**
  * WebSocket服务 - 基础版 + 心跳
@@ -37,20 +36,9 @@ export class WebSocketService {
     
     return new Promise((resolve) => {
       try {
-        // 从auth store获取token
-        const authStore = useAuthStore();
-        const token = authStore.token;
-        
-        // 🔴 重要：先检查token，再创建WebSocket
-        if (!token) {
-          console.error('请先登录获取token');
-          this.isConnecting = false;
-          resolve(false);
-          return;
-        }
-        
-        // 构建WebSocket URL（编码token中的特殊字符）
-        const url = `ws://localhost:8081/ws?token=${encodeURIComponent(token)}`;
+        // 同源连接，浏览器才会自动带 Cookie（代理会把 /ws 转到后端）
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const url = `${protocol}//${window.location.host}/ws`;
         console.log('正在连接WebSocket:', url);
         
         // 创建WebSocket连接

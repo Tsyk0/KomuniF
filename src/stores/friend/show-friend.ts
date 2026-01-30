@@ -70,9 +70,7 @@ export const useFriendStore = defineStore("friend", {
           throw new Error("用户未登录");
         }
 
-        const response = await friendApi.getFriendListByUserId({
-          userId: currentUserId
-        });
+        const response = await friendApi.getFriendListByUserId();
 
         if (response.code !== 200) {
           throw new Error(response.message || "获取好友列表失败");

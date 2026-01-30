@@ -31,17 +31,8 @@ export const useConversationStore = defineStore('conversation', {
       try {
         this.loadingConversations = true;
         
-        const authStore = useAuthStore();
-        const currentUserId = authStore.user?.userId;
-        
-        if (!currentUserId) {
-          throw new Error('用户未登录');
-        }
-        
         // 使用新的复合查询API
-        const response = await conversationDetailApi.getConversationDetailsByUserId({
-          userId: currentUserId
-        });
+        const response = await conversationDetailApi.getConversationDetailsByUserId();
         
         if (response.code === 200) {
           // 处理返回的数据

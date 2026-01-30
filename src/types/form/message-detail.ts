@@ -28,7 +28,6 @@ export interface MessageDetailDTO {
 // 获取消息详情请求参数
 export interface GetMessageDetailsRequest {
   convId: number;
-  currentUserId: number;
   page?: number;
   pageSize?: number;
 }

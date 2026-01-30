@@ -64,19 +64,9 @@ export const useWebSocketStore = defineStore('websocket', () => {
         // 关闭现有连接
         disconnect();
         
-        const token = authStore.token;
-        
-        if (!token) {
-          console.error('❌ [websocket-store] 未找到认证token，请先登录');
-          connectionError.value = '请先登录';
-          isConnecting = false;
-          reject(new Error('未找到认证token'));
-          return;
-        }
-        
-        const backendUrl = 'localhost:8081';
-        const wsUrl = `ws://${backendUrl}/ws?token=${encodeURIComponent(token)}`;
-        
+        // 同源连接，浏览器才会自动带 Cookie（代理会把 /ws 转到后端）
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws`;
         console.log('🔄 [websocket-store] 正在建立WebSocket连接:', wsUrl);
         
         const ws = new WebSocket(wsUrl);

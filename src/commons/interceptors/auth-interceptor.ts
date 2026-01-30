@@ -12,15 +12,6 @@ import type {
 // 请求拦截器
 export const authRequestInterceptor = {
   onFulfilled: (config: InternalAxiosRequestConfig) => {
-    // 从 sessionStorage 获取 token
-    const token = sessionStorage.getItem('token')
-    const url = config.url || ''
-    const skipAuth =
-      url.includes('/friendRelationDetail/getFriendListbyUserId')
-    if (token && config.headers && !skipAuth) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    
     // 开发环境日志
     if (import.meta.env.DEV) {
       console.log('📤 发送请求:', {
@@ -62,9 +53,8 @@ export const authResponseInterceptor = {
       message: error.message
     })
     
-    // 401 未授权，清除本地存储的 token 和用户信息
+    // 401 未授权，清除本地存储的用户信息
     if (error.response?.status === 401) {
-      sessionStorage.removeItem('token')
       sessionStorage.removeItem('user')
       
       // 可以在这里跳转到登录页，但为了解耦，建议在调用处处理
