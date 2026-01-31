@@ -1,0 +1,235 @@
+/* ==================== 注册表单样式 - 白天模式 ==================== */
+
+.register-form {
+  max-width: 400px;
+  margin: 0 auto;
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.register-form h2 {
+  text-align: center;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.register-form .subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* 表单容器 */
+.register-form .form-container {
+  background: transparent;
+}
+
+/* 输入组 */
+.register-form .input-group {
+  margin-bottom: 24px;
+}
+
+.register-form .input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+.register-form .el-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #333;
+  background: white;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.register-form .el-input:focus {
+  outline: none;
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.register-form .el-input.error {
+  border-color: #ff3b30;
+  box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.1);
+}
+
+/* 错误提示 */
+.register-form .error-message {
+  color: #ff3b30;
+  font-size: 13px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.register-form .error-icon {
+  font-size: 14px;
+  filter: drop-shadow(0 1px 2px rgba(255, 59, 48, 0.2));
+}
+
+/* 提示文本 */
+.register-form .hint {
+  font-size: 13px;
+  color: #999;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* 带提示的输入框 */
+.register-form .input-with-hint {
+  position: relative;
+}
+
+/* 条款复选框 */
+.register-form .terms {
+  margin: 24px 0;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #f0f0f0;
+}
+
+.register-form .checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+  gap: 12px;
+}
+
+.register-form .checkbox-label input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid #ddd;
+  cursor: pointer;
+  transition: all 0.2s;
+  accent-color: #007aff;
+}
+
+.register-form .checkbox-label input:checked {
+  background-color: #007aff;
+  border-color: #007aff;
+}
+
+.register-form .terms-link {
+  color: #007aff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.register-form .terms-link:hover {
+  color: #0056cc;
+  text-decoration: underline;
+}
+
+/* 按钮组 */
+.register-form .button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.register-form .el-button {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  box-sizing: border-box;
+  letter-spacing: 0.3px;
+}
+
+.register-form .el-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.register-form .el-button--primary {
+  background: linear-gradient(135deg, #007aff 0%, #0056cc 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+.register-form .el-button--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0062e6 0%, #0044a3 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+}
+
+.register-form .el-button--primary:active:not(:disabled) {
+  background: linear-gradient(135deg, #0050c8 0%, #003380 100%);
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+
+.register-form .el-button--default {
+  background: white;
+  color: #333;
+  border: 2px solid #f0f0f0;
+}
+
+.register-form .el-button--default:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #e0e0e0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.register-form .el-button--default:active:not(:disabled) {
+  background: #f0f0f0;
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* 重要提示框 */
+.register-form .important-notice {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fff8e1 0%, #fff3cd 100%);
+  border-left: 4px solid #ffb300;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  border: 1px solid rgba(255, 179, 0, 0.2);
+}
+
+.register-form .important-notice p {
+  margin: 8px 0;
+  color: #5d4037;
+}
+
+.register-form .important-notice p:first-child {
+  font-weight: 700;
+  color: #e65100;
+  margin-bottom: 12px;
+  font-size: 15px;
+}

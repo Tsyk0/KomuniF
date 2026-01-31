@@ -40,6 +40,7 @@ const loadNightStyles = () => {
     'change-password-night.css',
     'loginview-night.css',
     'loginform-night.css',
+    'register-night.css',
     'toast-night.css',      
     'ripple-night.css',    
     'chat-container-night.css',
