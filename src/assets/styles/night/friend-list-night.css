@@ -5,6 +5,7 @@ html.night-mode .friend-list-container {
   flex-direction: column;
   height: 100%;
   position: relative;
+  background-color: (26, 26, 26)
 }
 
 /* 搜索框样式 - 夜晚模式 */
@@ -86,7 +87,7 @@ html.night-mode .friend-list-container .friend-list-content {
 }
 
 html.night-mode .friend-list-container .friend-groups {
-  background-color: #252525;
+  background-color: rgb(26,26,26);
 }
 
 html.night-mode .friend-list-container .empty-group {
