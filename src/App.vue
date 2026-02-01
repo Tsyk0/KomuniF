@@ -15,7 +15,7 @@
 /* 只导入日间基础样式，夜间样式通过动态加载 */
 @import "@/assets/styles/base.css";
 @import "@/assets/styles/homeview.css";
-@import "@/assets/styles/profile-edit.css";
+@import "@/assets/styles/user-profile-edit.css";
 @import "@/assets/styles/more-options.css";
 @import "@/assets/styles/change-password.css";
 @import "@/assets/styles/loginview.css";
@@ -71,8 +71,8 @@
 }
 
 /* 1. 各区域滚动条宽度（与全局一致） */
-.profile-edit .form-content::-webkit-scrollbar,
-.profile-edit .edit-content::-webkit-scrollbar,
+.user-profile-edit .form-content::-webkit-scrollbar,
+.user-profile-edit .edit-content::-webkit-scrollbar,
 .homeview .conversation-list::-webkit-scrollbar,
 .homeview .conversation-list .conversations-container::-webkit-scrollbar,
 .conversation-list .conversations-container::-webkit-scrollbar,
@@ -97,8 +97,8 @@
   height: var(--scrollbar-width) !important;
 }
 
-.profile-edit .form-content::-webkit-scrollbar-button,
-.profile-edit .edit-content::-webkit-scrollbar-button,
+.user-profile-edit .form-content::-webkit-scrollbar-button,
+.user-profile-edit .edit-content::-webkit-scrollbar-button,
 .homeview .conversation-list::-webkit-scrollbar-button,
 .homeview .conversation-list .conversations-container::-webkit-scrollbar-button,
 .conversation-list .conversations-container::-webkit-scrollbar-button,
@@ -130,8 +130,8 @@
 }
 
 /* 3. 滚动条轨道 - 透明，继承父元素背景 */
-.profile-edit .form-content::-webkit-scrollbar-track,
-.profile-edit .edit-content::-webkit-scrollbar-track,
+.user-profile-edit .form-content::-webkit-scrollbar-track,
+.user-profile-edit .edit-content::-webkit-scrollbar-track,
 .homeview .conversation-list::-webkit-scrollbar-track,
 .homeview .conversation-list .conversations-container::-webkit-scrollbar-track,
 .conversation-list .conversations-container::-webkit-scrollbar-track,
@@ -159,8 +159,8 @@
 }
 
 /* 4. 滚动条滑块 - 默认透明，鼠标移出容器时隐藏 */
-.profile-edit .form-content::-webkit-scrollbar-thumb,
-.profile-edit .edit-content::-webkit-scrollbar-thumb,
+.user-profile-edit .form-content::-webkit-scrollbar-thumb,
+.user-profile-edit .edit-content::-webkit-scrollbar-thumb,
 .homeview .conversation-list::-webkit-scrollbar-thumb,
 .homeview .conversation-list .conversations-container::-webkit-scrollbar-thumb,
 .conversation-list .conversations-container::-webkit-scrollbar-thumb,
@@ -188,12 +188,12 @@
 }
 
 /* 5. 鼠标在可滚动容器区域内时显示拇指，显示/悬停拇指/拖拽时共用同一透明度（无变化） */
-.profile-edit .form-content:hover::-webkit-scrollbar-thumb,
-.profile-edit .form-content:hover::-webkit-scrollbar-thumb:hover,
-.profile-edit .form-content:hover::-webkit-scrollbar-thumb:active,
-.profile-edit .edit-content:hover::-webkit-scrollbar-thumb,
-.profile-edit .edit-content:hover::-webkit-scrollbar-thumb:hover,
-.profile-edit .edit-content:hover::-webkit-scrollbar-thumb:active,
+.user-profile-edit .form-content:hover::-webkit-scrollbar-thumb,
+.user-profile-edit .form-content:hover::-webkit-scrollbar-thumb:hover,
+.user-profile-edit .form-content:hover::-webkit-scrollbar-thumb:active,
+.user-profile-edit .edit-content:hover::-webkit-scrollbar-thumb,
+.user-profile-edit .edit-content:hover::-webkit-scrollbar-thumb:hover,
+.user-profile-edit .edit-content:hover::-webkit-scrollbar-thumb:active,
 .homeview .conversation-list:hover::-webkit-scrollbar-thumb,
 .homeview .conversation-list:hover::-webkit-scrollbar-thumb:hover,
 .homeview .conversation-list:hover::-webkit-scrollbar-thumb:active,
@@ -277,8 +277,8 @@
 .friend-default .friend-default-content,
 .friend-group .friend-group-content,
 .friend-group .friend-group-items,
-.profile-edit .form-content,
-.profile-edit .edit-content,
+.user-profile-edit .form-content,
+.user-profile-edit .edit-content,
 .homeview .conversation-list,
 .homeview .conversation-list .conversations-container,
 .conversation-list .conversations-container,

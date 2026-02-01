@@ -116,7 +116,7 @@
       <!-- 右侧聊天区域 (MCA - Main Chat Area) -->
       <div class="chat-main-area">
         <!-- 用户资料编辑组件 -->
-        <ProfileEdit
+        <UserProfileEdit
           v-if="currentMainView === 'profile'"
           :user-data="editForm"
           @back="exitEditMode"
@@ -234,7 +234,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useConversationStore } from "@/stores/chat/show-conversation";
 import { useShowMessageStore } from "@/stores/chat/show-message";
 import { useSendMessageStore } from "@/stores/chat/send-message";
-import ProfileEdit from "@/components/ProfileEdit.vue";
+import UserProfileEdit from "@/components/UserProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
 import ChatContainer from "@/components/ChatContainer.vue";

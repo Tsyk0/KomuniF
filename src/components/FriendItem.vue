@@ -1,5 +1,10 @@
 <template>
-  <div class="friend-item-container" @click="handleClick">
+  <div
+    class="friend-item-container"
+    :class="{ active: isActive }"
+    @click="handleClick"
+    v-ripple
+  >
     <!-- 头像 -->
     <div class="friend-item-avatar">
       <img
@@ -57,20 +62,18 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import type { FriendListItem } from "@/types/form/friend-detail";
+
+type FriendItemData = FriendListItem & {
+  unreadCount?: number;
+  lastSeen?: string;
+  isSpecialCare?: boolean;
+  isVip?: boolean;
+};
 
 const props = defineProps<{
-  friend: {
-    id: number;
-    nickname: string;
-    remarkName?: string;
-    avatar?: string;
-    signature?: string;
-    lastSeen?: string;
-    onlineStatus: "online" | "away" | "offline";
-    unreadCount?: number;
-    isSpecialCare?: boolean;
-    isVip?: boolean;
-  };
+  friend: FriendItemData;
+  isActive?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -81,6 +84,10 @@ const emit = defineEmits<{
 
 const displayName = computed(() => {
   return props.friend.remarkName || props.friend.nickname;
+});
+
+const isActive = computed(() => {
+  return Boolean(props.isActive);
 });
 
 const handleClick = () => {

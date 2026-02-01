@@ -75,7 +75,7 @@ export const useUserStore = defineStore('user', {
         this.isLoading = true
         this.errorMessage = null
         
-        const response = await getUserByIdApi(userId)
+        const response = await getUserByIdApi()
         
         console.log('✅ 获取用户信息响应:', response)
         

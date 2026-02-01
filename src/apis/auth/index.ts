@@ -1,7 +1,7 @@
 // src/apis/auth/index.ts
 import service from '../service'
 import type { LoginRequest, RegisterRequest } from '@/types/flow/auth.request'
-import type { LoginResponse, RegisterResponse,CheckTokenResponse } from '@/types/flow/auth.response'
+import type { LoginResponse, RegisterResponse, CheckTokenResponse } from '@/types/flow/auth.response'
 
 /**
  * 用户登录
@@ -15,7 +15,7 @@ export function loginApi(data: LoginRequest): Promise<LoginResponse> {
     data,
     withCredentials: true
   })
-  
+
 }
 // 新增：Token验证API
 export function checkTokenApi(_token?: string): Promise<CheckTokenResponse> {

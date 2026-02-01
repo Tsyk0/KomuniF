@@ -1,37 +1,52 @@
-/* ==================== 好友项样式 - 夜晚模式 ==================== */
+/* ==================== 好友项样式 - 夜晚模式（对齐会话项） ==================== */
 
 html.night-mode .friend-item-container {
   display: flex;
   align-items: center;
-  padding: 16px 20px;
+  padding: 12px 16px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background: #252525;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border-bottom: 1px solid #334155;
+  background-color: transparent;
   position: relative;
   overflow: hidden;
 }
 
-html.night-mode .friend-item-container:hover {
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.05) 0%, rgba(96, 165, 250, 0.02) 100%);
-  transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.1);
-}
-
-html.night-mode .friend-item-container.active {
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0.05) 100%);
-  border-left: 4px solid #60a5fa;
-  padding-left: 16px;
-}
-
-html.night-mode .friend-item-container.active::before {
+html.night-mode .friend-item-container::before {
   content: '';
   position: absolute;
   left: 0;
   top: 0;
-  bottom: 0;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.15) 0%, transparent 100%);
+  transition: width 0.3s ease;
+}
+
+html.night-mode .friend-item-container:hover::before {
   width: 4px;
-  background: #60a5fa;
+}
+
+html.night-mode .friend-item-container:hover {
+  background-color: rgba(51, 65, 85, 0.5);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+html.night-mode .friend-item-container.active {
+  background-color: rgba(96, 165, 250, 0.2);
+  border-left: 3px solid #60a5fa;
+  box-shadow: inset 4px 0 0 rgba(96, 165, 250, 0.15),
+              0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+html.night-mode .friend-item-container.active::before {
+  width: 0;
+}
+
+html.night-mode .friend-item-container:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
 }
 
 html.night-mode .friend-item-container:last-child {
@@ -40,54 +55,54 @@ html.night-mode .friend-item-container:last-child {
 
 /* 好友头像 */
 html.night-mode .friend-item-avatar {
-  position: relative;
-  margin-right: 16px;
   flex-shrink: 0;
+  margin-right: 12px;
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+html.night-mode .friend-item-avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #1e293b;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  filter: brightness(0.9);
+  transition: all 0.3s ease;
+  display: block;
+}
+
+html.night-mode .friend-item-container:hover .friend-item-avatar-img {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(96, 165, 250, 0.4);
+  filter: brightness(1);
+  border-color: #3b82f6;
 }
 
 html.night-mode .friend-item-avatar-default {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  font-weight: 700;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  color: #e2e8f0;
+  font-weight: bold;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  margin-bottom: 0 !important;
 }
 
-html.night-mode .friend-item-avatar-default::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.2) 0%, 
-    rgba(255, 255, 255, 0) 50%
-  );
-}
-
-html.night-mode .friend-item-avatar-default:hover {
+html.night-mode .friend-item-container:hover .friend-item-avatar-default {
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
-}
-
-html.night-mode .friend-item-avatar-img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  position: absolute;
-  top: 0;
-  left: 0;
+  box-shadow: 0 4px 16px rgba(96, 165, 250, 0.4);
+  background: linear-gradient(135deg, #4f9cff 0%, #2a5fcc 100%);
+  border-color: #3b82f6;
 }
 
 html.night-mode .friend-item-online-dot {
@@ -97,8 +112,8 @@ html.night-mode .friend-item-online-dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 2px solid #252525;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid #1e293b;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
   z-index: 1;
 }
 
@@ -108,10 +123,10 @@ html.night-mode .friend-item-online-dot.online {
 }
 
 @keyframes pulseOnline {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 2px 4px rgba(74, 222, 128, 0.5);
   }
-  50% { 
+  50% {
     box-shadow: 0 2px 8px rgba(74, 222, 128, 0.8);
   }
 }
@@ -122,10 +137,10 @@ html.night-mode .friend-item-online-dot.away {
 }
 
 @keyframes pulseAway {
-  0%, 100% { 
+  0%, 100% {
     box-shadow: 0 2px 4px rgba(251, 191, 36, 0.5);
   }
-  50% { 
+  50% {
     box-shadow: 0 2px 8px rgba(251, 191, 36, 0.8);
   }
 }
@@ -139,6 +154,9 @@ html.night-mode .friend-item-info {
   flex: 1;
   min-width: 0;
   padding-right: 12px;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 html.night-mode .friend-item-name-row {
@@ -146,28 +164,55 @@ html.night-mode .friend-item-name-row {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
+  position: relative;
 }
 
 html.night-mode .friend-item-name {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 500;
   color: #e2e8f0;
-  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  flex: 1;
+  line-height: 1.2;
+  position: relative;
+}
+
+html.night-mode .friend-item-name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #60a5fa, transparent);
+  transition: width 0.3s ease;
+}
+
+html.night-mode .friend-item-container:hover .friend-item-name::after {
+  width: 100%;
 }
 
 html.night-mode .friend-item-unread {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background-color: #ef4444;
   color: white;
   font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 10px;
-  min-width: 20px;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  font-weight: bold;
+  padding: 0 6px;
+  height: 18px;
+  border-radius: 9px;
+  min-width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #1e293b;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  margin-left: 8px;
+  flex-shrink: 0;
 }
 
 html.night-mode .friend-item-details {
@@ -183,6 +228,11 @@ html.night-mode .friend-item-signature {
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.4;
+  transition: color 0.2s;
+}
+
+html.night-mode .friend-item-container:hover .friend-item-signature {
+  color: #cbd5e1;
 }
 
 html.night-mode .friend-item-last-seen {
@@ -288,4 +338,9 @@ html.night-mode .friend-item-status-text.online {
 html.night-mode .friend-item-status-text.away {
   background: rgba(251, 191, 36, 0.1);
   color: #fcd34d;
+}
+
+/* 最后调整确保一致 */
+html.night-mode .friend-item-container * {
+  box-sizing: border-box;
 }

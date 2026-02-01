@@ -3,6 +3,7 @@
     class="conversation-item"
     :class="{ active: isActive, 'has-unread': conversation.unreadCount > 0 }"
     @click="handleClick"
+    v-ripple
   >
     <!-- 头像 -->
     <div class="avatar-container">

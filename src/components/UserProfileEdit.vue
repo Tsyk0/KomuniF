@@ -1,6 +1,6 @@
 <template>
-  <!-- 在根元素上添加 profile-edit 类名 -->
-  <div class="profile-edit profile-edit-container">
+  <!-- 在根元素上添加 user-profile-edit 类名 -->
+  <div class="user-profile-edit user-profile-edit-container">
     <div class="edit-header">
       <button class="back-btn" @click="$emit('back')" v-ripple>
         <span>←</span> 返回
@@ -195,7 +195,7 @@ import { useUserStore } from "@/stores/user";
 import toast from "@/commons/utils/toast"; // 导入独立的toast服务
 
 export default {
-  name: "ProfileEdit",
+  name: "UserProfileEdit",
   props: {
     userData: {
       type: Object,
@@ -425,6 +425,6 @@ export default {
 <style scoped>
 /* 使用外部样式 */
 @import "@/assets/styles/base.css";
-@import "@/assets/styles/profile-edit.css";
+@import "@/assets/styles/user-profile-edit.css";
 /* 移除toast.css的导入，因为使用独立的toast服务 */
 </style>

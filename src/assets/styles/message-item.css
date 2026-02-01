@@ -25,7 +25,7 @@
   width: 100%;
 }
 
-/* 头像区域 - 添加特异性标签避免与profile-edit冲突 */
+/* 头像区域 - 添加特异性标签避免与user-profile-edit冲突 */
 .message-item .avatar-section {
   display: flex;
   flex-direction: column;

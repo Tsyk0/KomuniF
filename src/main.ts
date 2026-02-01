@@ -35,7 +35,7 @@ const loadNightStyles = () => {
   const nightStyles = [
     'base-night.css',
     'homeview-night.css',
-    'profile-edit-night.css',
+    'user-profile-edit-night.css',
     'more-options-night.css',
     'change-password-night.css',
     'loginview-night.css',

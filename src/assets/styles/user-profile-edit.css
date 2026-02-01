@@ -1,7 +1,7 @@
-/* src/assets/styles/profile-edit.css */
+/* src/assets/styles/user-profile-edit.css */
 
 /* ========== 用户资料编辑界面 ========== */
-.profile-edit.profile-edit-container {
+.user-profile-edit.user-profile-edit-container {
   width: 100%;
   height: 100%;
   display: flex;
@@ -9,7 +9,7 @@
   overflow: hidden;
 }
 
-.profile-edit .edit-header {
+.user-profile-edit .edit-header {
   padding: 20px 30px;
   border-bottom: 1px solid rgba(240, 240, 240, 0.8);
   display: flex;
@@ -20,7 +20,7 @@
   box-sizing: border-box;
 }
 
-.profile-edit .edit-header h2 {
+.user-profile-edit .edit-header h2 {
   margin: 0;
   color: #333;
   font-size: 24px;
@@ -28,7 +28,7 @@
   white-space: nowrap;
 }
 
-.profile-edit .edit-content {
+.user-profile-edit .edit-content {
   flex: 1;
   display: flex;
   padding: 0;
@@ -39,7 +39,7 @@
   overflow: hidden;
 }
 
-.profile-edit .avatar-section {
+.user-profile-edit .avatar-section {
   width: 280px;
   display: flex;
   flex-direction: column;
@@ -52,7 +52,7 @@
   box-sizing: border-box;
 }
 
-.profile-edit .avatar-display {
+.user-profile-edit .avatar-display {
   width: 200px;
   height: 200px;
   border-radius: 50%;
@@ -67,25 +67,25 @@
   box-sizing: border-box;
 }
 
-.profile-edit .avatar-display:hover {
+.user-profile-edit .avatar-display:hover {
   border: none;
 
 }
 
-.profile-edit .avatar-img-container {
+.user-profile-edit .avatar-img-container {
   width: 100%;
   height: 100%;
   position: relative;
   box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
-.profile-edit .avatar-img {
+.user-profile-edit .avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.profile-edit .avatar-overlay {
+.user-profile-edit .avatar-overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -103,11 +103,11 @@
   border:none;
 }
 
-.profile-edit .avatar-display:hover .avatar-overlay {
+.user-profile-edit .avatar-display:hover .avatar-overlay {
   opacity: 1;
 }
 
-.profile-edit .avatar-placeholder-large {
+.user-profile-edit .avatar-placeholder-large {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #007aff, #0056cc);
@@ -122,14 +122,14 @@
 
 }
 
-.profile-edit .upload-hint {
+.user-profile-edit .upload-hint {
   font-size: 14px;
   margin-top: 10px;
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.4;
 }
 
-.profile-edit .avatar-info {
+.user-profile-edit .avatar-info {
   text-align: center;
   color: #666;
   font-size: 13px;
@@ -137,13 +137,13 @@
   flex-shrink: 0;
 }
 
-.profile-edit .avatar-hint {
+.user-profile-edit .avatar-hint {
   margin: 4px 0;
   font-size: 13px;
   line-height: 1.4;
 }
 
-.profile-edit .form-section {
+.user-profile-edit .form-section {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -153,7 +153,7 @@
   width: 100%;
 }
 
-.profile-edit .form-content {
+.user-profile-edit .form-content {
   flex: 1;
   overflow-y: auto;
   padding: 30px 40px 30px 30px;
@@ -162,7 +162,7 @@
   box-sizing: border-box;
 }
 
-.profile-edit .form-section::before {
+.user-profile-edit .form-section::before {
   content: '';
   position: absolute;
   top: 0;
@@ -182,7 +182,7 @@
 }
 
 /* 恢复默认字体设置 */
-.profile-edit .form-group label {
+.user-profile-edit .form-group label {
   display: block;
   margin-bottom: 10px;
   color: #374151;
@@ -190,11 +190,11 @@
 }
 
 /* 输入框使用默认字体设置 - 移除背景色 */
-.profile-edit input,
-.profile-edit textarea,
-.profile-edit .el-input,
-.profile-edit .el-textarea,
-.profile-edit input[type="date"] {
+.user-profile-edit input,
+.user-profile-edit textarea,
+.user-profile-edit .el-input,
+.user-profile-edit .el-textarea,
+.user-profile-edit input[type="date"] {
   padding: 14px 16px;
   height: auto;
   min-height: 48px;
@@ -208,16 +208,16 @@
 
 /* 特别针对输入框聚焦状态 */
 /* 集中管理 focus 和 hover 状态 */
-.profile-edit input:focus,
-.profile-edit input:hover,
-.profile-edit textarea:focus,
-.profile-edit textarea:hover,
-.profile-edit .el-input:focus,
-.profile-edit .el-input:hover,
-.profile-edit .el-textarea:focus,
-.profile-edit .el-textarea:hover,
-.profile-edit input[type="date"]:focus,
-.profile-edit input[type="date"]:hover,
+.user-profile-edit input:focus,
+.user-profile-edit input:hover,
+.user-profile-edit textarea:focus,
+.user-profile-edit textarea:hover,
+.user-profile-edit .el-input:focus,
+.user-profile-edit .el-input:hover,
+.user-profile-edit .el-textarea:focus,
+.user-profile-edit .el-textarea:hover,
+.user-profile-edit input[type="date"]:focus,
+.user-profile-edit input[type="date"]:hover,
 /* 原有的全局 hover 样式 */
 .el-input:hover,
 .el-textarea:hover {
@@ -226,7 +226,7 @@
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 /* 特别针对 textarea */
-.profile-edit .el-textarea {
+.user-profile-edit .el-textarea {
   width: 100%;
   padding: 14px 16px;
   border: 1px solid rgba(224, 224, 224, 0.8);
@@ -241,12 +241,12 @@
 }
 
 /* 性别选项 */
-.profile-edit .gender-options {
+.user-profile-edit .gender-options {
   display: flex;
   gap: 20px;
 }
 
-.profile-edit .gender-option {
+.user-profile-edit .gender-option {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -267,24 +267,24 @@
   background: rgba(255, 255, 255, 0.8);
 }
 
-.profile-edit .gender-option:hover {
+.user-profile-edit .gender-option:hover {
   background: rgba(255, 255, 255, 0.9);
   color: #007aff;
   border-color: #007aff;
 }
 
-.profile-edit .gender-option.active {
+.user-profile-edit .gender-option.active {
   background: rgba(0, 122, 255, 0.1);
   color: #007aff;
   border-color: #007aff;
 }
 
-.profile-edit .gender-icon {
+.user-profile-edit .gender-icon {
   font-size: 20px;
 }
 
 /* 提示文字 */
-.profile-edit .char-count {
+.user-profile-edit .char-count {
   text-align: right;
   color: #999;
   margin-top: 8px;
@@ -293,7 +293,7 @@
 }
 
 /* 操作按钮区域 */
-.profile-edit .action-buttons {
+.user-profile-edit .action-buttons {
   display: flex;
   justify-content: center;
   gap: 20px;
@@ -307,7 +307,7 @@
 }
 
 /* 按钮样式 */
-.profile-edit .save-btn {
+.user-profile-edit .save-btn {
   background: linear-gradient(135deg, #60b0ff, #4c81b6);
   padding: 8px 16px;
   border: none;
@@ -331,20 +331,20 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.profile-edit .save-btn:hover:not(:disabled) {
+.user-profile-edit .save-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #3399ff, #0077e6);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(51, 153, 255, 0.3);
 }
 
-.profile-edit .save-btn:disabled {
+.user-profile-edit .save-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
 }
 
 /* 取消/重置按钮 */
-.profile-edit .cancel-btn {
+.user-profile-edit .cancel-btn {
   padding: 14px 28px;
   border-radius: 8px;
   cursor: pointer;
@@ -365,17 +365,17 @@
   background: rgba(255, 255, 255, 0.8);
 }
 
-.profile-edit .cancel-btn:hover {
+.user-profile-edit .cancel-btn:hover {
   background: rgba(255, 255, 255, 0.9);
   color: #ff3b30;
   border: 1px solid #ff3b30;
   box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
 }
 
-.profile-edit .cancel-btn:active {
+.user-profile-edit .cancel-btn:active {
   transform: translateY(0);
 }
 
-.profile-edit .btn-icon {
+.user-profile-edit .btn-icon {
   font-size: 18px;
 }

@@ -30,6 +30,7 @@
           v-for="friend in filteredFriends"
           :key="friend.id"
           :friend="friend"
+          :isActive="friend.id === activeFriendId"
           @click="handleFriendClick(friend)"
         />
       </div>
@@ -65,10 +66,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import FriendItem from "./FriendItem.vue";
+import { computed, defineAsyncComponent, onMounted, ref } from "vue";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import type { FriendListItem } from "@/types/form/friend-detail";
+
+const FriendItem = defineAsyncComponent(() => import("./FriendItem.vue"));
 
 const emit = defineEmits<{
   "friend-click": [friend: FriendListItem];
@@ -76,6 +78,7 @@ const emit = defineEmits<{
 
 const friendStore = useFriendStore();
 const friendRequestCount = ref(2); // 测试数据，实际应该从API获取
+const activeFriendId = ref<number | null>(null);
 
 const searchKeyword = computed({
   get: () => friendStore.searchKeyword,
@@ -94,6 +97,7 @@ const clearSearch = () => {
 };
 
 const handleFriendClick = (friend: FriendListItem) => {
+  activeFriendId.value = friend.id;
   emit("friend-click", friend);
 };
 
