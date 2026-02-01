@@ -200,6 +200,43 @@
   letter-spacing: 0.5px;
 }
 
+/* 头像图片 */
+.avatar-large-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 12px;
+  display: block;
+}
+
+/* 加载/错误状态 */
+.friend-loading,
+.friend-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #666;
+}
+
+/* 底部操作区域 */
+.friend-actions-bottom {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* 删除好友按钮 */
+.action-btn.danger {
+  border-color: #ff3b30;
+  color: #ff3b30;
+}
+
+.action-btn.danger:hover {
+  background-color: rgba(255, 59, 48, 0.08);
+}
+
 /* 无好友选中状态 */
 .friend-no-selection {
   display: flex;

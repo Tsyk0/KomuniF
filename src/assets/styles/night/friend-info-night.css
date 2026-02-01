@@ -48,6 +48,33 @@ html.night-mode .friend-detail-content {
   padding: 24px 16px;
 }
 
+/* 加载/错误状态 - 夜晚模式 */
+html.night-mode .friend-loading,
+html.night-mode .friend-error {
+  color: #94a3b8;
+}
+
+/* 头像图片 - 夜晚模式 */
+html.night-mode .avatar-large-img {
+  border: 2px solid #334155;
+}
+
+/* 底部操作区域分隔线 - 夜晚模式 */
+html.night-mode .friend-actions-bottom {
+  border-top-color: #334155;
+}
+
+/* 删除好友按钮 - 夜晚模式 */
+html.night-mode .action-btn.danger {
+  border-color: #f87171;
+  color: #f87171;
+  background-color: transparent;
+}
+
+html.night-mode .action-btn.danger:hover {
+  background-color: rgba(248, 113, 113, 0.12);
+}
+
 /* 好友头像区域 - 夜晚模式 */
 html.night-mode .friend-avatar-large {
   text-align: center;

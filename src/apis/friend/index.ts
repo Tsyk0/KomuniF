@@ -1,5 +1,6 @@
 import service from "../service";
 import type { GetFriendListResponse } from "@/types/form/friend-detail";
+import type { GetFriendInfoResponse } from "@/types/form/friend-info";
 
 /**
  * 获取用户好友列表
@@ -12,8 +13,24 @@ export function getFriendListByUserIdApi(): Promise<GetFriendListResponse> {
   });
 }
 
+/**
+ * 根据 friendId 获取好友详情
+ * 对应后端接口：GET /friendInfo/getFriendInfoByUserIdAndFriendId
+ * @param friendId 好友用户 ID（正整数）
+ */
+export function getFriendInfoByUserIdAndFriendIdApi(
+  friendId: number
+): Promise<GetFriendInfoResponse> {
+  return service({
+    url: "/friendInfo/getFriendInfoByUserIdAndFriendId",
+    method: "get",
+    params: { friendId }
+  });
+}
+
 export const friendApi = {
-  getFriendListByUserId: getFriendListByUserIdApi
+  getFriendListByUserId: getFriendListByUserIdApi,
+  getFriendInfoByUserIdAndFriendId: getFriendInfoByUserIdAndFriendIdApi
 };
 
 export default friendApi;

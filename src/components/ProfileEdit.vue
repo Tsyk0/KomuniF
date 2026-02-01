@@ -342,13 +342,19 @@ export default {
           return;
         }
 
-        const latestResult = await userStore.fetchUserById(formData.userId);
+        const uid = Number(formData.userId);
+        if (!uid) {
+          toast.error("用户ID无效，无法同步最新信息");
+          return;
+        }
 
-        if (latestResult.success) {
+        const latestResult = await userStore.fetchUserById(uid);
+
+        if (latestResult.success && latestResult.data) {
           emit("update:userData", latestResult.data);
           toast.success("个人信息修改成功！");
         } else {
-          toast.warning("个人信息已更新，但部分信息同步失败");
+          toast.error("更新成功，但无法获取最新信息，请刷新页面");
         }
       } catch (error) {
         console.error("保存资料失败:", error);

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { friendApi } from "@/apis/friend";
+import { friendApi } from "@/apis/friend/index";
 import type {
   FriendListItem,
   FriendOnlineStatus,

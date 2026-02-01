@@ -148,7 +148,7 @@
           :friend="selectedFriend"
           @back="clearSelectedFriend"
           @send-message="handleSendMessageToFriend"
-          @more-actions="handleFriendMoreActions"
+          @delete-friend="handleDeleteFriend"
         />
 
         <!-- 聊天组件（当有选中会话时显示） -->
@@ -358,7 +358,8 @@ const backToAccountSecurity = () => {
 // 搜索相关方法
 // 好友相关方法
 const handleFriendClick = (friend) => {
-  console.log("选择好友:", friend);
+  selectedFriend.value = friend;
+  currentMainView.value = "friends-detail";
 };
 
 const clearSelectedFriend = () => {
@@ -380,9 +381,12 @@ const handleSendMessageToFriend = (friend) => {
   // 然后查找或创建与该好友的会话
 };
 
-const handleFriendMoreActions = (friend) => {
-  console.log("好友更多操作:", friend);
-  // TODO: 显示好友操作菜单
+const handleDeleteFriend = (friend) => {
+  if (confirm(`确定要删除好友「${friend.displayName || friend.nickname}」吗？`)) {
+    console.log("删除好友:", friend);
+    // TODO: 调用删除好友 API，成功后 clearSelectedFriend 并刷新好友列表
+    clearSelectedFriend();
+  }
 };
 
 // 头像相关方法
@@ -444,7 +448,8 @@ const processAvatarUrl = (avatarUrl) => {
     avatarUrl = "/" + avatarUrl;
   }
 
-  return "http://localhost:8081" + avatarUrl;
+  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+  return base.replace(/\/$/, "") + avatarUrl;
 };
 
 const formatDateForInput = (dateString) => {
@@ -488,19 +493,39 @@ const handlePasswordSuccess = (message) => {
   backToAccountSecurity();
 };
 
-const handleUserDataUpdate = (updatedData) => {
-  Object.assign(editForm, updatedData);
-  userNickname.value = updatedData.userNickname;
+const handleUserDataUpdate = (backendUser) => {
+  if (!backendUser) return;
 
-  const userStr = sessionStorage.getItem("user");
-  if (userStr) {
-    const user = JSON.parse(userStr);
-    Object.assign(user, updatedData);
-    sessionStorage.setItem("user", JSON.stringify(user));
+  const normalized = {
+    userId: backendUser.userId ?? backendUser.user_id,
+    userNickname: backendUser.userNickname ?? backendUser.user_nickname ?? "用户",
+    userAvatar: backendUser.userAvatar ?? backendUser.user_avatar ?? "",
+    userGender: backendUser.userGender ?? backendUser.user_gender ?? 0,
+    userBirthday: backendUser.userBirthday ?? backendUser.user_birthday ?? "",
+    userLocation: backendUser.userLocation ?? backendUser.user_location ?? "",
+    userSignature: backendUser.userSignature ?? backendUser.user_signature ?? "",
+    userPhone: backendUser.userPhone ?? backendUser.user_phone ?? "",
+    userEmail: backendUser.userEmail ?? backendUser.user_email ?? "",
+  };
 
-    const avatarUrl = processAvatarUrl(updatedData.userAvatar);
-    currentUserAvatar.value = avatarUrl;
-  }
+  Object.assign(editForm, {
+    ...normalized,
+    userBirthday: formatDateForInput(normalized.userBirthday),
+  });
+  userNickname.value = normalized.userNickname;
+  currentUserAvatar.value = processAvatarUrl(normalized.userAvatar);
+
+  const existingStr = sessionStorage.getItem("user");
+  const existing = existingStr ? (() => {
+    try {
+      return JSON.parse(existingStr) || {};
+    } catch {
+      return {};
+    }
+  })() : {};
+  const mergedUser = { ...existing, ...normalized };
+  sessionStorage.setItem("user", JSON.stringify(mergedUser));
+  authStore.user = mergedUser;
 };
 
 const handleEditSuccess = (message) => {

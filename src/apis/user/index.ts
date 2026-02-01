@@ -13,9 +13,9 @@ export function updateUserApi(data: UpdateUserRequest): Promise<UpdateUserRespon
 }
 
 // 原有的获取用户信息接口
-export function getUserByIdApi(userId: number): Promise<any> {
+export function getUserByIdApi(): Promise<any> {
   return service({
-    url: `/user/selectUserByUserId?userId=${userId}`,
+    url: `/user/selectUserByUserId`,
     method: 'get'
   })
 }

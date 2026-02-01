@@ -41,18 +41,18 @@ const loadNightStyles = () => {
     'loginview-night.css',
     'loginform-night.css',
     'register-night.css',
-    'toast-night.css',      
-    'ripple-night.css',    
+    'toast-night.css',
+    'ripple-night.css',
     'chat-container-night.css',
     'conversation-list-night.css',
     'message-item-night.css',
     'conversation-item-night.css',
-    'friend-detail-night.css',
+    'friend-info-night.css',
     'friend-list-night.css',
     'friend-item-night.css',
     'friend-group-night.css'
   ]
-  
+
   // TypeScript安全的方式检查href
   // 移除已存在的夜间样式
   document.querySelectorAll('link[data-theme="night"]').forEach(link => {
@@ -60,7 +60,7 @@ const loadNightStyles = () => {
     // 直接移除所有夜间样式，然后重新加载
     htmlLink.remove()
   })
-  
+
   // 如果是夜间模式，添加所有夜间样式
   if (themeStore.isDarkMode) {
     nightStyles.forEach(filename => {
@@ -78,7 +78,7 @@ const loadNightStyles = () => {
     dayToastLink.rel = 'stylesheet'
     dayToastLink.href = '/src/assets/styles/toast.css'
     document.head.appendChild(dayToastLink)
-    
+
     const dayRippleLink = document.createElement('link')
     dayRippleLink.rel = 'stylesheet'
     dayRippleLink.href = '/src/assets/styles/directives/ripple/style.css'
