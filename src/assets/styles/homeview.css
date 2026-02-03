@@ -247,7 +247,7 @@
 /* ========== 右侧聊天区域 ========== */
 .homeview .chat-main-area {
   flex: 1;
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #e9f1c7 0%, #9bcba5 50%, #e9f1c7 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -255,6 +255,27 @@
   overflow: hidden;
   height: 100%;
   width: 100%;
+}
+
+.homeview .chat-main-area::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-color: rgba(62, 92, 62, 0.15);
+  -webkit-mask-image: url('../background/pattern_02-600x600.png');
+  mask-image: url('../background/pattern_02-600x600.png');
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+.homeview .chat-main-area > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* 聊天区域标注 */

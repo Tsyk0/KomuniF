@@ -4,11 +4,12 @@ html.night-mode .chat-container {
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background: #1d1d1d;
+  background: transparent; /* 透明背景，显示底层的纹理 */
 }
 
 /* 聊天头部样式 */
 html.night-mode .chat-header {
+  height: 7vh;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -190,7 +191,8 @@ html.night-mode .messages-container {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  background: #1a1a1a;
+  position: relative;
+  background-color: transparent;
 }
 
 html.night-mode .loading-indicator {

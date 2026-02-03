@@ -94,13 +94,19 @@
               <div class="user-status online">在线</div>
             </div>
           </div>
+
+          <!-- 搜索框组件 -->
+          <SearchBar v-model="searchKeyword" :placeholder="searchPlaceholder" />
         </div>
 
         <!-- 内容切换：会话列表或好友列表 -->
         <div class="sidebar-content">
           <!-- 会话列表（聊天视图时显示） -->
           <div v-if="currentListView === 'chat'" class="chat-list-container">
-            <ConversationList @conversation-click="handleConversationClick" />
+            <ConversationList
+              @conversation-click="handleConversationClick"
+              :search-query="searchKeyword"
+            />
           </div>
 
           <!-- 好友列表（好友视图时显示） -->
@@ -108,12 +114,15 @@
             v-else-if="currentListView === 'friends'"
             class="friend-list-container"
           >
-            <FriendList @friend-click="handleFriendClick" />
+            <FriendList
+              @friend-click="handleFriendClick"
+              :search-query="searchKeyword"
+            />
           </div>
         </div>
       </div>
 
-      <!-- 右侧聊天区域 (MCA - Main Chat Area) -->
+      <!-- 右侧聊天区域 (CMA) -->
       <div class="chat-main-area">
         <!-- 用户资料编辑组件 -->
         <UserProfileEdit
@@ -160,59 +169,6 @@
           :show-back-button="false"
           @back="clearCurrentConversation"
         />
-
-        <!-- 默认聊天区域（当没有选中会话时显示） -->
-        <div v-else-if="currentListView === 'chat'" class="chat-area-label">
-          <div class="chat-label-header">
-            <span class="chat-label-icon">💭</span>
-            <span class="chat-label-text">聊天区域</span>
-          </div>
-          <div class="chat-label-content">
-            <p class="chat-label-description">选择一个对话以开始</p>
-            <div class="chat-label-features">
-              <div class="feature-item">
-                <span class="feature-icon">🔍</span>
-                <span class="feature-text">搜索好友</span>
-              </div>
-              <div class="feature-item">
-                <span class="feature-icon">👥</span>
-                <span class="feature-text">创建群聊</span>
-              </div>
-              <div class="feature-item">
-                <span class="feature-icon">📎</span>
-                <span class="feature-text">发送文件</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 好友视图默认状态 -->
-        <div
-          v-else-if="currentListView === 'friends' && !selectedFriend"
-          class="friend-default-view"
-        >
-          <div class="friend-default-content">
-            <div class="friend-default-icon">👥</div>
-            <h3 class="friend-default-title">好友列表</h3>
-            <p class="friend-default-description">
-              从左侧列表中选择一个好友以查看详细信息
-            </p>
-            <div class="friend-default-features">
-              <div class="feature-item">
-                <span class="feature-icon">🔍</span>
-                <span class="feature-text">搜索好友</span>
-              </div>
-              <div class="feature-item">
-                <span class="feature-icon">➕</span>
-                <span class="feature-text">添加好友</span>
-              </div>
-              <div class="feature-item">
-                <span class="feature-icon">📱</span>
-                <span class="feature-text">管理分组</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -227,7 +183,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from "vue";
+import { ref, computed, onMounted, reactive, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useThemeStore } from "@/stores/theme";
 import { useAuthStore } from "@/stores/auth";
@@ -241,6 +197,13 @@ import ChatContainer from "@/components/ChatContainer.vue";
 import ConversationList from "@/components/ConversationList.vue";
 import FriendInfo from "@/components/FriendInfo.vue";
 import FriendList from "@/components/FriendList.vue";
+import SearchBar from "@/components/SearchBar.vue";
+
+// 引入样式
+import "@/assets/styles/homeview.css";
+import "@/assets/styles/searchbar.css";
+import "@/assets/styles/night/homeview-night.css";
+import "@/assets/styles/night/searchbar-night.css";
 
 // 初始化 store 和 router
 const themeStore = useThemeStore();
@@ -259,6 +222,16 @@ const avatarLoadError = ref(false);
 // 视图状态分离：
 const currentListView = ref("chat"); // 控制中间列表区域：'chat' | 'friends'
 const currentMainView = ref(null); // 控制右侧主区域：'profile' | 'more' | 'password' | 'friends-detail' | null
+
+const searchKeyword = ref("");
+const searchPlaceholder = computed(() => {
+  return currentListView.value === "friends" ? "搜索好友..." : "搜索会话...";
+});
+
+// 监听视图切换，清空搜索框
+watch(currentListView, () => {
+  searchKeyword.value = "";
+});
 
 const showSuccessMessage = ref(false);
 const successMessage = ref("");
@@ -382,7 +355,9 @@ const handleSendMessageToFriend = (friend) => {
 };
 
 const handleDeleteFriend = (friend) => {
-  if (confirm(`确定要删除好友「${friend.displayName || friend.nickname}」吗？`)) {
+  if (
+    confirm(`确定要删除好友「${friend.displayName || friend.nickname}」吗？`)
+  ) {
     console.log("删除好友:", friend);
     // TODO: 调用删除好友 API，成功后 clearSelectedFriend 并刷新好友列表
     clearSelectedFriend();
@@ -498,12 +473,14 @@ const handleUserDataUpdate = (backendUser) => {
 
   const normalized = {
     userId: backendUser.userId ?? backendUser.user_id,
-    userNickname: backendUser.userNickname ?? backendUser.user_nickname ?? "用户",
+    userNickname:
+      backendUser.userNickname ?? backendUser.user_nickname ?? "用户",
     userAvatar: backendUser.userAvatar ?? backendUser.user_avatar ?? "",
     userGender: backendUser.userGender ?? backendUser.user_gender ?? 0,
     userBirthday: backendUser.userBirthday ?? backendUser.user_birthday ?? "",
     userLocation: backendUser.userLocation ?? backendUser.user_location ?? "",
-    userSignature: backendUser.userSignature ?? backendUser.user_signature ?? "",
+    userSignature:
+      backendUser.userSignature ?? backendUser.user_signature ?? "",
     userPhone: backendUser.userPhone ?? backendUser.user_phone ?? "",
     userEmail: backendUser.userEmail ?? backendUser.user_email ?? "",
   };
@@ -516,13 +493,15 @@ const handleUserDataUpdate = (backendUser) => {
   currentUserAvatar.value = processAvatarUrl(normalized.userAvatar);
 
   const existingStr = sessionStorage.getItem("user");
-  const existing = existingStr ? (() => {
-    try {
-      return JSON.parse(existingStr) || {};
-    } catch {
-      return {};
-    }
-  })() : {};
+  const existing = existingStr
+    ? (() => {
+        try {
+          return JSON.parse(existingStr) || {};
+        } catch {
+          return {};
+        }
+      })()
+    : {};
   const mergedUser = { ...existing, ...normalized };
   sessionStorage.setItem("user", JSON.stringify(mergedUser));
   authStore.user = mergedUser;

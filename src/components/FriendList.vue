@@ -1,22 +1,5 @@
 <template>
   <div class="friend-list-container">
-    <!-- 搜索框 -->
-    <div class="search-container">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input
-          type="text"
-          v-model="searchKeyword"
-          placeholder="搜索好友"
-          class="search-input"
-          @input="handleSearch"
-        />
-        <button v-if="searchKeyword" class="clear-btn" @click="clearSearch">
-          ×
-        </button>
-      </div>
-    </div>
-
     <!-- 好友列表内容区域 -->
     <div class="friend-list-content">
       <div class="friend-groups">
@@ -66,11 +49,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, ref } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import type { FriendListItem } from "@/types/form/friend-detail";
 
 const FriendItem = defineAsyncComponent(() => import("./FriendItem.vue"));
+
+const props = defineProps<{
+  searchQuery?: string;
+}>();
 
 const emit = defineEmits<{
   "friend-click": [friend: FriendListItem];
@@ -80,21 +67,16 @@ const friendStore = useFriendStore();
 const friendRequestCount = ref(2); // 测试数据，实际应该从API获取
 const activeFriendId = ref<number | null>(null);
 
-const searchKeyword = computed({
-  get: () => friendStore.searchKeyword,
-  set: (value: string) => friendStore.setSearchKeyword(value),
-});
+// 监听外部传入的搜索关键词并同步到 store
+watch(
+  () => props.searchQuery,
+  (newVal) => {
+    friendStore.setSearchKeyword(newVal || "");
+  }
+);
 
 const filteredFriends = computed(() => friendStore.filteredFriends);
 const isLoading = computed(() => friendStore.isLoading);
-
-const handleSearch = () => {
-  console.log("搜索关键词:", searchKeyword.value);
-};
-
-const clearSearch = () => {
-  searchKeyword.value = "";
-};
 
 const handleFriendClick = (friend: FriendListItem) => {
   activeFriendId.value = friend.id;

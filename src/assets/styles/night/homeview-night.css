@@ -255,7 +255,7 @@ html.night-mode .homeview .empty-hint {
 /* ========== 右侧聊天区域 ========== */
 html.night-mode .homeview .chat-main-area {
   flex: 1;
-  background: #1d1d1d;
+  background: #050505; /* 使用 background 简写覆盖日间模式的 background-image */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,6 +263,40 @@ html.night-mode .homeview .chat-main-area {
   overflow: hidden;
   height: 100%;
   width: 100%;
+}
+
+html.night-mode .homeview .chat-main-area::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  
+  /* 使用渐变色作为背景，结合 mask-image 显示纹理 */
+  /* 调整：将渐变半径从 50% 扩大到 85%，消除中心暗区 */
+  /* 
+   * [亮度控制指南]
+   * 1. 颜色浓度：修改 rgba 中的最后一个数字 (当前 0.5)，范围 0-1
+   * 2. 整体亮度：修改下方的 opacity 属性 (当前 0.9)，范围 0-1
+   */
+  background: radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.2) 0%, transparent 85%), 
+              radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.2) 0%, transparent 85%), 
+              radial-gradient(circle at 0% 100%, rgba(236, 72, 153, 0.3) 0%, transparent 85%), 
+              radial-gradient(circle at 100% 100%, rgba(234, 179, 8, 0.3) 0%, transparent 85%);
+              
+  -webkit-mask-image: url('../../background/pattern_02-600x600.png');
+  mask-image: url('../../background/pattern_02-600x600.png');
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  opacity: 0.9;
+}
+
+html.night-mode .homeview .chat-main-area > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* 聊天区域标注 */
