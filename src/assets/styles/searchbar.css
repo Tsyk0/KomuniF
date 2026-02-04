@@ -4,6 +4,7 @@
   background-color: transparent;
   width: 100%;
   box-sizing: border-box;
+  margin-top: 10px;
 }
 
 .search-bar-wrapper {
@@ -13,11 +14,16 @@
   border-radius: 20px;
   padding: 8px 12px;
   transition: all 0.3s ease;
-  border: 1px solid transparent;
+  border: 1px solid rgba(0, 0, 0, 0.05); /* 改为半透明边框，增加区分度 */
+}
+
+.search-bar-wrapper:hover {
+  border-color: #007aff;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
 }
 
 .search-bar-wrapper:focus-within {
-  background-color: #ffffff;
+  background-color: #dbdbdb;
   border-color: #007aff;
   box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
 }

@@ -36,3 +36,6 @@ const handleInput = (event: Event) => {
   // emit("update:modelValue", target.value);
 };
 </script>
+<style scoped>
+@import url("@/assets/styles/searchbar.css");
+</style>

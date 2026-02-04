@@ -1,8 +1,6 @@
 <template>
   <!-- 在根元素上添加 loginform 类名 -->
   <div class="loginform login-form">
-    <h2>登录</h2>
-
     <div class="form-container">
       <!-- 免密登录提示 -->
       <div v-if="showAutoLoginHint && !isLoggingIn" class="auto-login-hint">
