@@ -2,9 +2,8 @@
 // 专门处理消息发送功能的Store
 
 import { defineStore } from 'pinia';
-import type { SendMessageRequest } from '@/types/flow/message.request';
-import type { BaseResponse } from '@/types/flow/base.response';
-import type { SendMessageResponseData } from '@/types/form/message-response-data';
+import type { BaseResponse } from '@/types/dto/base';
+import type { SendMessageRequest, SendMessageResponseData } from '@/types/dto/message';
 import sendMessageApi from '@/apis/chat/message-send';
 import { ref } from 'vue';
 import { useWebSocketStore } from './websocket-store';
@@ -58,12 +57,12 @@ export const useSendMessageStore = defineStore('sendMessage', () => {
    */
   const sendTextMessage = async (
     convId: number,
-    senderId: number,
+    senderId: number, // 兼容保留参数，但不再使用
     content: string
   ): Promise<SendMessageResponseData> => {
     return sendMessage({
       convId,
-      senderId,
+      // senderId, // 不再传递senderId
       messageType: 'text',
       messageContent: content
     });

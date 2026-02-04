@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { ConversationDetailDTO } from "@/types/form/conversation-detail";
+import type { ConversationDetailDTO } from "@/types/dto/conversation";
 
 interface Props {
   conversation: ConversationDetailDTO;

@@ -1,7 +1,6 @@
 // src/apis/user/index.ts
 import service from '../service'
-import type { UpdateUserRequest } from '@/types/flow/update.request'
-import type { UpdateUserResponse } from '@/types/flow/update.response'
+import type { UpdateUserRequest, UpdateUserResponse } from '@/types/dto/user'
 
 // 原有的更新用户信息接口
 export function updateUserApi(data: UpdateUserRequest): Promise<UpdateUserResponse> {

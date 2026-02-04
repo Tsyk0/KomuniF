@@ -1,7 +1,12 @@
 // src/apis/auth/index.ts
 import service from '../service'
-import type { LoginRequest, RegisterRequest } from '@/types/flow/auth.request'
-import type { LoginResponse, RegisterResponse, CheckTokenResponse } from '@/types/flow/auth.response'
+import type { 
+  LoginRequest, 
+  RegisterRequest, 
+  LoginResponse, 
+  RegisterResponse, 
+  CheckTokenResponse 
+} from '@/types/dto/auth'
 
 /**
  * 用户登录

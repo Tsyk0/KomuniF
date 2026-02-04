@@ -4,7 +4,7 @@ import type {
   FriendListItem,
   FriendOnlineStatus,
   FriendRelationDetailDTO
-} from "@/types/form/friend-detail";
+} from "@/types/dto/friend";
 
 const normalizeOnlineStatus = (
   status?: number | null

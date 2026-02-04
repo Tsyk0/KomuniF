@@ -6,7 +6,7 @@ import {
   checkUserPasswordApi,     // 新增导入
   updateUserPasswordApi     // 新增导入
 } from '@/apis/user'
-import type { UpdateUserRequest } from '@/types/flow/update.request'
+import type { UpdateUserRequest } from '@/types/dto/user'
 
 export const useUserStore = defineStore('user', {
   state: () => ({

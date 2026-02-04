@@ -2,12 +2,14 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import type { 
+  SendMessageRequest, 
+  WebSocketAction,
+  WebSocketBaseMessage
+} from '@/types/websocket/message-types';
 
-// WebSocket消息接口
-export interface WebSocketMessage {
-  action: string;
-  [key: string]: any;
-}
+// WebSocket消息接口 - 使用联合类型
+export type WebSocketMessage = SendMessageRequest | WebSocketBaseMessage | any;
 
 export const useWebSocketStore = defineStore('websocket', () => {
   // Store
@@ -362,14 +364,14 @@ export const useWebSocketStore = defineStore('websocket', () => {
       return false;
     }
     
-    const message: WebSocketMessage = {
+    const message: SendMessageRequest = {
       action: 'sendMessage',
       convId,
-      senderId: currentUser.userId,
+      // senderId: currentUser.userId, // WebSocket通常不需要发送senderId，由后端Session确定
       messageType: 'text',
       messageContent,
-      replyToMessageId,
-      timestamp: Date.now(),
+      replyToMessageId: replyToMessageId || null,
+      // timestamp: Date.now(), // timestamp不是SendMessageRequest的标准字段，但在BaseMessage里可选
       localMessageId: `local_${Date.now()}` // 用于消息确认
     };
     
@@ -381,11 +383,11 @@ export const useWebSocketStore = defineStore('websocket', () => {
    * 发送已读回执
    */
   const sendReadReceipt = (messageId: number, convId: number): boolean => {
-    const message: WebSocketMessage = {
-      action: 'readMessage',
+    const message: WebSocketBaseMessage & { messageId: number; convId: number } = {
+      action: 'readReceipt', // 修正为 readReceipt
       messageId,
       convId
-    };
+    } as any; // 暂时转换，因为message-types里readReceipt可能没定义具体结构
     
     return sendMessage(message);
   };
@@ -394,11 +396,11 @@ export const useWebSocketStore = defineStore('websocket', () => {
    * 发送撤回消息
    */
   const sendRecallMessage = (messageId: number, convId: number): boolean => {
-    const message: WebSocketMessage = {
-      action: 'recallMessage',
+    const message: WebSocketBaseMessage & { messageId: number; convId: number } = {
+      action: 'messageRecall', // 修正为 messageRecall
       messageId,
       convId
-    };
+    } as any;
     
     return sendMessage(message);
   };

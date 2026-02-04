@@ -4,15 +4,74 @@ import { ref } from 'vue';
 import type { DisplayMessage } from '@/entity/message'; // 注意路径是否正确
 import { messageDetailApi } from '@/apis/chat/message-detail';
 import { useAuthStore } from '@/stores/auth';
+import { useFriendStore } from '@/stores/friend/show-friend';
+import { useConversationStore } from '@/stores/chat/show-conversation';
 
 export const useShowMessageStore = defineStore('message', () => {
   const authStore = useAuthStore();
+  const friendStore = useFriendStore();
+  const conversationStore = useConversationStore();
 
   // 当前消息列表
   const messages = ref<DisplayMessage[]>([]);
 
   // 加载状态
   const loading = ref(false);
+
+  /**
+   * 解析发送者名称
+   * 优先级：
+   * 1. 群聊且有群昵称 -> 群昵称
+   * 2. 好友 -> 备注名 > 昵称
+   * 3. 群成员缓存 -> 用户昵称
+   * 4. 默认 -> 传入的默认名称
+   */
+  const resolveSenderName = (
+    senderId: number, 
+    defaultName: string,
+    convType?: number,
+    memberNickname?: string | null,
+    convId?: number
+  ): string => {
+    // 如果是自己
+    if (senderId === authStore.user?.userId) {
+      return authStore.user?.userNickname || '我';
+    }
+
+    // 1. 如果是群聊(type=2)，尝试获取群昵称
+    let effectiveMemberNickname = memberNickname;
+    
+    // 如果没有传入 memberNickname 但有 convId，尝试从 store 查找
+    if (convType === 2 && convId && !effectiveMemberNickname) {
+      const members = conversationStore.groupMembersMap.get(convId);
+      const member = members?.find(m => m.userId === senderId);
+      if (member?.memberNickname) {
+        effectiveMemberNickname = member.memberNickname;
+      }
+    }
+
+    if (convType === 2 && effectiveMemberNickname) {
+      return effectiveMemberNickname;
+    }
+
+    // 2. 尝试从好友列表中查找 (显示备注名或好友昵称)
+    const friend = friendStore.friends.find(f => f.friendId === senderId);
+    if (friend) {
+      return friend.displayName; 
+    }
+    
+    // 3. 如果不是好友，尝试从群成员缓存中获取用户昵称
+    if (convType === 2 && convId) {
+      const members = conversationStore.groupMembersMap.get(convId);
+      const member = members?.find(m => m.userId === senderId);
+      if (member?.userNickname) {
+        return member.userNickname;
+      }
+    }
+
+    // 4. 默认
+    return defaultName;
+  };
 
   /**
    * 加载消息 - 核心功能：获取后端数据显示在前端
@@ -76,7 +135,13 @@ export const useShowMessageStore = defineStore('message', () => {
             recallTime: msg.recallTime,
 
             // 显示字段
-            senderName: msg.displayName || msg.memberNickname || msg.privateDisplayName,
+            senderName: resolveSenderName(
+              msg.senderId,
+              msg.displayName || msg.memberNickname || msg.privateDisplayName || '未知用户',
+              msg.convType,
+              msg.memberNickname,
+              msg.convId
+            ),
             senderAvatar: msg.senderAvatar,
             isSentByMe: msg.senderId === currentUserId,
           };
@@ -290,6 +355,7 @@ export const useShowMessageStore = defineStore('message', () => {
     getLatestMessage,
     getOldestMessage,
     clearMessages,
-    resetMessages
+    resetMessages,
+    resolveSenderName
   };
 });

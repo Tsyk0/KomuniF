@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { FriendListItem } from "@/types/form/friend-detail";
+import type { FriendListItem } from "@/types/dto/friend";
 
 type FriendItemData = FriendListItem & {
   unreadCount?: number;

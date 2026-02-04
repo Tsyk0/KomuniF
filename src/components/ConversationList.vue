@@ -39,7 +39,7 @@ import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import { useConversationStore } from "@/stores/chat/show-conversation";
 import { useShowMessageStore } from "@/stores/chat/show-message";
 import conversationItem from "./ConversationItem.vue";
-import type { ConversationDetailDTO } from "@/types/form/conversation-detail";
+import type { ConversationDetailDTO } from "@/types/dto/conversation";
 
 // Store
 const conversationStore = useConversationStore();

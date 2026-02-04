@@ -1,5 +1,5 @@
 import service from '../../service';
-import type { GetConversationDetailsResponse } from '@/types/form/conversation-detail';
+import type { GetConversationDetailsResponse } from '@/types/dto/conversation';
 
 /**
  * 获取用户会话详情列表（复合查询）- 新接口

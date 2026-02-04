@@ -2,15 +2,14 @@
 import { defineStore } from 'pinia'
 import { loginApi, checkTokenApi, registerApi } from '@/apis/auth'
 import type { User } from '@/entity/user'
-import type { LoginRequest, RegisterRequest } from '@/types/flow/auth.request'
-import type { LoginResponse } from '@/types/flow/auth.response'
-import type { CheckTokenResponse } from '@/types/flow/auth.response'
+import type { 
+  LoginRequest, 
+  RegisterRequest, 
+  LoginResponse, 
+  CheckTokenResponse, 
+  RememberMeData 
+} from '@/types/dto/auth'
 
-
-// 记住我数据结构
-export interface RememberMeData {
-  userId: string
-}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({

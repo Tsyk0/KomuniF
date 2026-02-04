@@ -1,6 +1,5 @@
 import service from "../service";
-import type { GetFriendListResponse } from "@/types/form/friend-detail";
-import type { GetFriendInfoResponse } from "@/types/form/friend-info";
+import type { GetFriendListResponse, GetFriendInfoResponse } from "@/types/dto/friend";
 
 /**
  * 获取用户好友列表

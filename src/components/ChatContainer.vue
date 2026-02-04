@@ -138,18 +138,21 @@ import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
 import { useShowMessageStore } from "@/stores/chat/show-message";
 import { useSendMessageStore } from "@/stores/chat/send-message";
 import { useAuthStore } from "@/stores/auth";
+import { useConversationStore } from "@/stores/chat/show-conversation";
 import {
   useWebSocketStore,
   type WebSocketMessage,
 } from "@/stores/chat/websocket-store";
 import MessageItem from "./MessageItem.vue";
 import type { DisplayMessage } from "@/entity/message";
+import type { User } from "@/entity/user";
 
 // Store
 const showMessageStore = useShowMessageStore();
 const sendMessageStore = useSendMessageStore();
 const authStore = useAuthStore();
 const websocketStore = useWebSocketStore();
+const conversationStore = useConversationStore();
 
 // Props
 const props = defineProps({
@@ -181,6 +184,7 @@ const isSending = computed(() => sendMessageStore.isSending);
 
 // WebSocket相关状态
 const websocketStatus = computed(() => {
+  if (isWebSocketConnecting.value) return "connecting";
   return websocketStore.isConnected ? "connected" : "disconnected";
 });
 const connectionError = ref<string | null>(null);
@@ -391,6 +395,11 @@ const handleIncomingWebSocketMessage = (message: any) => {
   }
 
   // 构建完整的DisplayMessage对象
+  // 获取会话类型以支持正确的昵称显示逻辑
+  const conv = conversationStore.conversations.find(
+    (c) => c.convId === message.convId
+  );
+
   const displayMessage: DisplayMessage = {
     messageId: message.messageId || Date.now(),
     convId: message.convId,
@@ -404,8 +413,14 @@ const handleIncomingWebSocketMessage = (message: any) => {
     replyToMessageId: message.replyToMessageId || undefined,
     isRecalled: message.isRecalled || 0,
 
-    // 显示字段
-    senderName: getSenderName(message.senderId),
+    // 显示字段 - 使用Store中的解析逻辑
+    senderName: showMessageStore.resolveSenderName(
+      message.senderId,
+      `用户${message.senderId}`,
+      conv?.convType,
+      undefined, // WS消息暂不包含群昵称，将回退到好友备注或默认名
+      message.convId
+    ),
     senderAvatar: getSenderAvatar(message.senderId),
     isSentByMe: message.senderId === currentUser.userId,
   };
@@ -425,7 +440,7 @@ const handleIncomingWebSocketMessage = (message: any) => {
 const getSenderName = (senderId: number): string => {
   const currentUser = authStore.user;
   if (senderId === currentUser?.userId) {
-    return currentUser.nickname || currentUser.username || "我";
+    return currentUser.userNickname || "我";
   }
 
   // TODO: 从联系人缓存中获取名称
@@ -438,7 +453,7 @@ const getSenderName = (senderId: number): string => {
 const getSenderAvatar = (senderId: number): string | null => {
   const currentUser = authStore.user;
   if (senderId === currentUser?.userId) {
-    return currentUser.avatar || null;
+    return currentUser.userAvatar || null;
   }
 
   // TODO: 从联系人缓存中获取头像
@@ -459,7 +474,7 @@ const sendMessage = async () => {
     return;
   }
 
-  let tempMessage: DisplayMessage;
+  let tempMessage: DisplayMessage | undefined;
   let messageTimeoutId: number | null = null;
 
   try {
@@ -474,8 +489,8 @@ const sendMessage = async () => {
       messageContent: content,
       messageStatus: 0, // 发送中
       sendTime: new Date().toISOString(),
-      senderName: currentUser.nickname || currentUser.username,
-      senderAvatar: currentUser.avatar || null,
+      senderName: currentUser.userNickname || "我",
+      senderAvatar: currentUser.userAvatar || null,
       isSentByMe: true,
     };
 
@@ -510,14 +525,16 @@ const sendMessage = async () => {
 
           // 更智能的超时处理
           messageTimeoutId = window.setTimeout(() => {
+            if (!tempMessage) return;
+
             const sentMessage = showMessageStore.messages.find(
-              (msg) => msg.messageId === tempMessage.messageId
+              (msg) => msg.messageId === tempMessage!.messageId
             );
             if (sentMessage && sentMessage.messageStatus === 0) {
               console.log("WebSocket确认超时，降级到HTTP");
               // 先清理定时器
               if (messageTimeoutId) clearTimeout(messageTimeoutId);
-              fallbackToHttpSend(tempMessage, content);
+              fallbackToHttpSend(tempMessage!, content);
             }
           }, 5000);
 
@@ -525,17 +542,23 @@ const sendMessage = async () => {
         } else {
           console.log("WebSocket发送失败，降级到HTTP");
           isUsingWebSocket.value = false;
-          fallbackToHttpSend(tempMessage, content);
+          if (tempMessage) {
+            fallbackToHttpSend(tempMessage, content);
+          }
         }
       } else {
         console.log("WebSocket连接失败，降级到HTTP");
         isUsingWebSocket.value = false;
-        fallbackToHttpSend(tempMessage, content);
+        if (tempMessage) {
+          fallbackToHttpSend(tempMessage, content);
+        }
       }
     } else {
       // 6. 直接使用HTTP发送
       console.log("WebSocket不可用，使用HTTP发送消息");
-      fallbackToHttpSend(tempMessage, content);
+      if (tempMessage) {
+        fallbackToHttpSend(tempMessage, content);
+      }
     }
   } catch (error) {
     console.error("发送消息失败:", error);
@@ -559,9 +582,14 @@ const fallbackToHttpSend = async (
   content: string
 ) => {
   try {
+    const userId = authStore.user?.userId;
+    if (userId === undefined) {
+      throw new Error("用户未登录");
+    }
+
     const response = await sendMessageStore.sendTextMessage(
       props.convId!,
-      authStore.user!.userId,
+      userId,
       content
     );
 

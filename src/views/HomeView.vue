@@ -190,6 +190,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useConversationStore } from "@/stores/chat/show-conversation";
 import { useShowMessageStore } from "@/stores/chat/show-message";
 import { useSendMessageStore } from "@/stores/chat/send-message";
+import { useFriendStore } from "@/stores/friend/show-friend";
 import UserProfileEdit from "@/components/UserProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
@@ -211,6 +212,7 @@ const authStore = useAuthStore();
 const conversationStore = useConversationStore();
 const showMessageStore = useShowMessageStore();
 const sendMessageStore = useSendMessageStore();
+const friendStore = useFriendStore();
 const router = useRouter();
 
 // 响应式数据
@@ -546,6 +548,7 @@ onMounted(() => {
   loadUserData();
   console.log("HomeView mounted, initial list view:", currentListView.value);
   loadConversations();
+  friendStore.loadFriends();
 });
 </script>
 

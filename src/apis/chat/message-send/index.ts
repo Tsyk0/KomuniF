@@ -1,7 +1,6 @@
 import service from '../../service';
-import type { SendMessageRequest } from '@/types/flow/message.request';
-import type { BaseResponse } from '@/types/flow/base.response';
-import type { SendMessageResponseData } from '@/types/form/message-response-data';
+import type { BaseResponse } from '@/types/dto/base';
+import type { SendMessageRequest, SendMessageResponseData } from '@/types/dto/message';
 
 /**
  * 发送消息 - 主接口

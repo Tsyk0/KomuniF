@@ -1,8 +1,9 @@
-// 修改后的 src/types/flow/message.response.ts
+/**
+ * 基础响应类型
+ */
 export interface BaseResponse<T = any> {
   code: number;
   message: string;
   data: T;
   timestamp?: number;
 }
-// 删除其他接口

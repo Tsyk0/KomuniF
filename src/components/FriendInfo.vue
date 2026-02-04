@@ -120,7 +120,7 @@
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted } from "vue";
 import { useFriendInfoStore } from "@/stores/friend/friend-info";
-import type { FriendListItem } from "@/types/form/friend-detail";
+import type { FriendListItem } from "@/types/dto/friend";
 
 const props = defineProps<{
   friend: FriendListItem;

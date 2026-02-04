@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { friendApi } from "@/apis/friend/index";
-import type { FriendInfoDTO } from "@/types/form/friend-info";
+import type { FriendInfoDTO } from "@/types/dto/friend";
 
 export const useFriendInfoStore = defineStore("friendInfo", {
     state: () => ({
