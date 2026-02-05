@@ -20,11 +20,8 @@ export const useShowMessageStore = defineStore('message', () => {
 
   /**
    * 解析发送者名称
-   * 优先级：
-   * 1. 群聊且有群昵称 -> 群昵称
-   * 2. 好友 -> 备注名 > 昵称
-   * 3. 群成员缓存 -> 用户昵称
-   * 4. 默认 -> 传入的默认名称
+   * 统一优先级：群昵称 > 好友备注 > 用户昵称
+   * 不论单聊还是群聊，都采用此优先级
    */
   const resolveSenderName = (
     senderId: number, 
@@ -33,43 +30,66 @@ export const useShowMessageStore = defineStore('message', () => {
     memberNickname?: string | null,
     convId?: number
   ): string => {
-    // 如果是自己
-    if (senderId === authStore.user?.userId) {
-      return authStore.user?.userNickname || '我';
-    }
-
-    // 1. 如果是群聊(type=2)，尝试获取群昵称
+    console.log(`[resolveSenderName] 开始解析 - senderId: ${senderId}, convId: ${convId}, convType: ${convType}`);
+    
+    // 1. 群昵称优先（不论单聊还是群聊）
     let effectiveMemberNickname = memberNickname;
     
     // 如果没有传入 memberNickname 但有 convId，尝试从 store 查找
-    if (convType === 2 && convId && !effectiveMemberNickname) {
+    if (convId) {
       const members = conversationStore.compressedCMMap.get(convId);
-      const member = members?.find(m => m.userId === senderId);
-      if (member?.memberNickname) {
-        effectiveMemberNickname = member.memberNickname;
+      console.log(`[resolveSenderName] 从map获取的members:`, members);
+      if (members) {
+        const member = members.find(m => m.userId === senderId);
+        console.log(`[resolveSenderName] 找到的member:`, member);
+        if (member?.memberNickname) {
+          effectiveMemberNickname = member.memberNickname;
+          console.log(`[resolveSenderName] 使用群昵称: ${effectiveMemberNickname}`);
+        }
       }
     }
-
-    if (convType === 2 && effectiveMemberNickname) {
+    
+    // 2. 如果是发送者自己，优先使用群昵称，群昵称为null时使用用户昵称
+    if (senderId === authStore.user?.userId) {
+      // 群昵称优先
+      if (effectiveMemberNickname) {
+        console.log(`[resolveSenderName] 发送者自己，返回群昵称: ${effectiveMemberNickname}`);
+        return effectiveMemberNickname;
+      }
+      
+      // 群昵称为null时使用用户昵称
+      const userNickname = authStore.user?.userNickname || '我';
+      console.log(`[resolveSenderName] 发送者自己，群昵称为null，返回用户昵称: ${userNickname}`);
+      return userNickname;
+    }
+    
+    // 3. 对于其他人，群昵称优先
+    if (effectiveMemberNickname) {
+      console.log(`[resolveSenderName] 返回群昵称: ${effectiveMemberNickname}`);
       return effectiveMemberNickname;
     }
 
-    // 2. 尝试从好友列表中查找 (显示备注名或好友昵称)
+    // 3. 尝试从好友列表中查找 (显示备注名或好友昵称)
     const friend = friendStore.friends.find(f => f.friendId === senderId);
     if (friend) {
+      console.log(`[resolveSenderName] 返回好友备注: ${friend.displayName}`);
       return friend.displayName; 
     }
     
-    // 3. 如果不是好友，尝试从群成员缓存中获取用户昵称
-    if (convType === 2 && convId) {
+    // 4. 如果不是好友，尝试从群成员缓存中获取用户昵称
+    if (convId) {
       const members = conversationStore.compressedCMMap.get(convId);
-      const member = members?.find(m => m.userId === senderId);
-      if (member?.userNickname) {
-        return member.userNickname;
+      if (members) {
+        const member = members.find(m => m.userId === senderId);
+        if (member?.userNickname) {
+          console.log(`[resolveSenderName] 返回群成员用户昵称: ${member.userNickname}`);
+          return member.userNickname;
+        }
       }
     }
 
-    // 4. 默认
+    // 5. 默认
+    console.log(`[resolveSenderName] 返回默认名称: ${defaultName}`);
     return defaultName;
   };
 

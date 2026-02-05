@@ -45,17 +45,12 @@ const themeStore = useThemeStore();
 const isSentByMe = computed(() => props.message.isSentByMe);
 
 const displayName = computed(() => {
-  if (isSentByMe.value) {
-    return authStore.user?.userNickname || "我";
-  } else {
-    // 注意：这里需要根据您的实际字段名调整
-    // 原来的 memberNickname 可能需要映射到 senderName
-    return (
-      props.message.senderName || // 使用 senderName
-      props.message.displayName ||
-      `用户${props.message.senderId}`
-    );
-  }
+  // 统一使用 senderName 字段，确保昵称显示一致性
+  return (
+    props.message.senderName || // 优先使用解析后的 senderName
+    (isSentByMe.value ? authStore.user?.userNickname || "我" : undefined) || // 发送者自己使用用户昵称
+    `用户${props.message.senderId}`
+  );
 });
 
 const formatTime = (timeStr: string) => {

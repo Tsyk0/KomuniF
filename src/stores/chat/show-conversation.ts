@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia';
 import type { ConversationDetailDTO, CompressedCM } from '@/types/dto/conversation';
 import { conversationDetailApi } from '@/apis/chat/conversation-detail';
-import { CompressedCMApi } from '@/apis/chat/group-member';
+import { CompressedCMApi } from '@/apis/chat/compressed-convMem';
 import { useAuthStore } from '@/stores/auth';
 
 export const useConversationStore = defineStore('conversation', {
@@ -107,19 +107,23 @@ export const useConversationStore = defineStore('conversation', {
     async loadCompressedCM(convId: number, force: boolean = false) {
       // 如果不是强制刷新且已有缓存，则跳过
       if (!force && this.compressedCMMap.has(convId)) {
+        console.log(`[loadCompressedCM] 会话 ${convId} 已有缓存，跳过加载`);
         return;
       }
 
       this.loadingCompressedCM = true;
       try {
+        console.log(`[loadCompressedCM] 开始加载会话 ${convId} 的群成员`);
         const response = await CompressedCMApi.getCompressedCM(convId);
         if (response.code === 200) {
           this.compressedCMMap.set(convId, response.data);
+          console.log(`[loadCompressedCM] 会话 ${convId} 群成员加载成功，数量: ${response.data.length}`);
+          console.log(`[loadCompressedCM] 群成员数据:`, response.data);
         } else {
-          console.warn(`加载群成员失败: ${response.message}`);
+          console.warn(`[loadCompressedCM] 加载群成员失败: ${response.message}`);
         }
       } catch (error) {
-        console.error('加载群成员出错:', error);
+        console.error('[loadCompressedCM] 加载群成员出错:', error);
       } finally {
         this.loadingCompressedCM = false;
       }

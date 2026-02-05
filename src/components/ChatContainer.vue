@@ -418,7 +418,10 @@ const handleIncomingWebSocketMessage = (message: any) => {
       message.senderId,
       `用户${message.senderId}`,
       conv?.convType,
-      undefined, // WS消息暂不包含群昵称，将回退到好友备注或默认名
+      // 尝试从会话成员缓存中获取群昵称
+      conv?.convType === 2
+        ? getMemberNicknameFromCache(message.convId, message.senderId)
+        : undefined,
       message.convId
     ),
     senderAvatar: getSenderAvatar(message.senderId),
@@ -461,6 +464,21 @@ const getSenderAvatar = (senderId: number): string | null => {
 };
 
 /**
+ * 从会话成员缓存中获取群昵称
+ */
+const getMemberNicknameFromCache = (
+  convId: number,
+  userId: number
+): string | null => {
+  const members = conversationStore.compressedCMMap.get(convId);
+  if (members) {
+    const member = members.find((m) => m.userId === userId);
+    return member?.memberNickname || null;
+  }
+  return null;
+};
+
+/**
  * 发送消息（优先使用WebSocket）- 修复超时逻辑
  */
 const sendMessage = async () => {
@@ -480,7 +498,7 @@ const sendMessage = async () => {
   try {
     console.log("发送消息:", { convId: props.convId, content });
 
-    // 1. 创建临时消息
+    // 1. 创建临时消息 - 使用resolveSenderName确保昵称正确
     tempMessage = {
       messageId: Date.now(),
       convId: props.convId,
@@ -489,7 +507,13 @@ const sendMessage = async () => {
       messageContent: content,
       messageStatus: 0, // 发送中
       sendTime: new Date().toISOString(),
-      senderName: currentUser.userNickname || "我",
+      senderName: showMessageStore.resolveSenderName(
+        currentUser.userId,
+        currentUser.userNickname || "我",
+        conversationStore.currentConversation?.convType,
+        getMemberNicknameFromCache(props.convId, currentUser.userId),
+        props.convId
+      ),
       senderAvatar: currentUser.userAvatar || null,
       isSentByMe: true,
     };
