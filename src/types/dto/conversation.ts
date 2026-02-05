@@ -40,7 +40,7 @@ export interface ConversationDetailDTO {
 /**
  * 群成员信息 DTO
  */
-export interface GroupMemberDTO {
+export interface CompressedCM {
   userId: number;
   memberNickname: string | null; // 群昵称
   userNickname: string;          // 用户原本昵称
@@ -62,9 +62,9 @@ export interface GetConversationDetailsResponse {
 /**
  * 获取群成员列表响应
  */
-export interface GetGroupMembersResponse {
+export interface GetCompressedCMResponse {
   code: number;
   message: string;
-  data: GroupMemberDTO[];
+  data: CompressedCM[];
   timestamp?: number;
 }

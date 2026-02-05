@@ -1,8 +1,8 @@
 // src/stores/chat/show-conversation.ts
 import { defineStore } from 'pinia';
-import type { ConversationDetailDTO, GroupMemberDTO } from '@/types/dto/conversation';
+import type { ConversationDetailDTO, CompressedCM } from '@/types/dto/conversation';
 import { conversationDetailApi } from '@/apis/chat/conversation-detail';
-import { groupMemberApi } from '@/apis/chat/group-member';
+import { CompressedCMApi } from '@/apis/chat/group-member';
 import { useAuthStore } from '@/stores/auth';
 
 export const useConversationStore = defineStore('conversation', {
@@ -13,13 +13,13 @@ export const useConversationStore = defineStore('conversation', {
     // 当前选中的会话
     currentConversation: null as ConversationDetailDTO | null,
 
-    // 群成员缓存 Map<convId, GroupMemberDTO[]>
-    groupMembersMap: new Map<number, GroupMemberDTO[]>(),
+    // 群成员缓存 Map<convId, CompressedCM[]>
+    compressedCMMap: new Map<number, CompressedCM[]>(),
     
     // 加载状态
     loadingConversations: false,
     loadingCurrentConversation: false,
-    loadingGroupMembers: false,
+    loadingCompressedCM: false,
     
     // 搜索关键词
     searchKeyword: '',
@@ -104,24 +104,24 @@ export const useConversationStore = defineStore('conversation', {
     /**
      * 加载指定会话的群成员列表
      */
-    async loadGroupMembers(convId: number, force: boolean = false) {
+    async loadCompressedCM(convId: number, force: boolean = false) {
       // 如果不是强制刷新且已有缓存，则跳过
-      if (!force && this.groupMembersMap.has(convId)) {
+      if (!force && this.compressedCMMap.has(convId)) {
         return;
       }
 
-      this.loadingGroupMembers = true;
+      this.loadingCompressedCM = true;
       try {
-        const response = await groupMemberApi.getGroupMembersByConvId(convId);
+        const response = await CompressedCMApi.getCompressedCM(convId);
         if (response.code === 200) {
-          this.groupMembersMap.set(convId, response.data);
+          this.compressedCMMap.set(convId, response.data);
         } else {
           console.warn(`加载群成员失败: ${response.message}`);
         }
       } catch (error) {
         console.error('加载群成员出错:', error);
       } finally {
-        this.loadingGroupMembers = false;
+        this.loadingCompressedCM = false;
       }
     },
     
@@ -141,7 +141,7 @@ export const useConversationStore = defineStore('conversation', {
         this.currentConversation = conversation;
         // 如果是群聊，加载群成员
         if (conversation.convType === 2) {
-            this.loadGroupMembers(convId);
+            this.loadCompressedCM(convId);
         }
       } else {
         console.warn(`会话 ${convId} 不存在`);

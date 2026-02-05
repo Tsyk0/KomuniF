@@ -1,8 +1,11 @@
 import service from '../../service';
-import type { GetGroupMembersResponse } from '@/types/dto/conversation';
+import type { GetCompressedCMResponse } from '@/types/dto/conversation';
 
-
-export function getGroupMembersByConvIdApi(convId: number): Promise<GetGroupMembersResponse> {
+/**
+ * 根据会话ID获取群成员列表
+ * 对应后端接口：GET /compressedCM/getCompressedCM
+ */
+export function getCompressedCMApi(convId: number): Promise<GetCompressedCMResponse> {
     return service({
         url: '/compressedCM/getCompressedCM',
         method: 'get',
@@ -10,8 +13,8 @@ export function getGroupMembersByConvIdApi(convId: number): Promise<GetGroupMemb
     });
 }
 
-export const groupMemberApi = {
-    getGroupMembersByConvId: getGroupMembersByConvIdApi
+export const CompressedCMApi = {
+    getCompressedCM: getCompressedCMApi
 };
 
-export default groupMemberApi;
+export default CompressedCMApi;

@@ -43,7 +43,7 @@ export const useShowMessageStore = defineStore('message', () => {
     
     // 如果没有传入 memberNickname 但有 convId，尝试从 store 查找
     if (convType === 2 && convId && !effectiveMemberNickname) {
-      const members = conversationStore.groupMembersMap.get(convId);
+      const members = conversationStore.compressedCMMap.get(convId);
       const member = members?.find(m => m.userId === senderId);
       if (member?.memberNickname) {
         effectiveMemberNickname = member.memberNickname;
@@ -62,7 +62,7 @@ export const useShowMessageStore = defineStore('message', () => {
     
     // 3. 如果不是好友，尝试从群成员缓存中获取用户昵称
     if (convType === 2 && convId) {
-      const members = conversationStore.groupMembersMap.get(convId);
+      const members = conversationStore.compressedCMMap.get(convId);
       const member = members?.find(m => m.userId === senderId);
       if (member?.userNickname) {
         return member.userNickname;
