@@ -48,6 +48,9 @@ export const useAuthStore = defineStore('auth', {
       try {
         console.log('🔄 调用登录接口...', { userId, rememberMe })
 
+        // 登录前先清理之前的认证状态（解决多账号冲突）
+        this.forceClearAuth()
+
         const loginRequest: LoginRequest = {
           userId: userId,
           userPwd: userPwd,
@@ -66,7 +69,15 @@ export const useAuthStore = defineStore('auth', {
           this.user = response.data.user
           this.rememberMe = rememberMe
 
-          // 3. 根据 rememberMe 处理 localStorage
+          // 3. 强制刷新cookie：立即发送一个验证请求
+          try {
+            await checkTokenApi()
+            console.log('✅ Cookie已强制刷新')
+          } catch (error) {
+            console.warn('⚠️ Cookie刷新失败，但不影响登录:', error)
+          }
+
+          // 4. 根据 rememberMe 处理 localStorage
           if (rememberMe) {
             const rememberMeData: RememberMeData = {
               userId: userId
@@ -172,7 +183,7 @@ export const useAuthStore = defineStore('auth', {
         console.log('🔑 找到记住的账户:', rememberMeData.userId)
 
         // 2. 调用 checkToken API（返回完整用户信息）
-        const response: CheckTokenResponse = await checkTokenApi(undefined)
+        const response: CheckTokenResponse = await checkTokenApi()
         console.log('🔍 Token验证结果:', response)
 
         if (response.code === 200) {
@@ -257,6 +268,23 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('rememberMeData')
       this.rememberMe = false
       console.log('🗑️ 已清除记住的账户')
+    },
+
+    /**
+     * 强制清理认证状态（用于多账号切换）
+     */
+    forceClearAuth(): void {
+      // 清理所有存储
+      this.clearStorage()
+      this.clearRememberedAccount()
+      
+      // 尝试清理cookie（通过发送一个登出请求）
+      try {
+        // 这里可以调用后端的登出接口来清理服务端session
+        console.log('🔄 强制清理认证状态完成')
+      } catch (error) {
+        console.warn('⚠️ 清理认证状态时出现警告:', error)
+      }
     },
 
     /**

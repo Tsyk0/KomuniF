@@ -32,7 +32,9 @@
 /* 原则：透明轨道、无箭头、Thumb 仅悬停/拖拽时显示，全局宽度一致 6px */
 :root {
   --scrollbar-width: 6px;
-  --scrollbar-thumb-visible: rgba(128, 128, 128, 0.5);
+  --scrollbar-thumb-visible: rgba(128, 128, 128, 0.3);
+  --scrollbar-thumb-hover: rgba(128, 128, 128, 0.4);
+  --scrollbar-thumb-active: rgba(128, 128, 128, 0.5);
 }
 
 /* 0. 全局兜底：所有可滚动区域统一宽度与高度、彻底无箭头（含 #app 自身） */
@@ -187,82 +189,97 @@
   background-clip: content-box;
 }
 
-/* 5. 鼠标在可滚动容器区域内时显示拇指，显示/悬停拇指/拖拽时共用同一透明度（无变化） */
+/* 5. 鼠标在可滚动容器区域内时显示拇指，不同状态使用不同透明度 */
+/* 默认显示状态 */
 .user-profile-edit .form-content:hover::-webkit-scrollbar-thumb,
-.user-profile-edit .form-content:hover::-webkit-scrollbar-thumb:hover,
-.user-profile-edit .form-content:hover::-webkit-scrollbar-thumb:active,
 .user-profile-edit .edit-content:hover::-webkit-scrollbar-thumb,
-.user-profile-edit .edit-content:hover::-webkit-scrollbar-thumb:hover,
-.user-profile-edit .edit-content:hover::-webkit-scrollbar-thumb:active,
 .homeview .conversation-list:hover::-webkit-scrollbar-thumb,
-.homeview .conversation-list:hover::-webkit-scrollbar-thumb:hover,
-.homeview .conversation-list:hover::-webkit-scrollbar-thumb:active,
 .homeview
   .conversation-list
   .conversations-container:hover::-webkit-scrollbar-thumb,
-.homeview
-  .conversation-list
-  .conversations-container:hover::-webkit-scrollbar-thumb:hover,
-.homeview
-  .conversation-list
-  .conversations-container:hover::-webkit-scrollbar-thumb:active,
 .conversation-list .conversations-container:hover::-webkit-scrollbar-thumb,
-.conversation-list
+.homeview .chat-area-label:hover::-webkit-scrollbar-thumb,
+.more-options .more-options-content:hover::-webkit-scrollbar-thumb,
+.change-password-form:hover::-webkit-scrollbar-thumb,
+.chat-container .messages-container:hover::-webkit-scrollbar-thumb,
+.chat-container .message-input:hover::-webkit-scrollbar-thumb,
+.message-input-container .message-input:hover::-webkit-scrollbar-thumb,
+.loginview .form-content:hover::-webkit-scrollbar-thumb,
+.friend-detail .friend-detail-content:hover::-webkit-scrollbar-thumb,
+.friend-list .friends-groups:hover::-webkit-scrollbar-thumb,
+.friend-list .friend-list-container:hover::-webkit-scrollbar-thumb,
+.friend-list .sidebar-content:hover::-webkit-scrollbar-thumb,
+.friend-list .chat-list-container:hover::-webkit-scrollbar-thumb,
+.friend-default .friend-default-content:hover::-webkit-scrollbar-thumb,
+.friend-group .friend-group-content:hover::-webkit-scrollbar-thumb,
+.friend-group .friend-group-items:hover::-webkit-scrollbar-thumb,
+.register-form .form-container:hover::-webkit-scrollbar-thumb,
+.register-form:hover::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-visible) !important;
+  border-radius: 3px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* 悬停状态 */
+.user-profile-edit .form-content:hover::-webkit-scrollbar-thumb:hover,
+.user-profile-edit .edit-content:hover::-webkit-scrollbar-thumb:hover,
+.homeview .conversation-list:hover::-webkit-scrollbar-thumb:hover,
+.homeview
+  .conversation-list
   .conversations-container:hover::-webkit-scrollbar-thumb:hover,
 .conversation-list
-  .conversations-container:hover::-webkit-scrollbar-thumb:active,
-.homeview .chat-area-label:hover::-webkit-scrollbar-thumb,
+  .conversations-container:hover::-webkit-scrollbar-thumb:hover,
 .homeview .chat-area-label:hover::-webkit-scrollbar-thumb:hover,
-.homeview .chat-area-label:hover::-webkit-scrollbar-thumb:active,
-.more-options .more-options-content:hover::-webkit-scrollbar-thumb,
 .more-options .more-options-content:hover::-webkit-scrollbar-thumb:hover,
-.more-options .more-options-content:hover::-webkit-scrollbar-thumb:active,
-.change-password-form:hover::-webkit-scrollbar-thumb,
 .change-password-form:hover::-webkit-scrollbar-thumb:hover,
-.change-password-form:hover::-webkit-scrollbar-thumb:active,
-.chat-container .messages-container:hover::-webkit-scrollbar-thumb,
 .chat-container .messages-container:hover::-webkit-scrollbar-thumb:hover,
-.chat-container .messages-container:hover::-webkit-scrollbar-thumb:active,
-.chat-container .message-input:hover::-webkit-scrollbar-thumb,
 .chat-container .message-input:hover::-webkit-scrollbar-thumb:hover,
-.chat-container .message-input:hover::-webkit-scrollbar-thumb:active,
-.message-input-container .message-input:hover::-webkit-scrollbar-thumb,
 .message-input-container .message-input:hover::-webkit-scrollbar-thumb:hover,
-.message-input-container .message-input:hover::-webkit-scrollbar-thumb:active,
-.loginview .form-content:hover::-webkit-scrollbar-thumb,
 .loginview .form-content:hover::-webkit-scrollbar-thumb:hover,
-.loginview .form-content:hover::-webkit-scrollbar-thumb:active,
-.friend-detail .friend-detail-content:hover::-webkit-scrollbar-thumb,
 .friend-detail .friend-detail-content:hover::-webkit-scrollbar-thumb:hover,
-.friend-detail .friend-detail-content:hover::-webkit-scrollbar-thumb:active,
-.friend-list .friends-groups:hover::-webkit-scrollbar-thumb,
 .friend-list .friends-groups:hover::-webkit-scrollbar-thumb:hover,
-.friend-list .friends-groups:hover::-webkit-scrollbar-thumb:active,
-.friend-list .friend-list-container:hover::-webkit-scrollbar-thumb,
 .friend-list .friend-list-container:hover::-webkit-scrollbar-thumb:hover,
-.friend-list .friend-list-container:hover::-webkit-scrollbar-thumb:active,
-.friend-list .sidebar-content:hover::-webkit-scrollbar-thumb,
 .friend-list .sidebar-content:hover::-webkit-scrollbar-thumb:hover,
-.friend-list .sidebar-content:hover::-webkit-scrollbar-thumb:active,
-.friend-list .chat-list-container:hover::-webkit-scrollbar-thumb,
 .friend-list .chat-list-container:hover::-webkit-scrollbar-thumb:hover,
-.friend-list .chat-list-container:hover::-webkit-scrollbar-thumb:active,
-.friend-default .friend-default-content:hover::-webkit-scrollbar-thumb,
 .friend-default .friend-default-content:hover::-webkit-scrollbar-thumb:hover,
-.friend-default .friend-default-content:hover::-webkit-scrollbar-thumb:active,
-.friend-group .friend-group-content:hover::-webkit-scrollbar-thumb,
 .friend-group .friend-group-content:hover::-webkit-scrollbar-thumb:hover,
-.friend-group .friend-group-content:hover::-webkit-scrollbar-thumb:active,
-.friend-group .friend-group-items:hover::-webkit-scrollbar-thumb,
 .friend-group .friend-group-items:hover::-webkit-scrollbar-thumb:hover,
-.friend-group .friend-group-items:hover::-webkit-scrollbar-thumb:active,
-.register-form .form-container:hover::-webkit-scrollbar-thumb,
 .register-form .form-container:hover::-webkit-scrollbar-thumb:hover,
+.register-form:hover::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover) !important;
+  border-radius: 3px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* 拖拽状态 */
+.user-profile-edit .form-content:hover::-webkit-scrollbar-thumb:active,
+.user-profile-edit .edit-content:hover::-webkit-scrollbar-thumb:active,
+.homeview .conversation-list:hover::-webkit-scrollbar-thumb:active,
+.homeview
+  .conversation-list
+  .conversations-container:hover::-webkit-scrollbar-thumb:active,
+.conversation-list
+  .conversations-container:hover::-webkit-scrollbar-thumb:active,
+.homeview .chat-area-label:hover::-webkit-scrollbar-thumb:active,
+.more-options .more-options-content:hover::-webkit-scrollbar-thumb:active,
+.change-password-form:hover::-webkit-scrollbar-thumb:active,
+.chat-container .messages-container:hover::-webkit-scrollbar-thumb:active,
+.chat-container .message-input:hover::-webkit-scrollbar-thumb:active,
+.message-input-container .message-input:hover::-webkit-scrollbar-thumb:active,
+.loginview .form-content:hover::-webkit-scrollbar-thumb:active,
+.friend-detail .friend-detail-content:hover::-webkit-scrollbar-thumb:active,
+.friend-list .friends-groups:hover::-webkit-scrollbar-thumb:active,
+.friend-list .friend-list-container:hover::-webkit-scrollbar-thumb:active,
+.friend-list .sidebar-content:hover::-webkit-scrollbar-thumb:active,
+.friend-list .chat-list-container:hover::-webkit-scrollbar-thumb:active,
+.friend-default .friend-default-content:hover::-webkit-scrollbar-thumb:active,
+.friend-group .friend-group-content:hover::-webkit-scrollbar-thumb:active,
+.friend-group .friend-group-items:hover::-webkit-scrollbar-thumb:active,
 .register-form .form-container:hover::-webkit-scrollbar-thumb:active,
-.register-form:hover::-webkit-scrollbar-thumb,
-.register-form:hover::-webkit-scrollbar-thumb:hover,
 .register-form:hover::-webkit-scrollbar-thumb:active {
-  background: var(--scrollbar-thumb-visible) !important;
+  background: var(--scrollbar-thumb-active) !important;
   border-radius: 3px;
   border: 2px solid transparent;
   background-clip: content-box;
@@ -291,7 +308,7 @@
 .message-input-container .message-input,
 .register-form .form-container,
 .register-form {
-  scrollbar-color: var(--scrollbar-thumb-visible) transparent;
+  scrollbar-color: var(--scrollbar-thumb-hover) transparent;
   scrollbar-width: thin;
 }
 

@@ -3,10 +3,7 @@
     <!-- 好友列表内容区域 -->
     <div class="friend-list-content">
       <div class="friend-groups">
-        <div v-if="isLoading" class="empty-group">
-          <p>加载中...</p>
-        </div>
-        <div v-else-if="filteredFriends.length === 0" class="empty-group">
+        <div v-if="filteredFriends.length === 0" class="empty-group">
           <p>暂无好友</p>
         </div>
         <FriendItem

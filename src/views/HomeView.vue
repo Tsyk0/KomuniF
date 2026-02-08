@@ -69,7 +69,18 @@
       </div>
 
       <!-- 中间会话/好友列表区域 -->
-      <div class="conversation-sidebar">
+      <div
+        class="conversation-sidebar"
+        :class="{ resizing: isResizing }"
+        :style="{ width: sidebarWidth + 'px' }"
+      >
+        <!-- 拖拽调整宽度的把手 -->
+        <div
+          class="resize-handle"
+          @mousedown="startResize"
+          @touchstart="startResize"
+          title="拖拽调整宽度"
+        ></div>
         <div class="sidebar-header">
           <!-- 可点击的用户资料区域 -->
           <div class="user-profile" @click="enterEditMode" v-ripple>
@@ -220,6 +231,106 @@ const userId = ref("");
 const userNickname = ref("用户");
 const currentUserAvatar = ref("");
 const avatarLoadError = ref(false);
+
+// 侧边栏宽度拖拽功能
+const sidebarWidth = ref(400); // 默认宽度
+const isResizing = ref(false);
+const startX = ref(0);
+const startWidth = ref(0);
+
+// 使用requestAnimationFrame优化拖拽性能
+let animationFrameId = null;
+
+// localStorage键名
+const SIDEBAR_WIDTH_KEY = "komunif_sidebar_width";
+
+// 拖拽调整宽度功能
+const startResize = (e) => {
+  e.preventDefault();
+  isResizing.value = true;
+  startX.value = e.type.includes("touch") ? e.touches[0].clientX : e.clientX;
+  startWidth.value = sidebarWidth.value;
+
+  // 添加全局事件监听器
+  document.addEventListener("mousemove", handleResize);
+  document.addEventListener("mouseup", stopResize);
+  document.addEventListener("touchmove", handleResize);
+  document.addEventListener("touchend", stopResize);
+
+  // 防止文本选中和改变光标
+  document.body.style.userSelect = "none";
+  document.body.style.cursor = "col-resize";
+};
+
+const handleResize = (e) => {
+  if (!isResizing.value) return;
+
+  // 使用requestAnimationFrame优化性能
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
+
+  animationFrameId = requestAnimationFrame(() => {
+    const currentX = e.type.includes("touch")
+      ? e.touches[0].clientX
+      : e.clientX;
+    const deltaX = currentX - startX.value;
+
+    // 计算新的宽度，限制在最小和最大宽度之间
+    let newWidth = startWidth.value + deltaX;
+    newWidth = Math.max(300, Math.min(600, newWidth)); // 限制在300px到600px之间
+
+    sidebarWidth.value = newWidth;
+  });
+};
+
+const stopResize = () => {
+  isResizing.value = false;
+
+  // 取消动画帧
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
+  // 移除事件监听器
+  document.removeEventListener("mousemove", handleResize);
+  document.removeEventListener("mouseup", stopResize);
+  document.removeEventListener("touchmove", handleResize);
+  document.removeEventListener("touchend", stopResize);
+
+  // 恢复文本选中和光标
+  document.body.style.userSelect = "";
+  document.body.style.cursor = "";
+
+  // 保存宽度到localStorage
+  saveSidebarWidth();
+};
+
+// 保存宽度到localStorage
+const saveSidebarWidth = () => {
+  try {
+    localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.value.toString());
+  } catch (error) {
+    console.warn("无法保存侧边栏宽度到localStorage:", error);
+  }
+};
+
+// 从localStorage加载宽度
+const loadSidebarWidth = () => {
+  try {
+    const savedWidth = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+    if (savedWidth) {
+      const width = parseInt(savedWidth, 10);
+      // 确保宽度在有效范围内
+      if (!isNaN(width) && width >= 300 && width <= 600) {
+        sidebarWidth.value = width;
+      }
+    }
+  } catch (error) {
+    console.warn("无法从localStorage加载侧边栏宽度:", error);
+  }
+};
 
 // 视图状态分离：
 const currentListView = ref("chat"); // 控制中间列表区域：'chat' | 'friends'
@@ -549,6 +660,9 @@ onMounted(() => {
   console.log("HomeView mounted, initial list view:", currentListView.value);
   loadConversations();
   friendStore.loadFriends();
+
+  // 加载保存的侧边栏宽度
+  loadSidebarWidth();
 });
 </script>
 

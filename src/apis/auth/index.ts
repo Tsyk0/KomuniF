@@ -22,8 +22,8 @@ export function loginApi(data: LoginRequest): Promise<LoginResponse> {
   })
 
 }
-// 新增：Token验证API
-export function checkTokenApi(_token?: string): Promise<CheckTokenResponse> {
+// 新增：Token验证API（依赖cookie自动传递token）
+export function checkTokenApi(): Promise<CheckTokenResponse> {
   return service({
     url: '/user/checkToken',
     method: 'get',

@@ -22,18 +22,7 @@ html.night-mode .friend-list-container .friend-groups {
   background-color: rgb(26,26,26);
 }
 
-html.night-mode .friend-list-container .empty-group {
-  padding: 60px 20px;
-  text-align: center;
-  color: #94a3b8;
-  font-size: 15px;
-  background-color: #252525;
-}
 
-html.night-mode .friend-list-container .empty-group p {
-  margin: 0;
-  line-height: 1.5;
-}
 
 /* ==================== 固定在底部的操作栏 - 夜晚模式 ==================== */
 

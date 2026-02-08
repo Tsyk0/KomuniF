@@ -9,6 +9,8 @@
   background-color: white;
   position: relative;
   overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .conversation-item::before {
