@@ -85,6 +85,13 @@ export const useFriendStore = defineStore("friend", {
       } catch (error) {
         console.error("加载好友列表失败:", error);
         this.friends = [];
+        
+        // Redis服务异常时的降级处理
+        // if (error.message && error.message.includes('Redis is configured to save RDB snapshots')) {
+        //   console.warn('⚠️ Redis服务异常，返回空列表继续运行');
+        //   return [];
+        // }
+        
         throw error;
       } finally {
         this.loadingFriends = false;

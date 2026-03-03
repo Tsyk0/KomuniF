@@ -91,10 +91,6 @@ import toast from "@/commons/utils/toast";
 export default {
   name: "ChangePassword",
   props: {
-    userId: {
-      type: String,
-      required: true,
-    },
     userNickname: {
       type: String,
       required: true,
@@ -136,26 +132,26 @@ export default {
     };
 
     // 验证原密码
-    const validateCurrentPassword = async () => {
-      try {
-        const result = await userStore.checkUserPassword(
-          props.userId,
-          formData.currentPassword
-        );
+    // const validateCurrentPassword = async () => {
+    //   try {
+    //     const result = await userStore.checkUserPassword(
+    //       props.userId,
+    //       formData.currentPassword
+    //     );
 
-        if (!result.success) {
-          errors.currentPassword = result.message;
-          toast.error(result.message);
-          return false;
-        }
-        return true;
-      } catch (error) {
-        console.error("验证原密码失败:", error);
-        errors.currentPassword = "验证原密码失败，请检查网络连接";
-        toast.error("验证原密码失败，请检查网络连接");
-        return false;
-      }
-    };
+    //     if (!result.success) {
+    //       errors.currentPassword = result.message;
+    //       toast.error(result.message);
+    //       return false;
+    //     }
+    //     return true;
+    //   } catch (error) {
+    //     console.error("验证原密码失败:", error);
+    //     errors.currentPassword = "验证原密码失败，请检查网络连接";
+    //     toast.error("验证原密码失败，请检查网络连接");
+    //     return false;
+    //   }
+    // };
 
     // 验证新密码
     const validateNewPassword = () => {
@@ -197,15 +193,15 @@ export default {
 
       try {
         // 验证原密码
-        const isValid = await validateCurrentPassword();
-        if (!isValid) {
-          loading.value = false;
-          return;
-        }
+        // const isValid = await validateCurrentPassword();
+        // if (!isValid) {
+        //   loading.value = false;
+        //   return;
+        // }
 
         // 更新密码
         const result = await userStore.updateUserPassword(
-          props.userId,
+          formData.currentPassword,
           formData.newPassword
         );
 

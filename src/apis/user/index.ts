@@ -19,27 +19,27 @@ export function getUserByIdApi(): Promise<any> {
   })
 }
 
-// 修改：验证用户密码接口 - 使用JSON格式请求体
-export function checkUserPasswordApi(userId: number, userPwd: string): Promise<any> {
-  return service({
-    url: '/user/checkUserPwd',
-    method: 'post',
-    data: {  // 使用data字段传递JSON格式请求体
-      userId: userId, // 根据后端要求，可能需要字符串格式
-      userPwd: userPwd
-    }
-  })
-}
+// // 修改：验证用户密码接口 - 使用JSON格式请求体
+// export function checkUserPasswordApi(userPwd: string): Promise<any> {
+//   return service({
+//     url: '/user/checkUserPwd',
+//     method: 'post',
+//     data: {  // 使用data字段传递JSON格式请求体
+//       userPwd: userPwd
+//     }
+//   })
+// }
 
-// 修改：更新用户密码接口 - 确认正确格式
-export function updateUserPasswordApi(userId: number, newPwd: string): Promise<any> {
+// 修改：更新用户密码接口 - 通过cookie自动识别用户
+export function updateUserPasswordApi(oldPwd: string, newPwd: string): Promise<any> {
   return service({
-    url: '/user/updateUserPwdByUserId',
+    url: '/user/updateUserPwdByOldPwd',
     method: 'post',
-    params: {  // 使用params传递查询参数
-      userId: userId,
+    data: {
+      oldPwd: oldPwd,
       newPwd: newPwd
-    }
+    },
+    withCredentials: true  // 确保携带cookie
   })
 }
 
@@ -47,7 +47,7 @@ export function updateUserPasswordApi(userId: number, newPwd: string): Promise<a
 export const userApi = {
   updateUser: updateUserApi,
   getUserById: getUserByIdApi,
-  checkPassword: checkUserPasswordApi,
+  // checkPassword: checkUserPasswordApi,
   updatePassword: updateUserPasswordApi
 }
 

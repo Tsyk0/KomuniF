@@ -159,14 +159,9 @@ const handleConversationClick = async (convId: number) => {
 
 
 
-// 监听store中的会话列表变化，自动更新组件数据
-watch(() => conversationStore.conversations, (newConversations) => {
-  conversations.value = newConversations;
-}, { immediate: true });
-
-// 监听搜索关键词变化
-watch(() => props.searchQuery, (newQuery) => {
-  conversationStore.setSearchKeyword(newQuery);
+// 生命周期
+onMounted(async () => {
+  await loadConversations();
 });
 
 

@@ -156,7 +156,6 @@
         <!-- 修改密码组件 -->
         <ChangePassword
           v-else-if="currentMainView === 'password'"
-          :user-id="userId"
           :user-nickname="userNickname"
           @back="backToAccountSecurity"
           @success="handlePasswordSuccess"
