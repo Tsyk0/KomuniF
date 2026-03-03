@@ -62,6 +62,15 @@ export const useAuthStore = defineStore('auth', {
         console.log('✅ 后端响应:', response)
 
         if (response.code === 200) {
+          // 0. 保存访问 token（access token）
+          const accessToken = response.data.token
+          if (accessToken) {
+            localStorage.setItem('access_token', accessToken)
+            console.log('🔐 已保存访问 token')
+          } else {
+            console.warn('⚠️ 登录成功但未返回访问 token')
+          }
+
           // 1. 保存用户信息到 sessionStorage
           sessionStorage.setItem('user', JSON.stringify(response.data.user))
 
@@ -69,12 +78,12 @@ export const useAuthStore = defineStore('auth', {
           this.user = response.data.user
           this.rememberMe = rememberMe
 
-          // 3. 强制刷新cookie：立即发送一个验证请求
+          // 3. 可选：发送一次 checkToken，用于让后端基于 refresh_token 做一次保活
           try {
             await checkTokenApi()
-            console.log('✅ Cookie已强制刷新')
+            console.log('✅ 已调用 /user/checkToken 进行会话保活')
           } catch (error) {
-            console.warn('⚠️ Cookie刷新失败，但不影响登录:', error)
+            console.warn('⚠️ 调用 /user/checkToken 失败，但不影响本次登录:', error)
           }
 
           // 4. 根据 rememberMe 处理 localStorage
@@ -182,12 +191,19 @@ export const useAuthStore = defineStore('auth', {
         const rememberMeData: RememberMeData = JSON.parse(savedDataStr)
         console.log('🔑 找到记住的账户:', rememberMeData.userId)
 
-        // 2. 调用 checkToken API（返回完整用户信息）
+        // 2. 调用 checkToken API（需要现有 access token + refresh_token Cookie）
         const response: CheckTokenResponse = await checkTokenApi()
         console.log('🔍 Token验证结果:', response)
 
         if (response.code === 200) {
           if (response.data.valid && response.data.user) {
+            // 如果后端返回了新的 access token，则更新本地
+            const newToken = response.data.token
+            if (newToken) {
+              localStorage.setItem('access_token', newToken)
+              console.log('🔐 免密登录：已刷新访问 token')
+            }
+
             // 3. Token有效，直接登录
             this.user = response.data.user  // ✅ 使用checkToken返回的完整user信息
             this.rememberMe = true
@@ -292,6 +308,7 @@ export const useAuthStore = defineStore('auth', {
      */
     clearStorage(): void {
       sessionStorage.removeItem('user')
+      localStorage.removeItem('access_token')
       this.user = null
       this.rememberMe = false
       console.log('🗑️ 已清除会话存储')
@@ -330,6 +347,59 @@ export const useAuthStore = defineStore('auth', {
         console.log('📋 发现记住的账户，等待用户选择是否免密登录')
       } else {
         console.log('📭 没有存储的登录状态')
+      }
+    },
+
+    /**
+     * 确保当前 access token 可用，并在需要时通过 /user/checkToken 自动续签
+     * 返回：
+     *  - true：当前（可能已刷新后的）access token 有效
+     *  - false：token 无效或刷新失败，需要重新登录
+     */
+    async ensureAccessTokenValid(): Promise<boolean> {
+      const currentToken = localStorage.getItem('access_token')
+
+      if (!currentToken) {
+        console.warn('ensureAccessTokenValid: 未找到本地访问 token，视为未登录')
+        this.clearStorage()
+        return false
+      }
+
+      try {
+        const response: CheckTokenResponse = await checkTokenApi()
+        console.log('🔍 检查 access token 结果:', response)
+
+        if (response.code !== 200 || !response.data) {
+          console.warn('ensureAccessTokenValid: 检查失败，code != 200')
+          return false
+        }
+
+        const { valid, refreshed, token, user } = response.data
+
+        if (valid) {
+          // 如果通过 refresh_token 刷新出了新的 access token，则覆盖本地保存
+          if (token && (refreshed || token !== currentToken)) {
+            localStorage.setItem('access_token', token)
+            console.log('🔐 access token 已更新')
+          }
+
+          // 如果后端返回了最新的用户信息，同步到本地
+          if (user) {
+            this.user = user
+            sessionStorage.setItem('user', JSON.stringify(user))
+          }
+
+          return true
+        }
+
+        // valid === false：刷新令牌也过期或其它原因，清理本地状态
+        console.warn('ensureAccessTokenValid: token 无效，将清理本地登录状态')
+        this.clearStorage()
+        return false
+      } catch (error) {
+        console.error('ensureAccessTokenValid: 检查 access token 失败:', error)
+        // 网络异常等情况下，不强制清除本地状态，但返回 false 由调用方决定是否跳转登录
+        return false
       }
     }
   }

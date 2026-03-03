@@ -1,5 +1,6 @@
 // router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
   {
@@ -32,15 +33,30 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫 - 检查登录状态
-router.beforeEach((to, from, next) => {
-  const user = sessionStorage.getItem('user')
-  
-  // 需要登录的页面
-  if (to.meta.requiresAuth && !user) {
-    next('/')  // 跳转到登录页
-  } else {
+// 路由守卫 - 检查登录状态 + access token 有效性
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+
+  // 不需要登录的页面，直接放行
+  if (!to.meta.requiresAuth) {
     next()
+    return
+  }
+
+  // 检查本地是否有 access token
+  const accessToken = localStorage.getItem('access_token')
+  if (!accessToken) {
+    authStore.clearStorage()
+    next('/') // 没有 token，直接跳转登录
+    return
+  }
+
+  // 调用 /user/checkToken 确保 access token 有效（如有需要会自动续签）
+  const ok = await authStore.ensureAccessTokenValid()
+  if (ok) {
+    next()
+  } else {
+    next('/') // token 无效或刷新失败，要求重新登录
   }
 })
 

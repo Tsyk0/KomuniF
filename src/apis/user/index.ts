@@ -14,7 +14,8 @@ export function updateUserApi(data: UpdateUserRequest): Promise<UpdateUserRespon
 // 原有的获取用户信息接口
 export function getUserByIdApi(): Promise<any> {
   return service({
-    url: `/user/selectUserByUserId`,
+    // 通过时间戳参数避免浏览器/中间缓存命中，确保拿到最新资料
+    url: `/user/selectUserByUserId?t=${Date.now()}`,
     method: 'get'
   })
 }

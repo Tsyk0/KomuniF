@@ -66,9 +66,19 @@ export const useWebSocketStore = defineStore('websocket', () => {
         // 关闭现有连接
         disconnect();
         
-        // 同源连接，浏览器才会自动带 Cookie（代理会把 /ws 转到后端）
+        // 从本地获取当前访问 token
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          console.error('❌ [websocket-store] 缺少访问 token，无法建立WebSocket连接');
+          isConnecting = false;
+          connectionError.value = '未登录或登录已过期';
+          reject(new Error('missing access token'));
+          return;
+        }
+
+        // 同源连接，通过查询参数携带访问 token
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws`;
+        const wsUrl = `${protocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`;
         console.log('🔄 [websocket-store] 正在建立WebSocket连接:', wsUrl);
         
         const ws = new WebSocket(wsUrl);

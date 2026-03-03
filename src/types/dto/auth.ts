@@ -79,6 +79,16 @@ export interface CheckTokenResponse {
     remainingSeconds?: number
     originalExpiration?: string
     expiredSecondsAgo?: number
+    /**
+     * 当前可用的访问 token：
+     * - access token 未过期时：通常为原 token
+     * - 通过 refresh token 刷新后：为新的 access token
+     */
+    token?: string
+    /**
+     * 是否通过 refresh token 刷新出了新的 access token
+     */
+    refreshed?: boolean
   }
   timestamp: number
 }

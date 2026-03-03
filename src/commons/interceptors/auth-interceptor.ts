@@ -20,6 +20,13 @@ export const authRequestInterceptor = {
         baseURL: config.baseURL
       })
     }
+
+    // 从本地存储中读取访问 token，并统一添加到 Authorization 头
+    const accessToken = localStorage.getItem('access_token')
+    if (accessToken) {
+      // AxiosRequestHeaders 在运行时是普通对象，这里直接赋值即可
+      ;(config.headers as any).Authorization = `Bearer ${accessToken}`
+    }
     
     return config
   },
@@ -53,9 +60,10 @@ export const authResponseInterceptor = {
       message: error.message
     })
     
-    // 401 未授权，清除本地存储的用户信息
+    // 401 未授权，清除本地存储的用户信息和访问 token
     if (error.response?.status === 401) {
       sessionStorage.removeItem('user')
+      localStorage.removeItem('access_token')
       
       // 可以在这里跳转到登录页，但为了解耦，建议在调用处处理
       // window.location.href = '/login'

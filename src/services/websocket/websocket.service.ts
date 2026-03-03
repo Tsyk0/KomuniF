@@ -36,9 +36,18 @@ export class WebSocketService {
     
     return new Promise((resolve) => {
       try {
-        // 同源连接，浏览器才会自动带 Cookie（代理会把 /ws 转到后端）
+        // 从本地获取当前访问 token
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          console.error('WebSocket连接失败：缺少访问 token，请先登录');
+          this.isConnecting = false;
+          resolve(false);
+          return;
+        }
+
+        // 同源连接，通过查询参数携带访问 token
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const url = `${protocol}//${window.location.host}/ws`;
+        const url = `${protocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`;
         console.log('正在连接WebSocket:', url);
         
         // 创建WebSocket连接
