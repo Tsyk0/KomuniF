@@ -1,132 +1,164 @@
 <template>
   <div class="chat-container">
-    <!-- 聊天头部 -->
-    <div class="chat-header">
-      <div class="header-left">
-        <button class="back-button" @click="handleBack" v-if="showBackButton">
-          <span class="back-icon">←</span>
-        </button>
-        <div class="chat-info">
-          <div class="avatar-wrapper">
-            <div class="chat-avatar">
-              <span>{{ firstChar }}</span>
+    <div
+      v-if="convId"
+      class="chat-layout"
+      :class="{ 'info-open': isGroupInfoOpen && isGroupChat }"
+    >
+      <!-- 左侧聊天主区域 -->
+      <div class="chat-main">
+        <!-- 聊天头部 -->
+        <div class="chat-header">
+          <div
+            class="header-left"
+            :class="{ clickable: isGroupChat }"
+            @click="handleHeaderLeftClick"
+          >
+            <div class="chat-info">
+              <div class="avatar-wrapper">
+                <div class="chat-avatar">
+                  <span>{{ firstChar }}</span>
+                </div>
+              </div>
+              <div class="chat-details">
+                <h3 class="chat-name">{{ conversationName }}</h3>
+                <p class="chat-status">
+                  {{ isGroupChat ? "群聊中" : "在线" }}
+                </p>
+              </div>
             </div>
           </div>
-          <div class="chat-details">
-            <h3 class="chat-name">{{ conversationName }}</h3>
-            <p class="chat-status">在线</p>
+
+          <!-- WebSocket状态显示 - 新增部分 -->
+          <div class="header-center" v-if="shouldShowWebSocketStatus">
+            <div class="websocket-status" :class="websocketStatus">
+              <span class="status-icon">
+                <span v-if="websocketStatus === 'connected'">✓</span>
+                <span v-if="websocketStatus === 'connecting'">⟳</span>
+                <span v-if="websocketStatus === 'disconnected'">⚠</span>
+              </span>
+              <span class="status-text">
+                <span v-if="websocketStatus === 'connected'">实时连接</span>
+                <span v-if="websocketStatus === 'connecting'">连接中...</span>
+                <span v-if="websocketStatus === 'disconnected'">离线</span>
+              </span>
+              <span
+                v-if="connectionError"
+                class="error-text"
+                :title="connectionError"
+              >
+                ({{
+                  connectionError.length > 10
+                    ? connectionError.substring(0, 10) + "..."
+                    : connectionError
+                }})
+              </span>
+            </div>
+          </div>
+
+          <div class="header-right">
+            <button class="header-action" @click="handleSearch" title="搜索">
+              <span class="action-icon">🔍</span>
+            </button>
+            <button class="header-action" @click="handleMenu" title="更多">
+              <span class="action-icon">⋮</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 消息列表区域 -->
+        <div class="messages-container" ref="messagesContainer">
+          <!-- 加载状态 -->
+          <div v-if="isLoading" class="loading-indicator">加载消息中...</div>
+
+          <!-- 消息列表 -->
+          <div class="messages-list">
+            <!-- 每条消息使用MessageItem组件 -->
+            <MessageItem
+              v-for="message in messages"
+              :key="message.messageId"
+              :message="message"
+            />
+
+            <!-- 没有消息的提示 -->
+            <div v-if="!isLoading && messages.length === 0" class="no-messages">
+              暂无消息
+            </div>
+          </div>
+        </div>
+
+        <!-- 发送消息区域 -->
+        <div class="message-input-container">
+          <div class="input-wrapper">
+            <!-- 左侧功能按钮 -->
+            <div class="input-left-actions">
+              <button class="action-button attachment-button" title="附件">
+                <span class="action-icon">📎</span>
+              </button>
+              <button class="action-button emoji-button" title="表情">
+                <span class="action-icon">😊</span>
+              </button>
+            </div>
+
+            <!-- 消息输入框 -->
+            <div class="message-input-wrapper">
+              <textarea
+                ref="messageInputRef"
+                v-model="messageText"
+                class="message-input"
+                placeholder="输入消息..."
+                rows="1"
+                @keydown.enter.prevent="handleEnterKey"
+                @input="handleInputResize"
+              ></textarea>
+            </div>
+
+            <!-- 右侧发送按钮 -->
+            <div class="input-right-actions">
+              <button
+                class="action-button send-button"
+                :class="{ disabled: !canSend }"
+                :disabled="!canSend || isSending"
+                @click="sendMessage"
+                title="发送"
+              >
+                <span class="send-icon" v-if="!isSending">➤</span>
+                <span class="loading-icon" v-if="isSending">⏳</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 发送方式提示 - 新增部分 -->
+          <div class="send-mode-hint" v-if="!isUsingWebSocket">
+            <span class="hint-icon">⚠</span>
+            <span class="hint-text">使用HTTP发送（WebSocket不可用）</span>
           </div>
         </div>
       </div>
 
-      <!-- WebSocket状态显示 - 新增部分 -->
-      <div class="header-center" v-if="shouldShowWebSocketStatus">
-        <div class="websocket-status" :class="websocketStatus">
-          <span class="status-icon">
-            <span v-if="websocketStatus === 'connected'">✓</span>
-            <span v-if="websocketStatus === 'connecting'">⟳</span>
-            <span v-if="websocketStatus === 'disconnected'">⚠</span>
-          </span>
-          <span class="status-text">
-            <span v-if="websocketStatus === 'connected'">实时连接</span>
-            <span v-if="websocketStatus === 'connecting'">连接中...</span>
-            <span v-if="websocketStatus === 'disconnected'">离线</span>
-          </span>
-          <span
-            v-if="connectionError"
-            class="error-text"
-            :title="connectionError"
-          >
-            ({{
-              connectionError.length > 10
-                ? connectionError.substring(0, 10) + "..."
-                : connectionError
-            }})
-          </span>
-        </div>
-      </div>
-
-      <div class="header-right">
-        <button class="header-action" @click="handleSearch" title="搜索">
-          <span class="action-icon">🔍</span>
-        </button>
-        <button class="header-action" @click="handleMenu" title="更多">
-          <span class="action-icon">⋮</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 消息列表区域 -->
-    <div class="messages-container" ref="messagesContainer">
-      <!-- 加载状态 -->
-      <div v-if="isLoading" class="loading-indicator">加载消息中...</div>
-
-      <!-- 消息列表 -->
-      <div class="messages-list">
-        <!-- 每条消息使用MessageItem组件 -->
-        <MessageItem
-          v-for="message in messages"
-          :key="message.messageId"
-          :message="message"
+      <!-- 右侧群聊信息面板 -->
+      <div
+        v-if="isGroupChat"
+        ref="infoPanelWrapper"
+        class="chat-conversation-info-wrapper"
+        :class="{ open: isGroupInfoOpen, resizing: isResizingInfoPanel }"
+        :style="infoPanelStyle"
+      >
+        <div
+          class="info-resize-handle"
+          @mousedown="startInfoPanelResize"
+          @touchstart.prevent="startInfoPanelResize"
+        ></div>
+        <ConversationInfo
+          :conv-id="convId"
+          @close="closeGroupInfo"
+          @changes-pending="hasInfoPendingChanges = $event"
         />
-
-        <!-- 没有消息的提示 -->
-        <div v-if="!isLoading && messages.length === 0" class="no-messages">
-          暂无消息
-        </div>
-      </div>
-    </div>
-
-    <!-- 发送消息区域 -->
-    <div class="message-input-container" v-if="convId">
-      <div class="input-wrapper">
-        <!-- 左侧功能按钮 -->
-        <div class="input-left-actions">
-          <button class="action-button attachment-button" title="附件">
-            <span class="action-icon">📎</span>
-          </button>
-          <button class="action-button emoji-button" title="表情">
-            <span class="action-icon">😊</span>
-          </button>
-        </div>
-
-        <!-- 消息输入框 -->
-        <div class="message-input-wrapper">
-          <textarea
-            ref="messageInputRef"
-            v-model="messageText"
-            class="message-input"
-            placeholder="输入消息..."
-            rows="1"
-            @keydown.enter.prevent="handleEnterKey"
-            @input="handleInputResize"
-          ></textarea>
-        </div>
-
-        <!-- 右侧发送按钮 -->
-        <div class="input-right-actions">
-          <button
-            class="action-button send-button"
-            :class="{ disabled: !canSend }"
-            :disabled="!canSend || isSending"
-            @click="sendMessage"
-            title="发送"
-          >
-            <span class="send-icon" v-if="!isSending">➤</span>
-            <span class="loading-icon" v-if="isSending">⏳</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 发送方式提示 - 新增部分 -->
-      <div class="send-mode-hint" v-if="!isUsingWebSocket">
-        <span class="hint-icon">⚠</span>
-        <span class="hint-text">使用HTTP发送（WebSocket不可用）</span>
       </div>
     </div>
 
     <!-- 未选择会话状态 -->
-    <div v-if="!convId" class="no-conversation">
+    <div v-else class="no-conversation">
       <div class="placeholder-icon">💭</div>
       <p class="placeholder-text">选择一个会话以开始聊天</p>
     </div>
@@ -144,6 +176,7 @@ import {
   type WebSocketMessage,
 } from "@/stores/chat/websocket-store";
 import MessageItem from "./MessageItem.vue";
+import ConversationInfo from "./ConversationInfo.vue";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
 
@@ -168,19 +201,26 @@ const props = defineProps({
     type: String,
     default: "",
   },
-  showBackButton: {
-    type: Boolean,
-    default: false,
-  },
 });
 
 const emit = defineEmits(["back", "search", "menu", "message-sent"]);
 
 // 响应式数据
-const messagesContainer = ref<HTMLElement>();
-const messageInputRef = ref<HTMLTextAreaElement>();
+const messagesContainer = ref<HTMLElement | null>(null);
+const messageInputRef = ref<HTMLTextAreaElement | null>(null);
 const messageText = ref("");
 const isSending = computed(() => sendMessageStore.isSending);
+
+// 群聊信息面板状态
+const isGroupInfoOpen = ref(false);
+const infoPanelWidth = ref(320);
+const isResizingInfoPanel = ref(false);
+const infoPanelStartX = ref(0);
+const infoPanelStartWidth = ref(0);
+let infoPanelAnimationFrameId: number | null = null;
+const INFO_PANEL_WIDTH_KEY = "komunif_chat_info_width";
+const infoPanelWrapper = ref<HTMLElement | null>(null);
+const infoPanelRight = ref(0);
 
 // WebSocket相关状态
 const websocketStatus = computed(() => {
@@ -226,6 +266,21 @@ const shouldShowWebSocketStatus = computed(() => {
 // 使用Store的数据
 const messages = computed(() => showMessageStore.messages);
 const isLoading = computed(() => showMessageStore.loading);
+
+// 是否为群聊
+const isGroupChat = computed(() => {
+  return conversationStore.currentConversation?.convType === 2;
+});
+
+const hasInfoPendingChanges = ref(false);
+
+const infoPanelStyle = computed(() => {
+  if (!isGroupChat.value) return {};
+  const extra = hasInfoPendingChanges.value ? 80 : 0;
+  return {
+    width: isGroupInfoOpen.value ? `${infoPanelWidth.value + extra}px` : "0px",
+  };
+});
 
 /**
  * 初始化WebSocket连接和监听器 - 修复重复连接问题
@@ -703,6 +758,82 @@ const handleBack = () => emit("back");
 const handleSearch = () => emit("search");
 const handleMenu = () => emit("menu");
 
+const handleHeaderLeftClick = () => {
+  if (!props.convId || !isGroupChat.value) return;
+  isGroupInfoOpen.value = !isGroupInfoOpen.value;
+};
+
+const closeGroupInfo = () => {
+  isGroupInfoOpen.value = false;
+};
+
+const startInfoPanelResize = (e: MouseEvent | TouchEvent) => {
+  if (!isGroupInfoOpen.value) return;
+
+  e.preventDefault();
+  isResizingInfoPanel.value = true;
+
+  const clientX =
+    "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+  infoPanelStartX.value = clientX;
+  infoPanelStartWidth.value = infoPanelWidth.value;
+
+  document.addEventListener("mousemove", handleInfoPanelResize as any);
+  document.addEventListener("mouseup", stopInfoPanelResize as any);
+  document.addEventListener("touchmove", handleInfoPanelResize as any);
+  document.addEventListener("touchend", stopInfoPanelResize as any);
+
+  document.body.style.userSelect = "none";
+  document.body.style.cursor = "col-resize";
+};
+
+const handleInfoPanelResize = (e: MouseEvent | TouchEvent) => {
+  if (!isResizingInfoPanel.value) return;
+
+  if (infoPanelAnimationFrameId !== null) {
+    cancelAnimationFrame(infoPanelAnimationFrameId);
+  }
+
+  infoPanelAnimationFrameId = requestAnimationFrame(() => {
+    const currentX =
+      "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    // 右侧面板左边缘跟随光标：向左拖动变宽，向右拖动变窄
+    const deltaX = infoPanelStartX.value - currentX;
+    let newWidth = infoPanelStartWidth.value + deltaX;
+
+    const minWidth = 360;
+    const maxWidth = 800;
+    if (newWidth < minWidth) newWidth = minWidth;
+    if (newWidth > maxWidth) newWidth = maxWidth;
+
+    infoPanelWidth.value = newWidth;
+  });
+};
+
+const stopInfoPanelResize = () => {
+  isResizingInfoPanel.value = false;
+
+  if (infoPanelAnimationFrameId !== null) {
+    cancelAnimationFrame(infoPanelAnimationFrameId);
+    infoPanelAnimationFrameId = null;
+  }
+
+  document.removeEventListener("mousemove", handleInfoPanelResize as any);
+  document.removeEventListener("mouseup", stopInfoPanelResize as any);
+  document.removeEventListener("touchmove", handleInfoPanelResize as any);
+  document.removeEventListener("touchend", stopInfoPanelResize as any);
+
+  document.body.style.userSelect = "";
+  document.body.style.cursor = "";
+
+  // 可选：与会话列表类似，保存宽度到 localStorage
+  try {
+    localStorage.setItem(INFO_PANEL_WIDTH_KEY, infoPanelWidth.value.toString());
+  } catch (error) {
+    console.warn("无法保存群信息面板宽度:", error);
+  }
+};
+
 /**
  * 清理WebSocket监听器
  */
@@ -736,6 +867,7 @@ watch(
       // 当没有会话时，只清空消息，不断开WebSocket连接
       showMessageStore.clearMessages();
       cleanupWebSocketListeners();
+      isGroupInfoOpen.value = false;
     }
   },
   { immediate: true }

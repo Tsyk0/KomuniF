@@ -7,6 +7,58 @@ html.night-mode .chat-container {
   background: transparent; /* 透明背景，显示底层的纹理 */
 }
 
+/* 聊天布局：主区域 + 群信息侧栏 */
+html.night-mode .chat-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+html.night-mode .chat-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  transition: width 0.25s ease;
+}
+
+html.night-mode .chat-conversation-info-wrapper {
+  max-width: 800px;
+  overflow: hidden;
+  border-left: 1px solid #111827;
+  background: #020617;
+  transition: width 0.05s ease-out, opacity 0.25s ease;
+  opacity: 0;
+  position: relative;
+}
+
+html.night-mode .chat-conversation-info-wrapper.open {
+  opacity: 1;
+}
+
+html.night-mode .chat-conversation-info-wrapper.resizing {
+  transition: none;
+}
+
+html.night-mode .info-resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+  background: transparent;
+}
+
+html.night-mode .header-left.clickable {
+  cursor: pointer;
+}
+
+html.night-mode .header-left.clickable:hover .chat-info {
+  filter: brightness(1.05);
+}
+
 /* 聊天头部样式 */
 html.night-mode .chat-header {
   height: 7vh;
