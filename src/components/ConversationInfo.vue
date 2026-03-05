@@ -43,7 +43,11 @@
           <div class="conversation-field-row" :class="conversationFieldClass">
             <div class="field-label">群头像</div>
             <div class="field-value avatar-value">
-              <div class="conversation-avatar-large">
+              <div
+                class="conversation-avatar-large"
+                :class="{ 'avatar-clickable': canEditConversation }"
+                @click="handleAvatarClick"
+              >
                 <img
                   v-if="conversationAvatarUrl"
                   :src="conversationAvatarUrl"
@@ -219,13 +223,23 @@
       <button class="info-action-btn apply" @click="handleApply">应用</button>
       <button class="info-action-btn cancel" @click="handleCancel">撤销</button>
     </div>
+
+    <input
+      ref="avatarInputRef"
+      type="file"
+      accept="image/*"
+      style="display: none"
+      @change="handleAvatarChange"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import toast from "@/commons/utils/toast";
 import { useAuthStore } from "@/stores/auth";
 import { useFriendStore } from "@/stores/friend/show-friend";
+import { useConversationStore } from "@/stores/chat/show-conversation";
 import { conversationMemberApi } from "@/apis/chat/conversation-member";
 import { manageConversationApi } from "@/apis/chat/manage-conversation";
 import type {
@@ -244,6 +258,7 @@ const emit = defineEmits<{
 
 const authStore = useAuthStore();
 const friendStore = useFriendStore();
+const conversationStore = useConversationStore();
 
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -366,6 +381,7 @@ const myDisplayName = computed(() => {
 // 可编辑字段本地状态
 const editableName = ref("");
 const editableDescription = ref("");
+const avatarInputRef = ref<HTMLInputElement | null>(null);
 
 const syncEditableFromConversation = () => {
   editableName.value = conversation.value?.convName ?? "";
@@ -427,6 +443,111 @@ const handleClose = () => {
   emit("close");
 };
 
+const handleAvatarClick = () => {
+  if (!canEditConversation.value) return;
+  avatarInputRef.value?.click();
+};
+
+// 重新获取会话详情（含会话列表和当前会话），用于在更新后同步全局与本地显示
+const fetchConversationDetails = async (successMessage: string) => {
+  if (!conversation.value) {
+    toast.success(successMessage);
+    return;
+  }
+  try {
+    await conversationStore.loadConversations();
+    conversationStore.setCurrentConversation(conversation.value.convId);
+    // 重新拉取一次带成员信息的详情，保证本组件数据也是最新的
+    await loadConversationInfo();
+    toast.success(successMessage);
+  } catch (e) {
+    console.error("刷新会话详情失败:", e);
+    toast.error("信息已更新，但刷新会话列表失败，请稍后重试");
+  }
+};
+
+// 复用 UserProfileEdit 中的思路：压缩图片得到 base64，再通过会话更新接口上传
+const compressImage = (
+  file: File,
+  maxWidth = 400,
+  maxHeight = 400,
+  quality = 0.7
+) => {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("无法获取 Canvas 上下文"));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedBase64 = canvas.toDataURL("image/jpeg", quality);
+        resolve(compressedBase64);
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+const handleAvatarChange = async (event: Event) => {
+  if (!conversation.value || !canEditConversation.value) return;
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  try {
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("图片大小不能超过 2MB");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("请选择图片文件");
+      return;
+    }
+
+    const compressedBase64 = await compressImage(file, 400, 400, 0.7);
+
+    const resp =
+      await manageConversationApi.updateConversationAttriUserOrientedByConvId({
+        convId: conversation.value.convId,
+        convAvatar: compressedBase64,
+      });
+
+    if (resp.code === 200) {
+      // 前端立即更新显示
+      conversation.value.convAvatar = compressedBase64;
+      await fetchConversationDetails("群头像更新成功");
+    } else {
+      toast.error(resp.message || "群头像更新失败");
+    }
+  } catch (e) {
+    console.error("更新群头像失败:", e);
+    toast.error("群头像更新失败，请稍后重试");
+  } finally {
+    input.value = "";
+  }
+};
+
 const handleApply = async () => {
   if (!conversation.value || !canEditConversation.value) return;
 
@@ -449,9 +570,10 @@ const handleApply = async () => {
       return;
     }
 
-    const resp = await manageConversationApi.updateConversationAttriUserOrientedByConvId(
-      payload
-    );
+    const resp =
+      await manageConversationApi.updateConversationAttriUserOrientedByConvId(
+        payload
+      );
 
     if (resp.code === 200) {
       if (payload.convName !== undefined) {
@@ -461,11 +583,14 @@ const handleApply = async () => {
         conversation.value.convDescription = payload.convDescription;
       }
       syncEditableFromConversation();
+      await fetchConversationDetails("群聊信息更新成功");
     } else {
       console.error("更新会话信息失败:", resp.message);
+      toast.error(resp.message || "更新群聊信息失败");
     }
   } catch (e) {
     console.error("更新会话信息异常:", e);
+    toast.error("更新群聊信息异常，请稍后重试");
   }
 };
 

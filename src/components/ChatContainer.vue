@@ -17,7 +17,14 @@
             <div class="chat-info">
               <div class="avatar-wrapper">
                 <div class="chat-avatar">
-                  <span>{{ firstChar }}</span>
+                  <img
+                    v-if="avatarUrl"
+                    :src="avatarUrl"
+                    alt="会话头像"
+                    class="chat-avatar-img"
+                    @error="handleAvatarError"
+                  />
+                  <span v-else>{{ firstChar }}</span>
                 </div>
               </div>
               <div class="chat-details">
@@ -236,6 +243,29 @@ const isWebSocketConnecting = ref(false);
 let globalWebSocketCleanup: (() => void) | null = null;
 
 // 计算属性
+const processAvatarUrl = (avatarUrl: string): string => {
+  if (!avatarUrl || avatarUrl === "") {
+    return "";
+  }
+
+  if (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:image/")) {
+    return avatarUrl;
+  }
+
+  avatarUrl = avatarUrl.trim();
+
+  if (!avatarUrl.startsWith("/")) {
+    avatarUrl = "/" + avatarUrl;
+  }
+
+  return "http://localhost:8081" + avatarUrl;
+};
+
+const avatarUrl = computed(() => {
+  if (!props.conversationAvatar) return "";
+  return processAvatarUrl(props.conversationAvatar);
+});
+
 const firstChar = computed(() => {
   return props.conversationName ? props.conversationName.charAt(0) : "";
 });
@@ -262,6 +292,11 @@ const shouldShowWebSocketStatus = computed(() => {
     websocketStore.connectionError !== null
   );
 });
+
+const handleAvatarError = (event: Event) => {
+  const img = event.target as HTMLImageElement;
+  img.style.display = "none";
+};
 
 // 使用Store的数据
 const messages = computed(() => showMessageStore.messages);
