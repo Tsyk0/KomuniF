@@ -7,13 +7,13 @@ import type { GetMessageDetailsRequest, GetMessageDetailsResponse } from '@/type
  * 一次性获取消息、发送者信息和显示名称
  */
 export function getMessageDetailsByConvIdApi(
-    params: GetMessageDetailsRequest
+  params: GetMessageDetailsRequest
 ): Promise<GetMessageDetailsResponse> {
-    return service({
-        url: '/messageDetail/getMessageDetailsByConvId',
-        method: 'get',
-        params
-    });
+  return service({
+    url: '/messageDetail/getMessageDetailsByConvId',
+    method: 'get',
+    params
+  });
 }
 
 /**
@@ -21,21 +21,39 @@ export function getMessageDetailsByConvIdApi(
  * 注意：所有调用方必须更新为新的参数格式
  */
 export function getMessagesByConvIdApi(
-    convId: number,
-    page: number = 10,
-    pageSize: number = 100
+  convId: number,
+  page: number = 10,
+  pageSize: number = 100
 ): Promise<GetMessageDetailsResponse> {
-    return getMessageDetailsByConvIdApi({
-        convId,
-        page,
-        pageSize
-    });
+  return getMessageDetailsByConvIdApi({
+    convId,
+    page,
+    pageSize
+  });
+}
+
+/**
+ * 占位符：根据 messageId 向前加载更旧消息
+ * 约定后端接口：GET /messageDetail/getHistoryMessagesByConvId
+ * 参数：convId, beforeMessageId, pageSize
+ */
+export function getHistoryMessagesByConvIdApi(params: {
+  convId: number;
+  beforeMessageId?: number;
+  pageSize?: number;
+}): Promise<GetMessageDetailsResponse> {
+  return service({
+    url: '/messageDetail/getHistoryMessagesByConvId',
+    method: 'get',
+    params
+  });
 }
 
 // 导出所有API
 export const messageDetailApi = {
-    getMessageDetailsByConvId: getMessageDetailsByConvIdApi,
-    getMessagesByConvId: getMessagesByConvIdApi
+  getMessageDetailsByConvId: getMessageDetailsByConvIdApi,
+  getMessagesByConvId: getMessagesByConvIdApi,
+  getHistoryMessagesByConvId: getHistoryMessagesByConvIdApi
 };
 
 export default messageDetailApi;

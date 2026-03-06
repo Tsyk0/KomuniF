@@ -74,7 +74,7 @@
         </div>
 
         <!-- 消息列表区域 -->
-        <div class="messages-container" ref="messagesContainer">
+        <div class="messages-container" ref="messagesContainer" @scroll="handleMessagesScroll">
           <!-- 加载状态 -->
           <div v-if="isLoading" class="loading-indicator">加载消息中...</div>
 
@@ -870,6 +870,36 @@ const stopInfoPanelResize = () => {
 };
 
 /**
+ * 消息容器滚动事件：到达顶部时自动加载更旧的历史消息
+ */
+const handleMessagesScroll = async () => {
+  const container = messagesContainer.value;
+  if (!container || !props.convId) return;
+
+  // 只有在接近顶部时才触发（给一点阈值，避免频繁触发）
+  const threshold = 10;
+  if (container.scrollTop > threshold) return;
+
+  // 如果正在加载（任意类型）或没有更多历史，则不再触发
+  if (
+    showMessageStore.loading ||
+    showMessageStore.historyLoading ||
+    !showMessageStore.hasMoreHistory
+  ) {
+    return;
+  }
+
+  const oldest = showMessageStore.getOldestMessage();
+  if (!oldest) return;
+
+  console.log(
+    "滚动到顶部，加载更早的历史消息，beforeMessageId:",
+    oldest.messageId
+  );
+  await showMessageStore.loadMessages(props.convId, "history", oldest.messageId);
+};
+
+/**
  * 清理WebSocket监听器
  */
 const cleanupWebSocketListeners = () => {
@@ -912,6 +942,9 @@ watch(
 watch(
   () => showMessageStore.messages,
   () => {
+    // 加载历史消息（向上翻）时不自动滚动到底部，避免打断用户位置
+    if (showMessageStore.historyLoading) return;
+
     nextTick(() => {
       scrollToBottom();
     });

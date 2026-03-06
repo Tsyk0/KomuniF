@@ -7,7 +7,7 @@ export interface RealMessage {
     messageType: string;
     messageContent: string;
     messageStatus: number;
-    isRecalled?: number;
+    isRecalled?: boolean;
     replyToMessageId?: number | null;
     atUserIds?: number[] | null;
     sendTime: string;
