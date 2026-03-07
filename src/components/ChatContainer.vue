@@ -3,7 +3,7 @@
     <div
       v-if="convId"
       class="chat-layout"
-      :class="{ 'info-open': isGroupInfoOpen && isGroupChat }"
+      :class="{ 'info-open': isGroupInfoOpen && (isGroupChat || friendId) }"
     >
       <!-- 左侧聊天主区域 -->
       <div class="chat-main">
@@ -11,7 +11,7 @@
         <div class="chat-header">
           <div
             class="header-left"
-            :class="{ clickable: isGroupChat }"
+            :class="{ clickable: isGroupChat || !!friendId }"
             @click="handleHeaderLeftClick"
           >
             <div class="chat-info">
@@ -28,9 +28,9 @@
                 </div>
               </div>
               <div class="chat-details">
-                <h3 class="chat-name">{{ conversationName }}</h3>
-                <p class="chat-status">
-                  {{ isGroupChat ? "群聊中" : "在线" }}
+                <h3 class="chat-name">{{ conversationDisplayName }}</h3>
+                <p v-if="chatStatusText" class="chat-status">
+                  {{ chatStatusText }}
                 </p>
               </div>
             </div>
@@ -74,7 +74,11 @@
         </div>
 
         <!-- 消息列表区域 -->
-        <div class="messages-container" ref="messagesContainer" @scroll="handleMessagesScroll">
+        <div
+          class="messages-container"
+          ref="messagesContainer"
+          @scroll="handleMessagesScroll"
+        >
           <!-- 加载状态 -->
           <div v-if="isLoading" class="loading-indicator">加载消息中...</div>
 
@@ -143,9 +147,9 @@
         </div>
       </div>
 
-      <!-- 右侧群聊信息面板 -->
+      <!-- 右侧会话/好友信息面板（群聊或单聊均可打开） -->
       <div
-        v-if="isGroupChat"
+        v-if="isGroupChat || friendId"
         ref="infoPanelWrapper"
         class="chat-conversation-info-wrapper"
         :class="{ open: isGroupInfoOpen, resizing: isResizingInfoPanel }"
@@ -158,6 +162,7 @@
         ></div>
         <ConversationInfo
           :conv-id="convId"
+          :friend-id="friendId"
           @close="closeGroupInfo"
           @changes-pending="hasInfoPendingChanges = $event"
         />
@@ -184,6 +189,7 @@ import {
 } from "@/stores/chat/websocket-store";
 import MessageItem from "./MessageItem.vue";
 import ConversationInfo from "./ConversationInfo.vue";
+import { useConversationDisplay } from "@/composables/useConversationDisplay";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
 
@@ -200,17 +206,24 @@ const props = defineProps({
     type: Number,
     default: null,
   },
-  conversationName: {
-    type: String,
-    default: "",
-  },
-  conversationAvatar: {
-    type: String,
-    default: "",
+  /** 单聊时对方用户 ID（好友 userId），用于点击 chat-info 打开好友信息面板 */
+  friendId: {
+    type: Number,
+    default: null,
   },
 });
 
 const emit = defineEmits(["back", "search", "menu", "message-sent"]);
+
+// 当前会话（与会话列表同源，保证 chatinfo 与会话 item 显示一致）
+const currentConversation = computed(() => {
+  if (props.convId == null) return null;
+  const cur = conversationStore.currentConversation;
+  if (cur?.convId === props.convId) return cur;
+  return conversationStore.conversationMap.get(props.convId) ?? null;
+});
+const { displayName: conversationDisplayName, avatar: conversationAvatar } =
+  useConversationDisplay(currentConversation);
 
 // 响应式数据
 const messagesContainer = ref<HTMLElement | null>(null);
@@ -262,12 +275,13 @@ const processAvatarUrl = (avatarUrl: string): string => {
 };
 
 const avatarUrl = computed(() => {
-  if (!props.conversationAvatar) return "";
-  return processAvatarUrl(props.conversationAvatar);
+  if (!conversationAvatar.value) return "";
+  return processAvatarUrl(conversationAvatar.value);
 });
 
 const firstChar = computed(() => {
-  return props.conversationName ? props.conversationName.charAt(0) : "";
+  const name = conversationDisplayName.value || "";
+  return name ? name.charAt(0) : "";
 });
 
 const canSend = computed(() => {
@@ -283,6 +297,17 @@ const canUseWebSocket = computed(() => {
     user?.userId !== undefined &&
     props.convId !== null
   );
+});
+
+/** 当前会话在线人数（有后端下发且为当前会话时显示，否则不显示该区域） */
+const chatStatusText = computed(() => {
+  const count = websocketStore.conversationOnlineCount;
+  const isCurrentConv =
+    props.convId != null && websocketStore.currentConvId === props.convId;
+  if (isCurrentConv && typeof count === "number") {
+    return `${count}人在线`;
+  }
+  return "";
 });
 
 const shouldShowWebSocketStatus = computed(() => {
@@ -310,7 +335,8 @@ const isGroupChat = computed(() => {
 const hasInfoPendingChanges = ref(false);
 
 const infoPanelStyle = computed(() => {
-  if (!isGroupChat.value) return {};
+  const showPanel = isGroupChat.value || props.friendId;
+  if (!showPanel) return {};
   const extra = hasInfoPendingChanges.value ? 80 : 0;
   return {
     width: isGroupInfoOpen.value ? `${infoPanelWidth.value + extra}px` : "0px",
@@ -742,13 +768,20 @@ const loadMessages = async () => {
   // 1. 使用HTTP获取历史消息
   await showMessageStore.loadMessages(props.convId);
 
-  // 2. 只在需要时建立WebSocket连接
+  // 2. WebSocket：未连接则建立连接；已连接则同步当前会话并发送 subscribe（便于后端更新 currentConvId 并回传在线人数）
   if (!websocketStore.isConnected && !isWebSocketConnecting.value) {
     await initWebSocket();
-  } else if (!webSocketListenersInitialized.value) {
-    // 如果已连接但监听器未初始化，只设置监听器
-    const cleanup = setupWebSocketEventListeners();
-    if (cleanup) globalWebSocketCleanup = cleanup;
+  } else {
+    if (!webSocketListenersInitialized.value) {
+      const cleanup = setupWebSocketEventListeners();
+      if (cleanup) globalWebSocketCleanup = cleanup;
+    }
+    const currentUser = authStore.user;
+    if (currentUser?.userId && props.convId) {
+      await websocketStore.connect(currentUser.userId, props.convId);
+      // 已连接时发送 subscribe，确保切换会话后后端回传新会话的在线人数
+      websocketStore.sendSubscribe(props.convId);
+    }
   }
 };
 
@@ -794,7 +827,8 @@ const handleSearch = () => emit("search");
 const handleMenu = () => emit("menu");
 
 const handleHeaderLeftClick = () => {
-  if (!props.convId || !isGroupChat.value) return;
+  if (!props.convId) return;
+  if (!isGroupChat.value && !props.friendId) return;
   isGroupInfoOpen.value = !isGroupInfoOpen.value;
 };
 
@@ -896,7 +930,11 @@ const handleMessagesScroll = async () => {
     "滚动到顶部，加载更早的历史消息，beforeMessageId:",
     oldest.messageId
   );
-  await showMessageStore.loadMessages(props.convId, "history", oldest.messageId);
+  await showMessageStore.loadMessages(
+    props.convId,
+    "history",
+    oldest.messageId
+  );
 };
 
 /**

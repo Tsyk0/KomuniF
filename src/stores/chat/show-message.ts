@@ -130,6 +130,30 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   /**
+   * 根据当前好友列表/群成员实时解析发送者显示名（优先级：群昵称 > 好友备注 > 用户昵称）
+   * 用于 MessageItem 等展示，使修改备注后无需重载消息即可更新名称
+   */
+  const getSenderDisplayName = (message: DisplayMessage): string => {
+    const convId = message.convId;
+    const convType = conversationStore.currentConversation?.convId === convId
+      ? conversationStore.currentConversation?.convType
+      : undefined;
+    let memberNickname: string | null = null;
+    if (convId) {
+      const members = conversationStore.compressedCMMap.get(convId);
+      const member = members?.find(m => m.userId === message.senderId);
+      memberNickname = member?.memberNickname ?? null;
+    }
+    return resolveSenderName(
+      message.senderId,
+      message.senderName || '未知用户',
+      convType,
+      memberNickname,
+      convId
+    );
+  };
+
+  /**
    * 加载消息 - 核心功能：获取后端数据显示在前端
    */
   const loadMessages = async (
@@ -434,6 +458,7 @@ export const useShowMessageStore = defineStore('message', () => {
     getOldestMessage,
     clearMessages,
     resetMessages,
-    resolveSenderName
+    resolveSenderName,
+    getSenderDisplayName,
   };
 });

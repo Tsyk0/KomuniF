@@ -30,7 +30,7 @@
     <!-- 会话信息 -->
     <div class="conversation-info">
       <div class="conversation-header">
-        <span class="conversation-name">{{ conversation.convName }}</span>
+        <span class="conversation-name">{{ displayName }}</span>
         <span class="conversation-time">{{ lastMessageTime }}</span>
       </div>
 
@@ -59,6 +59,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useConversationDisplay } from "@/composables/useConversationDisplay";
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
 
 interface Props {
@@ -68,15 +69,17 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const { displayName, avatar } = useConversationDisplay(() => props.conversation);
+
 // 处理头像URL
 const processedAvatar = computed(() => {
-  if (!props.conversation.convAvatar) return "";
-  return processAvatarUrl(props.conversation.convAvatar);
+  if (!avatar.value) return "";
+  return processAvatarUrl(avatar.value);
 });
 
-// 头像占位符文本
+// 头像占位符文本（与显示名一致）
 const avatarText = computed(() => {
-  const name = props.conversation.convName || "";
+  const name = displayName.value || "";
   return name.charAt(0).toUpperCase() || "?";
 });
 

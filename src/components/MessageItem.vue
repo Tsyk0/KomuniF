@@ -32,25 +32,26 @@
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { useThemeStore } from "@/stores/theme";
-import type { DisplayMessage } from "@/entity/message"; // 修改导入
+import { useShowMessageStore } from "@/stores/chat/show-message";
+import { useFriendStore } from "@/stores/friend/show-friend";
+import type { DisplayMessage } from "@/entity/message";
 
 interface Props {
-  message: DisplayMessage; // 修改类型
+  message: DisplayMessage;
 }
 
 const props = defineProps<Props>();
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
+const showMessageStore = useShowMessageStore();
+const friendStore = useFriendStore();
 
 const isSentByMe = computed(() => props.message.isSentByMe);
 
+// 依赖好友列表，使修改备注后消息中的对方名称实时更新（优先级：群昵称 > 好友备注 > 用户昵称）
 const displayName = computed(() => {
-  // 统一使用 senderName 字段，确保昵称显示一致性
-  return (
-    props.message.senderName || // 优先使用解析后的 senderName
-    (isSentByMe.value ? authStore.user?.userNickname || "我" : undefined) || // 发送者自己使用用户昵称
-    `用户${props.message.senderId}`
-  );
+  void friendStore.friends;
+  return showMessageStore.getSenderDisplayName(props.message);
 });
 
 const formatTime = (timeStr: string) => {

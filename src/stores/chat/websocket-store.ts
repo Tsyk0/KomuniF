@@ -2,8 +2,8 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
-import type { 
-  SendMessageRequest, 
+import type {
+  SendMessageRequest,
   WebSocketAction,
   WebSocketBaseMessage
 } from '@/types/websocket/message-types';
@@ -14,14 +14,19 @@ export type WebSocketMessage = SendMessageRequest | WebSocketBaseMessage | any;
 export const useWebSocketStore = defineStore('websocket', () => {
   // Store
   const authStore = useAuthStore();
-  
+
   // 状态
   const wsConnection = ref<WebSocket | null>(null);
   const isConnected = ref(false);
   const connectionError = ref<string | null>(null);
   const reconnectAttempts = ref(0);
   const maxReconnectAttempts = 5;
-  
+
+  /** 当前订阅的会话 ID（用于显示该会话在线人数） */
+  const currentConvId = ref<number | null>(null);
+  /** 当前会话在线人数（后端通过 conversationPresence 下发） */
+  const conversationOnlineCount = ref<number | null>(null);
+
   // 防止重复连接的标志
   let isConnecting = false;
 
@@ -32,7 +37,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     if (readyState === undefined || readyState === null) {
       return 'NOT_CONNECTED (undefined)';
     }
-    
+
     switch (readyState) {
       case WebSocket.CONNECTING: return 'CONNECTING (0)';
       case WebSocket.OPEN: return 'OPEN (1)';
@@ -53,7 +58,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
         resolve();
         return;
       }
-      
+
       if (isConnected.value && wsConnection.value?.readyState === WebSocket.OPEN) {
         console.log('✅ [websocket-store] 已经连接，跳过');
         resolve();
@@ -61,28 +66,27 @@ export const useWebSocketStore = defineStore('websocket', () => {
       }
 
       isConnecting = true;
-      
+
       try {
-        // 关闭现有连接
-        disconnect();
-        
-        // 从本地获取当前访问 token
+        // 从本地存储获取 access token，后端 WebSocket 需要认证
         const token = localStorage.getItem('access_token');
         if (!token) {
-          console.error('❌ [websocket-store] 缺少访问 token，无法建立WebSocket连接');
           isConnecting = false;
-          connectionError.value = '未登录或登录已过期';
-          reject(new Error('missing access token'));
+          connectionError.value = '未提供认证token，请先登录';
+          reject(new Error('未提供认证token，请先登录'));
           return;
         }
 
-        // 同源连接，通过查询参数携带访问 token
+        // 关闭现有连接
+        disconnect();
+
+        // 同源连接，通过查询参数携带 token（浏览器 WebSocket API 不支持自定义请求头）
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`;
-        console.log('🔄 [websocket-store] 正在建立WebSocket连接:', wsUrl);
-        
+        console.log('🔄 [websocket-store] 正在建立WebSocket连接:', wsUrl.replace(/token=[^&]+/, 'token=***'));
+
         const ws = new WebSocket(wsUrl);
-        
+
         ws.onopen = () => {
           console.log('✅ [websocket-store] WebSocket连接已建立');
           wsConnection.value = ws;
@@ -90,38 +94,40 @@ export const useWebSocketStore = defineStore('websocket', () => {
           connectionError.value = null;
           reconnectAttempts.value = 0;
           isConnecting = false;
-          
+
           startHeartbeat();
+          // 建立连接后订阅当前会话，以便后端回传在线人数
+          sendSubscribe(convId);
           resolve();
         };
-        
+
         ws.onclose = (event) => {
           console.log('ℹ️ [websocket-store] WebSocket连接已关闭:', event.code, event.reason);
           wsConnection.value = null;
           isConnected.value = false;
           isConnecting = false;
           stopHeartbeat();
-          
+
           if (event.code !== 1000 && reconnectAttempts.value < maxReconnectAttempts) {
             scheduleReconnect(userId, convId);
           }
-          
+
           if (event.code !== 1000) {
             connectionError.value = `连接已断开: ${event.reason || '未知原因'}`;
           }
         };
-        
+
         ws.onerror = (error) => {
           console.error('❌ [websocket-store] WebSocket连接错误:', error);
           connectionError.value = '连接错误';
           isConnecting = false;
           reject(new Error('WebSocket连接失败'));
         };
-        
+
         ws.onmessage = (event) => {
           handleWebSocketMessage(event.data);
         };
-        
+
       } catch (error) {
         console.error('❌ [websocket-store] 建立WebSocket连接失败:', error);
         connectionError.value = '连接失败';
@@ -130,7 +136,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
       }
     });
   };
-  
+
   /**
    * 关闭WebSocket连接 - 修复版
    */
@@ -142,34 +148,34 @@ export const useWebSocketStore = defineStore('websocket', () => {
         readyState: readyState,
         readyStateText: getReadyStateText(readyState)
       });
-      
+
       stopHeartbeat();
-      
+
       if (readyState === WebSocket.OPEN) {
         console.log('🔄 [websocket-store] 发送正常关闭信号');
         wsConnection.value.close(1000, '正常关闭');
       } else {
         console.log('🔄 [websocket-store] 连接已处于非打开状态，直接清理');
       }
-      
+
       wsConnection.value = null;
       isConnected.value = false;
     }
   };
-  
+
   /**
    * 发送WebSocket消息 - 修复版（状态一致性检查）
    */
   const sendMessage = (message: WebSocketMessage): boolean => {
     console.log('🔄 [websocket-store] 尝试发送WebSocket消息');
     console.log('  连接对象:', wsConnection.value);
-    
+
     // 获取 readyState 值
     const readyState = wsConnection.value?.readyState;
     console.log('  连接状态:', readyState);
     console.log('  是否已连接:', isConnected.value);
     console.log('  消息内容:', message);
-    
+
     if (!wsConnection.value || readyState !== WebSocket.OPEN) {
       console.error('❌ [websocket-store] WebSocket连接不存在或未打开');
       console.error('  详细状态:', {
@@ -178,16 +184,16 @@ export const useWebSocketStore = defineStore('websocket', () => {
         readyStateText: getReadyStateText(readyState), // 🔴 修复：传递 readyState
         storeIsConnected: isConnected.value
       });
-      
+
       // 自动修复状态不一致
       if (isConnected.value && (!wsConnection.value || readyState !== WebSocket.OPEN)) {
         console.warn('⚠️ [websocket-store] 状态不一致，自动修正');
         isConnected.value = false;
       }
-      
+
       return false;
     }
-    
+
     try {
       const messageStr = JSON.stringify(message);
       console.log('📤 [websocket-store] 发送WebSocket消息:', messageStr);
@@ -199,10 +205,10 @@ export const useWebSocketStore = defineStore('websocket', () => {
       return false;
     }
   };
-  
+
   // 心跳相关
   let heartbeatInterval: number | null = null;
-  
+
   /**
    * 开始心跳 - 修复：发送纯文本ping
    */
@@ -211,7 +217,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     heartbeatInterval = window.setInterval(() => {
       if (wsConnection.value?.readyState === WebSocket.OPEN) {
         console.log('💓 [websocket-store] 发送心跳ping');
-        
+
         try {
           // 🔴 修复：发送纯文本ping（后端期望纯文本）
           wsConnection.value.send('ping');
@@ -221,7 +227,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
       }
     }, 30000); // 30秒一次
   };
-  
+
   /**
    * 停止心跳
    */
@@ -231,16 +237,16 @@ export const useWebSocketStore = defineStore('websocket', () => {
       heartbeatInterval = null;
     }
   };
-  
+
   /**
    * 安排重连 - 修复版
    */
   const scheduleReconnect = (userId: number, convId: number) => {
     reconnectAttempts.value++;
     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value), 30000);
-    
+
     console.log(`🔄 [websocket-store] 将在 ${delay}ms 后尝试重连 (第${reconnectAttempts.value}次)`);
-    
+
     setTimeout(() => {
       if (!isConnected.value) {
         console.log(`🔄 [websocket-store] 执行第${reconnectAttempts.value}次重连`);
@@ -250,20 +256,20 @@ export const useWebSocketStore = defineStore('websocket', () => {
       }
     }, delay);
   };
-  
+
   /**
    * 处理WebSocket消息 - 修复：支持纯文本和JSON
    */
   const handleWebSocketMessage = (data: string) => {
     console.log('📥 [websocket-store] 收到WebSocket消息:', data);
-    
+
     try {
       // 处理心跳响应（纯文本）
       if (data === 'pong') {
         console.log('💓 [websocket-store] 收到心跳响应pong');
         return;
       }
-      
+
       // 尝试解析JSON
       let message;
       try {
@@ -273,20 +279,20 @@ export const useWebSocketStore = defineStore('websocket', () => {
         console.log('📥 [websocket-store] 收到非JSON消息:', data);
         return;
       }
-      
+
       // 处理连接成功响应
       if (message.action === 'connected') {
         console.log('✅ [websocket-store] 服务器连接成功确认:', message);
         isConnected.value = true;
         connectionError.value = null;
-        
+
         const event = new CustomEvent('websocket:connected', {
           detail: message
         });
         window.dispatchEvent(event);
         return;
       }
-      
+
       // 根据action分发处理
       switch (message.action) {
         case 'newMessage':
@@ -294,6 +300,14 @@ export const useWebSocketStore = defineStore('websocket', () => {
           break;
         case 'messageSent':
           handleMessageSent(message);
+          break;
+        case 'conversationPresence':
+          if (typeof message.convId === 'number' && typeof message.onlineCount === 'number') {
+            if (message.convId === currentConvId.value) {
+              conversationOnlineCount.value = message.onlineCount;
+              console.log('📊 [websocket-store] 当前会话在线人数:', message.onlineCount);
+            }
+          }
           break;
         case 'error':
           handleErrorMessage(message);
@@ -305,61 +319,61 @@ export const useWebSocketStore = defineStore('websocket', () => {
       console.error('❌ [websocket-store] 解析WebSocket消息失败:', error, data);
     }
   };
-  
+
   /**
    * 处理新消息
    */
   const handleNewMessage = (message: any) => {
     console.log('🔔 [websocket-store] 收到newMessage广播:', message);
-    
+
     // 确保消息格式正确
     if (!message.convId || !message.messageContent) {
       console.warn('⚠️ [websocket-store] 收到的消息格式不正确:', message);
       return;
     }
-    
+
     // 触发新消息事件
     const event = new CustomEvent('websocket:newMessage', {
       detail: message
     });
-    
+
     console.log('🔄 [websocket-store] 派发websocket:newMessage事件');
     window.dispatchEvent(event);
   };
-  
+
   /**
    * 处理消息发送成功
    */
   const handleMessageSent = (message: any) => {
     console.log('✅ [websocket-store] 消息发送成功确认:', message);
-    
+
     const event = new CustomEvent('websocket:messageSent', {
       detail: message
     });
     window.dispatchEvent(event);
   };
-  
+
   /**
    * 处理错误消息 - 修复：过滤ping相关错误
    */
   const handleErrorMessage = (message: any) => {
     const errorMsg = message.message || message;
-    
+
     // 🔴 修复：过滤ping相关的历史错误
     if (errorMsg && typeof errorMsg === 'string' && errorMsg.includes('ping')) {
       console.log('⚠️ [websocket-store] 忽略ping相关的历史错误:', errorMsg);
       return;
     }
-    
+
     console.error('❌ [websocket-store] WebSocket错误:', errorMsg);
     connectionError.value = errorMsg || 'WebSocket错误';
-    
+
     const event = new CustomEvent('websocket:error', {
       detail: errorMsg
     });
     window.dispatchEvent(event);
   };
-  
+
   /**
    * 发送文本消息 - 增强版
    */
@@ -373,7 +387,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
       console.error('❌ [websocket-store] 无法发送消息：用户未登录');
       return false;
     }
-    
+
     const message: SendMessageRequest = {
       action: 'sendMessage',
       convId,
@@ -384,11 +398,22 @@ export const useWebSocketStore = defineStore('websocket', () => {
       // timestamp: Date.now(), // timestamp不是SendMessageRequest的标准字段，但在BaseMessage里可选
       localMessageId: `local_${Date.now()}` // 用于消息确认
     };
-    
+
     console.log('📤 [websocket-store] 发送文本消息:', message);
     return sendMessage(message);
   };
-  
+
+  /**
+   * 订阅当前会话（用于后端更新 currentConvId 并回传在线人数）
+   */
+  const sendSubscribe = (convId: number): boolean => {
+    currentConvId.value = convId;
+    conversationOnlineCount.value = null; // 清空直到收到 conversationPresence
+    const msg = { action: 'subscribe', convId };
+    console.log('📤 [websocket-store] 发送 subscribe:', convId);
+    return sendMessage(msg);
+  };
+
   /**
    * 发送已读回执
    */
@@ -398,10 +423,10 @@ export const useWebSocketStore = defineStore('websocket', () => {
       messageId,
       convId
     } as any; // 暂时转换，因为message-types里readReceipt可能没定义具体结构
-    
+
     return sendMessage(message);
   };
-  
+
   /**
    * 发送撤回消息
    */
@@ -411,10 +436,10 @@ export const useWebSocketStore = defineStore('websocket', () => {
       messageId,
       convId
     } as any;
-    
+
     return sendMessage(message);
   };
-  
+
   /**
    * 手动重连
    */
@@ -428,18 +453,21 @@ export const useWebSocketStore = defineStore('websocket', () => {
       return false;
     }
   };
-  
+
   return {
     // 状态
     wsConnection,
     isConnected,
     connectionError,
     reconnectAttempts,
-    
+    currentConvId,
+    conversationOnlineCount,
+
     // 方法
     connect,
     disconnect,
     sendMessage,
+    sendSubscribe,
     sendTextMessage,
     sendReadReceipt,
     sendRecallMessage,

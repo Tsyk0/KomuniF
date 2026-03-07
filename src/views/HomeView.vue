@@ -174,8 +174,7 @@
         <ChatContainer
           v-else-if="currentConversationId"
           :conv-id="currentConversationId"
-          :conversation-name="currentConversationName"
-          :conversation-avatar="currentConversationAvatar"
+          :friend-id="currentFriendId"
           :show-back-button="false"
           @back="clearCurrentConversation"
         />
@@ -374,18 +373,19 @@ const currentConversationId = computed(() => {
   return conversationStore.currentConversation?.convId || null;
 });
 
-const currentConversationName = computed(() => {
-  const currentConv = conversationStore.currentConversation;
-  return currentConv?.convName || `会话 ${currentConversationId.value}`;
-});
-
-const currentConversationAvatar = computed(() => {
-  const currentConv = conversationStore.currentConversation;
-  return currentConv?.convAvatar || "";
-});
-
 const isGroupChat = computed(() => {
   return conversationStore.currentConversation?.convType === 2;
+});
+
+/** 单聊时对方用户 ID（好友 userId），用于在聊天中打开好友信息面板；优先用会话的 targetUserId，否则从消息列表推断 */
+const currentFriendId = computed(() => {
+  const c = conversationStore.currentConversation;
+  if (c?.convType !== 1) return null;
+  if (c.targetUserId != null) return c.targetUserId;
+  const myId = authStore.user?.userId;
+  const messages = showMessageStore.messages || [];
+  const otherIds = [...new Set(messages.map((m) => m.senderId).filter((id) => id !== myId && id > 0))];
+  return otherIds.length > 0 ? otherIds[0] : null;
 });
 
 // 主题切换

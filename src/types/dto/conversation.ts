@@ -20,19 +20,21 @@ export interface ConversationDetailDTO {
   convType: number;           // 1-单聊，2-群聊
   convName: string;           // 会话显示名称
   convAvatar: string | null;  // 会话头像
-  
+
   // 会话状态信息
   currentMemberCount: number;
   maxMemberCount: number;
   convStatus: number;
-  
+
   // 会话成员相关
   privateDisplayName: string | null; // 用户设置的私有显示名称
   unreadCount: number;               // 未读消息数
-  
+  /** 单聊时对方用户 ID（好友 userId），由后端 getConversationDetailsViaToken 返回 */
+  targetUserId?: number;
+
   // 最后一条消息信息
   lastMessage: LastMessageInfo | null;
-  
+
   // 时间信息
   updateTime: string;
 }

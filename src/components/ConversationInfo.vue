@@ -3,15 +3,20 @@
     <!-- 头部：标题与关闭按钮 -->
     <div class="conversation-info-header">
       <div class="conversation-info-title-wrap">
-        <h2 class="conversation-info-title">群聊信息</h2>
-        <p v-if="conversation" class="conversation-info-subtitle">
+        <h2 class="conversation-info-title">
+          {{ isFriendMode ? "好友信息" : "群聊信息" }}
+        </h2>
+        <p v-if="isFriendMode && friendInfo" class="conversation-info-subtitle">
+          {{ friendDisplayName }}
+        </p>
+        <p v-else-if="!isFriendMode && conversation" class="conversation-info-subtitle">
           {{ conversation.convDescription || "暂无群简介" }}
         </p>
       </div>
       <button
         class="conversation-info-close"
         @click="handleClose"
-        title="关闭群聊信息"
+        :title="isFriendMode ? '关闭好友信息' : '关闭群聊信息'"
       >
         ✕
       </button>
@@ -22,7 +27,7 @@
       v-if="loading"
       class="conversation-info-content conversation-info-loading"
     >
-      <p>正在加载群聊信息...</p>
+      <p>{{ isFriendMode ? "正在加载好友信息..." : "正在加载群聊信息..." }}</p>
     </div>
 
     <!-- 错误状态 -->
@@ -33,8 +38,108 @@
       <p>{{ error }}</p>
     </div>
 
-    <!-- 成功内容 -->
-    <div v-else class="conversation-info-content">
+    <!-- 好友信息内容（单聊） -->
+    <div v-else-if="isFriendMode && friendInfo" class="conversation-info-content">
+      <section class="conversation-section">
+        <h3 class="section-title">基本信息</h3>
+        <div class="conversation-fields">
+          <div class="conversation-field-row">
+            <div class="field-label">头像</div>
+            <div class="field-value avatar-value">
+              <div class="conversation-avatar-large">
+                <img
+                  v-if="friendAvatarUrl"
+                  :src="friendAvatarUrl"
+                  alt="好友头像"
+                  class="avatar-large-img"
+                />
+                <div v-else class="avatar-large-default">
+                  {{ friendDisplayName.charAt(0).toUpperCase() }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="conversation-field-row">
+            <div class="field-label">昵称</div>
+            <div class="field-value">{{ friendInfo.friendNickname }}</div>
+          </div>
+          <div class="conversation-field-row conversation-field-editable">
+            <div class="field-label">备注</div>
+            <div class="field-value">
+              <input
+                v-model="editableRemark"
+                class="field-input"
+                type="text"
+                placeholder="未设置备注"
+              />
+            </div>
+          </div>
+          <div class="conversation-field-row conversation-field-editable">
+            <div class="field-label">分组</div>
+            <div class="field-value">
+              <input
+                v-model="editableGroup"
+                class="field-input"
+                type="text"
+                placeholder="未分组"
+              />
+            </div>
+          </div>
+          <div class="conversation-field-row" v-if="friendInfo.addSource">
+            <div class="field-label">添加来源</div>
+            <div class="field-value">{{ friendInfo.addSource }}</div>
+          </div>
+          <div class="conversation-field-row" v-if="friendInfo.addTime">
+            <div class="field-label">添加时间</div>
+            <div class="field-value">{{ friendInfo.addTime }}</div>
+          </div>
+          <div class="conversation-field-row" v-if="friendInfo.updateTime">
+            <div class="field-label">更新时间</div>
+            <div class="field-value">{{ friendInfo.updateTime }}</div>
+          </div>
+        </div>
+      </section>
+      <section class="conversation-section">
+        <h3 class="section-title">个人信息</h3>
+        <div class="conversation-fields">
+          <div class="conversation-field-row" v-if="friendInfo.friendSignature">
+            <div class="field-label">个性签名</div>
+            <div class="field-value multiline">{{ friendInfo.friendSignature }}</div>
+          </div>
+          <div class="conversation-field-row" v-if="friendInfo.friendGender !== undefined && friendInfo.friendGender !== null">
+            <div class="field-label">性别</div>
+            <div class="field-value">{{ friendGenderText }}</div>
+          </div>
+          <div class="conversation-field-row" v-if="friendInfo.friendBirthday">
+            <div class="field-label">生日</div>
+            <div class="field-value">{{ friendInfo.friendBirthday }}</div>
+          </div>
+          <div class="conversation-field-row" v-if="friendInfo.friendLocation">
+            <div class="field-label">地区</div>
+            <div class="field-value">{{ friendInfo.friendLocation }}</div>
+          </div>
+          <div class="conversation-field-row" v-if="friendInfo.friendPhone">
+            <div class="field-label">手机号</div>
+            <div class="field-value">{{ friendInfo.friendPhone }}</div>
+          </div>
+          <div class="conversation-field-row" v-if="friendInfo.friendEmail">
+            <div class="field-label">邮箱</div>
+            <div class="field-value">{{ friendInfo.friendEmail }}</div>
+          </div>
+          <div class="conversation-field-row" v-if="friendInfo.friendLastLoginTime">
+            <div class="field-label">最后登录</div>
+            <div class="field-value">{{ friendInfo.friendLastLoginTime }}</div>
+          </div>
+          <div class="conversation-field-row">
+            <div class="field-label">用户 ID</div>
+            <div class="field-value">{{ friendInfo.friendId }}</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 群聊成功内容 -->
+    <div v-else-if="!isFriendMode" class="conversation-info-content">
       <!-- 群基础信息：以“文本框行”的形式展示 -->
       <section v-if="conversation" class="conversation-section">
         <h3 class="section-title">群聊信息</h3>
@@ -214,17 +319,28 @@
       </section>
     </div>
 
-    <!-- 悬浮操作按钮：只在有改动且有权限时显示 -->
+    <!-- 悬浮操作按钮：群聊有改动且有权限时 / 好友模式有改动时显示 -->
     <div
-      v-if="canEditConversation"
+      v-if="(isFriendMode && hasFriendPendingChanges) || (!isFriendMode && canEditConversation)"
       class="info-actions-float"
-      :class="{ visible: hasPendingChanges }"
+      :class="{ visible: (isFriendMode && hasFriendPendingChanges) || (!isFriendMode && hasPendingChanges) }"
     >
-      <button class="info-action-btn apply" @click="handleApply">应用</button>
-      <button class="info-action-btn cancel" @click="handleCancel">撤销</button>
+      <button
+        class="info-action-btn apply"
+        @click="isFriendMode ? handleFriendApply() : handleApply()"
+      >
+        应用
+      </button>
+      <button
+        class="info-action-btn cancel"
+        @click="isFriendMode ? handleFriendCancel() : handleCancel()"
+      >
+        撤销
+      </button>
     </div>
 
     <input
+      v-if="!isFriendMode"
       ref="avatarInputRef"
       type="file"
       accept="image/*"
@@ -242,13 +358,17 @@ import { useFriendStore } from "@/stores/friend/show-friend";
 import { useConversationStore } from "@/stores/chat/show-conversation";
 import { conversationMemberApi } from "@/apis/chat/conversation-member";
 import { manageConversationApi } from "@/apis/chat/manage-conversation";
+import { friendApi } from "@/apis/friend";
 import type {
   ConversationEntity,
   ConversationMemberDTO,
 } from "@/types/dto/conversation-member";
+import type { FriendInfoDTO } from "@/types/dto/friend";
 
 const props = defineProps<{
   convId: number | null;
+  /** 单聊时对方用户 ID（好友 userId），传入时展示好友详情而非群聊信息 */
+  friendId?: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -264,6 +384,12 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const conversation = ref<ConversationEntity | null>(null);
 const members = ref<ConversationMemberDTO[]>([]);
+const friendInfo = ref<FriendInfoDTO | null>(null);
+
+const isFriendMode = computed(
+  () =>
+    props.friendId != null && props.friendId > 0
+);
 
 const currentUserId = computed(() => authStore.user?.userId ?? null);
 
@@ -318,6 +444,27 @@ const conversationFieldClass = computed(() =>
 const conversationAvatarUrl = computed(() => {
   if (!conversation.value?.convAvatar) return "";
   return buildAvatarUrl(conversation.value.convAvatar);
+});
+
+// 好友模式下的展示
+const friendAvatarUrl = computed(() => {
+  if (!friendInfo.value?.friendAvatar) return "";
+  return buildAvatarUrl(friendInfo.value.friendAvatar);
+});
+const friendDisplayName = computed(() => {
+  if (!friendInfo.value) return "";
+  return (
+    friendInfo.value.remarkName?.trim() ||
+    friendInfo.value.friendNickname ||
+    "未知"
+  );
+});
+const friendGenderText = computed(() => {
+  if (!friendInfo.value || friendInfo.value.friendGender == null) return "";
+  const g = friendInfo.value.friendGender;
+  if (g === 1) return "男";
+  if (g === 2) return "女";
+  return "未知";
 });
 
 const ownerDisplayName = computed(() => {
@@ -378,14 +525,23 @@ const myDisplayName = computed(() => {
   return resolveDisplayName(me);
 });
 
-// 可编辑字段本地状态
+// 可编辑字段本地状态（群聊）
 const editableName = ref("");
 const editableDescription = ref("");
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 
+// 可编辑字段本地状态（好友模式：备注、分组）
+const editableRemark = ref("");
+const editableGroup = ref("");
+
 const syncEditableFromConversation = () => {
   editableName.value = conversation.value?.convName ?? "";
   editableDescription.value = conversation.value?.convDescription ?? "";
+};
+
+const syncEditableFromFriend = () => {
+  editableRemark.value = friendInfo.value?.remarkName ?? "";
+  editableGroup.value = friendInfo.value?.friendGroup ?? "";
 };
 
 const hasPendingChanges = computed(() => {
@@ -396,9 +552,80 @@ const hasPendingChanges = computed(() => {
   );
 });
 
-watch(hasPendingChanges, (pending) => {
+const hasFriendPendingChanges = computed(() => {
+  if (!friendInfo.value) return false;
+  return (
+    editableRemark.value !== (friendInfo.value.remarkName ?? "") ||
+    editableGroup.value !== (friendInfo.value.friendGroup ?? "")
+  );
+});
+
+const anyPendingChanges = computed(() =>
+  isFriendMode.value ? hasFriendPendingChanges.value : hasPendingChanges.value
+);
+
+watch(anyPendingChanges, (pending) => {
   emit("changes-pending", pending);
 });
+
+const loadFriendInfo = async () => {
+  if (props.friendId == null || props.friendId <= 0) {
+    friendInfo.value = null;
+    error.value = null;
+    return;
+  }
+  try {
+    loading.value = true;
+    error.value = null;
+    const response = await friendApi.getFriendInfoByUserIdAndFriendId(
+      props.friendId
+    );
+    if (response.code !== 200 || !response.data) {
+      throw new Error(response.message || "获取好友信息失败");
+    }
+    friendInfo.value = response.data;
+    syncEditableFromFriend();
+  } catch (e: any) {
+    console.error("加载好友信息失败:", e);
+    error.value = e?.message || "加载好友信息失败，请检查网络连接";
+    friendInfo.value = null;
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handleFriendApply = async () => {
+  if (!friendInfo.value || !props.friendId) return;
+  const remark = editableRemark.value.trim();
+  const group = editableGroup.value.trim();
+  const sameRemark = (friendInfo.value.remarkName ?? "") === remark;
+  const sameGroup = (friendInfo.value.friendGroup ?? "") === group;
+  if (sameRemark && sameGroup) return;
+  try {
+    const resp = await friendApi.updateFriendRemarkAndGroup({
+      friendId: props.friendId,
+      remarkName: sameRemark ? undefined : remark || null,
+      friendGroup: sameGroup ? undefined : group || null,
+    });
+    if (resp.code === 200) {
+      await loadFriendInfo();
+      await friendStore.loadFriends();
+      if (props.convId != null) {
+        await conversationStore.refreshConversationById(props.convId);
+      }
+      toast.success("备注与分组已更新");
+    } else {
+      toast.error(resp.message || "更新失败");
+    }
+  } catch (e: any) {
+    console.error("更新好友备注/分组失败:", e);
+    toast.error(e?.message || "更新失败，请稍后重试");
+  }
+};
+
+const handleFriendCancel = () => {
+  syncEditableFromFriend();
+};
 
 const loadConversationInfo = async () => {
   if (!props.convId) {
@@ -448,16 +675,15 @@ const handleAvatarClick = () => {
   avatarInputRef.value?.click();
 };
 
-// 重新获取会话详情（含会话列表和当前会话），用于在更新后同步全局与本地显示
+// 按 convId 定向拉取会话详情并写回 store，再刷新本组件带成员信息的详情
 const fetchConversationDetails = async (successMessage: string) => {
   if (!conversation.value) {
     toast.success(successMessage);
     return;
   }
+  const convId = conversation.value.convId;
   try {
-    await conversationStore.loadConversations();
-    conversationStore.setCurrentConversation(conversation.value.convId);
-    // 重新拉取一次带成员信息的详情，保证本组件数据也是最新的
+    await conversationStore.refreshConversationById(convId);
     await loadConversationInfo();
     toast.success(successMessage);
   } catch (e) {
@@ -599,13 +825,27 @@ const handleCancel = () => {
 };
 
 onMounted(() => {
-  loadConversationInfo();
+  if (isFriendMode.value) {
+    loadFriendInfo();
+  } else if (props.convId) {
+    loadConversationInfo();
+  }
 });
 
 watch(
-  () => props.convId,
-  () => {
-    loadConversationInfo();
+  () => [props.convId, props.friendId] as const,
+  ([convId, friendId]) => {
+    if (friendId != null && friendId > 0) {
+      loadFriendInfo();
+    } else if (convId) {
+      loadConversationInfo();
+    } else {
+      loading.value = false;
+      error.value = null;
+      conversation.value = null;
+      members.value = [];
+      friendInfo.value = null;
+    }
   }
 );
 </script>

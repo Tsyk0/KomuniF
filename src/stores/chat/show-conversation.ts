@@ -9,21 +9,21 @@ export const useConversationStore = defineStore('conversation', {
   state: () => ({
     // 会话列表 - 使用新的复合DTO
     conversations: [] as ConversationDetailDTO[],
-    
+
     // 当前选中的会话
     currentConversation: null as ConversationDetailDTO | null,
 
     // 群成员缓存 Map<convId, CompressedCM[]>
     compressedCMMap: new Map<number, CompressedCM[]>(),
-    
+
     // 加载状态
     loadingConversations: false,
     loadingCurrentConversation: false,
     loadingCompressedCM: false,
-    
+
     // 搜索关键词
     searchKeyword: '',
-    
+
     // 缓存用于快速查找
     conversationMap: new Map<number, ConversationDetailDTO>()
   }),
@@ -35,17 +35,17 @@ export const useConversationStore = defineStore('conversation', {
     async loadConversations() {
       try {
         this.loadingConversations = true;
-        
+
         // 使用新的复合查询API
-        const response = await conversationDetailApi.getConversationDetailsByUserId();
-        
+        const response = await conversationDetailApi.getConversationDetailsViaToken();
+
         if (response.code === 200) {
           // 处理返回的数据
           this.conversations = this.processConversations(response.data);
-          
+
           // 更新缓存映射
           this.updateConversationMap();
-          
+
           return this.conversations;
         } else {
           throw new Error(response.message || '加载会话失败');
@@ -57,7 +57,7 @@ export const useConversationStore = defineStore('conversation', {
         this.loadingConversations = false;
       }
     },
-    
+
     /**
      * 处理会话数据，确保显示名称正确
      */
@@ -66,14 +66,14 @@ export const useConversationStore = defineStore('conversation', {
         // 确保会话显示名称
         if (!conv.convName || conv.convName.trim() === '') {
           if (conv.convType === 1) {
-            // 单聊：使用私有显示名称或默认
-            conv.convName = conv.privateDisplayName || '私聊会话';
+            // 单聊：保留私有显示名称或空，展示名由 ConversationItem / HomeView 按好友备注或昵称解析
+            conv.convName = conv.privateDisplayName || '';
           } else {
             // 群聊：使用默认
             conv.convName = '群聊会话';
           }
         }
-        
+
         // 确保最后消息不为空
         if (!conv.lastMessage) {
           conv.lastMessage = {
@@ -86,11 +86,11 @@ export const useConversationStore = defineStore('conversation', {
             sendTime: conv.updateTime || new Date().toISOString()
           };
         }
-        
+
         return conv;
       });
     },
-    
+
     /**
      * 更新会话映射缓存
      */
@@ -128,14 +128,14 @@ export const useConversationStore = defineStore('conversation', {
         this.loadingCompressedCM = false;
       }
     },
-    
+
     /**
      * 根据ID获取会话
      */
     getConversationById(convId: number): ConversationDetailDTO | undefined {
       return this.conversationMap.get(convId);
     },
-    
+
     /**
      * 设置当前会话
      */
@@ -145,21 +145,21 @@ export const useConversationStore = defineStore('conversation', {
         this.currentConversation = conversation;
         // 如果是群聊，加载群成员
         if (conversation.convType === 2) {
-            this.loadCompressedCM(convId);
+          this.loadCompressedCM(convId);
         }
       } else {
         console.warn(`会话 ${convId} 不存在`);
         this.currentConversation = null;
       }
     },
-    
+
     /**
      * 清空当前会话
      */
     clearCurrentConversation() {
       this.currentConversation = null;
     },
-    
+
     /**
      * 搜索会话
      */
@@ -167,21 +167,21 @@ export const useConversationStore = defineStore('conversation', {
       if (!keyword.trim()) {
         return this.conversations;
       }
-      
+
       const lowerKeyword = keyword.toLowerCase();
-      return this.conversations.filter(conv => 
+      return this.conversations.filter(conv =>
         conv.convName.toLowerCase().includes(lowerKeyword) ||
         (conv.lastMessage?.messageContent?.toLowerCase() || '').includes(lowerKeyword)
       );
     },
-    
+
     /**
      * 更新搜索关键词
      */
     setSearchKeyword(keyword: string) {
       this.searchKeyword = keyword;
     },
-    
+
     /**
      * 标记会话为已读
      */
@@ -191,7 +191,7 @@ export const useConversationStore = defineStore('conversation', {
         conversation.unreadCount = 0;
       }
     },
-    
+
     /**
      * 更新会话的最后消息（用于实时消息）
      */
@@ -200,17 +200,17 @@ export const useConversationStore = defineStore('conversation', {
       if (conversation && lastMessage) {
         conversation.lastMessage = lastMessage;
         conversation.updateTime = lastMessage.sendTime;
-        
+
         // 如果当前不在这个会话中，增加未读计数
         if (this.currentConversation?.convId !== convId) {
           conversation.unreadCount += 1;
         }
-        
+
         // 将该会话移到列表顶部
         this.moveConversationToTop(convId);
       }
     },
-    
+
     /**
      * 将会话移到列表顶部
      */
@@ -221,7 +221,33 @@ export const useConversationStore = defineStore('conversation', {
         this.conversations.unshift(conversation);
       }
     },
-    
+
+    /**
+     * 按 convId 单独刷新一条会话详情（如修改备注后更新会话项展示）
+     * 使用 getConversationDetailsViaToken(convId) 只拉取该会话，不全局刷新
+     */
+    async refreshConversationById(convId: number) {
+      try {
+        const response = await conversationDetailApi.getConversationDetailsViaToken(convId);
+        if (response.code !== 200 || !response.data?.length) return;
+        const list = this.processConversations(response.data);
+        const updated = list.find((c) => c.convId === convId);
+        if (!updated) return;
+        const index = this.conversations.findIndex((c) => c.convId === convId);
+        if (index >= 0) {
+          this.conversations.splice(index, 1, updated);
+        } else {
+          this.conversations.unshift(updated);
+        }
+        this.conversationMap.set(convId, updated);
+        if (this.currentConversation?.convId === convId) {
+          this.currentConversation = updated;
+        }
+      } catch (error) {
+        console.error('[refreshConversationById] 刷新会话失败:', convId, error);
+      }
+    },
+
     /**
      * 添加新会话（用于创建新会话）
      */
@@ -232,7 +258,7 @@ export const useConversationStore = defineStore('conversation', {
         this.conversationMap.set(conversation.convId, conversation);
       }
     },
-    
+
     /**
      * 重置会话列表
      */
@@ -253,29 +279,29 @@ export const useConversationStore = defineStore('conversation', {
         return state.conversations;
       }
       const lowerKeyword = state.searchKeyword.toLowerCase();
-      return state.conversations.filter(conv => 
+      return state.conversations.filter(conv =>
         conv.convName.toLowerCase().includes(lowerKeyword) ||
         (conv.lastMessage?.messageContent?.toLowerCase() || '').includes(lowerKeyword)
       );
     },
-    
+
     /**
      * 获取未读消息总数
      */
     totalUnreadCount: (state) => {
       return state.conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
     },
-    
+
     /**
      * 是否正在加载
      */
     isLoading: (state) => state.loadingConversations,
-    
+
     /**
      * 是否有会话
      */
     hasConversations: (state) => state.conversations.length > 0,
-    
+
     /**
      * 获取当前会话ID
      */
