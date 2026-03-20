@@ -64,11 +64,18 @@
           </div>
 
           <div class="header-right">
+            <button
+              class="header-action"
+              @click="handleCall"
+              title="音视频通话"
+            >
+              <BaseIcon class="action-icon" name="phone" />
+            </button>
             <button class="header-action" @click="handleSearch" title="搜索">
-              <span class="action-icon">🔍</span>
+              <BaseIcon class="action-icon" name="search" />
             </button>
             <button class="header-action" @click="handleMenu" title="更多">
-              <span class="action-icon">⋮</span>
+              <BaseIcon class="action-icon" name="more-vertical" />
             </button>
           </div>
         </div>
@@ -104,10 +111,10 @@
             <!-- 左侧功能按钮 -->
             <div class="input-left-actions">
               <button class="action-button attachment-button" title="附件">
-                <span class="action-icon">📎</span>
+                <BaseIcon class="action-icon" name="attachment" />
               </button>
               <button class="action-button emoji-button" title="表情">
-                <span class="action-icon">😊</span>
+                <BaseIcon class="action-icon" name="emoji" />
               </button>
             </div>
 
@@ -133,8 +140,12 @@
                 @click="sendMessage"
                 title="发送"
               >
-                <span class="send-icon" v-if="!isSending">➤</span>
-                <span class="loading-icon" v-if="isSending">⏳</span>
+                <span class="send-icon" v-if="!isSending">
+                  <BaseIcon name="send" />
+                </span>
+                <span class="loading-icon" v-if="isSending">
+                  <span class="loading-spinner small"></span>
+                </span>
               </button>
             </div>
           </div>
@@ -171,7 +182,9 @@
 
     <!-- 未选择会话状态 -->
     <div v-else class="no-conversation">
-      <div class="placeholder-icon">💭</div>
+      <div class="placeholder-icon">
+        <BaseIcon name="message" :size="40" />
+      </div>
       <p class="placeholder-text">选择一个会话以开始聊天</p>
     </div>
   </div>
@@ -192,6 +205,7 @@ import ConversationInfo from "./ConversationInfo.vue";
 import { useConversationDisplay } from "@/composables/useConversationDisplay";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
+import BaseIcon from "./BaseIcon.vue";
 
 // Store
 const showMessageStore = useShowMessageStore();
@@ -213,7 +227,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["back", "search", "menu", "message-sent"]);
+const emit = defineEmits(["back", "search", "menu", "message-sent", "call"]);
 
 // 当前会话（与会话列表同源，保证 chatinfo 与会话 item 显示一致）
 const currentConversation = computed(() => {
@@ -825,6 +839,7 @@ const scrollToBottom = () => {
 const handleBack = () => emit("back");
 const handleSearch = () => emit("search");
 const handleMenu = () => emit("menu");
+const handleCall = () => emit("call");
 
 const handleHeaderLeftClick = () => {
   if (!props.convId) return;

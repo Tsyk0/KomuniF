@@ -22,18 +22,18 @@
 </template>
 
 <script setup lang="ts">
+const emit = defineEmits<{
+  (e: "update:modelValue", value: string): void;
+}>();
+
 defineProps<{
   modelValue: string;
   placeholder?: string;
 }>();
 
-defineEmits<{
-  (e: "update:modelValue", value: string): void;
-}>();
-
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement;
-  // emit("update:modelValue", target.value);
+  emit("update:modelValue", target.value);
 };
 </script>
 <style scoped>

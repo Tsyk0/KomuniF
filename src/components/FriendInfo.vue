@@ -104,11 +104,15 @@
         <!-- 底部操作按钮 -->
         <div class="friend-actions friend-actions-bottom">
           <button class="action-btn primary" @click="handleStartChat">
-            <span class="action-icon">💬</span>
+            <span class="action-icon">
+              <BaseIcon name="message" />
+            </span>
             <span class="action-text">发起聊天</span>
           </button>
           <button class="action-btn secondary danger" @click="handleDeleteFriend">
-            <span class="action-icon">🗑️</span>
+            <span class="action-icon">
+              <BaseIcon name="trash" />
+            </span>
             <span class="action-text">删除好友</span>
           </button>
         </div>
@@ -121,6 +125,7 @@
 import { computed, watch, onMounted, onUnmounted } from "vue";
 import { useFriendInfoStore } from "@/stores/friend/friend-info";
 import type { FriendListItem } from "@/types/dto/friend";
+import BaseIcon from "./BaseIcon.vue";
 
 const props = defineProps<{
   friend: FriendListItem;

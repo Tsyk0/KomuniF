@@ -21,7 +21,9 @@
       <div class="action-buttons">
         <button class="action-btn add-friend-btn" @click="handleAddFriend">
           <div class="action-btn-content">
-            <span class="action-icon">➕</span>
+            <span class="action-icon">
+              <BaseIcon name="add" />
+            </span>
             <span class="action-text">添加好友</span>
           </div>
           <div class="action-hover-bg"></div>
@@ -32,7 +34,9 @@
           @click="handleFriendRequests"
         >
           <div class="action-btn-content">
-            <span class="action-icon">👤</span>
+            <span class="action-icon">
+              <BaseIcon name="user" />
+            </span>
             <span class="action-text">好友通知</span>
             <span v-if="friendRequestCount > 0" class="notification-badge">
               {{ friendRequestCount > 99 ? "99+" : friendRequestCount }}
@@ -49,6 +53,7 @@
 import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import type { FriendListItem } from "@/types/dto/friend";
+import BaseIcon from "./BaseIcon.vue";
 
 const FriendItem = defineAsyncComponent(() => import("./FriendItem.vue"));
 
@@ -69,7 +74,8 @@ watch(
   () => props.searchQuery,
   (newVal) => {
     friendStore.setSearchKeyword(newVal || "");
-  }
+  },
+  { immediate: true }
 );
 
 const filteredFriends = computed(() => friendStore.filteredFriends);

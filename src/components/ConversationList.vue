@@ -23,7 +23,7 @@
 
     <!-- 会话列表 -->
     <div v-else class="conversations-container">
-      <conversationItem
+      <ConversationItem
         v-for="conversation in filteredConversations"
         :key="conversation.convId"
         :conversation="conversation"
@@ -38,7 +38,8 @@
 import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import { useConversationStore } from "@/stores/chat/show-conversation";
 import { useShowMessageStore } from "@/stores/chat/show-message";
-import conversationItem from "./ConversationItem.vue";
+import { findConversationIdsByKeywordFromDB } from "@/utils/local-db";
+import ConversationItem from "./ConversationItem.vue";
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
 
 // Store
@@ -52,6 +53,8 @@ const props = defineProps<{
 
 // 响应式数据
 const errorMessage = ref<string | null>(null);
+const messageMatchedConversationIds = ref<Set<number>>(new Set());
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 计算属性
 const conversations = computed(() => {
@@ -63,11 +66,12 @@ const isLoading = computed(() => {
 });
 
 const filteredConversations = computed(() => {
-  if (!props.searchQuery?.trim()) {
+  const keyword = props.searchQuery?.trim().toLowerCase();
+  if (!keyword) {
     return conversations.value;
   }
 
-  const keyword = props.searchQuery.toLowerCase();
+  const matchedConvIdSet = messageMatchedConversationIds.value;
   return conversations.value.filter((conversation) => {
     // 搜索会话名称
     if (conversation.convName?.toLowerCase().includes(keyword)) {
@@ -90,7 +94,8 @@ const filteredConversations = computed(() => {
       return true;
     }
 
-    return false;
+    // 搜索会话内历史消息（异步检索结果）
+    return matchedConvIdSet.has(conversation.convId);
   });
 });
 
@@ -107,6 +112,28 @@ const isActiveConversation = (convId: number) => {
 const retryLoad = async () => {
   errorMessage.value = null;
   await loadConversations();
+};
+
+const searchConversationByMessages = async (keyword: string) => {
+  if (!keyword) {
+    messageMatchedConversationIds.value = new Set();
+    return;
+  }
+
+  const normalizedKeyword = keyword.toLowerCase();
+  const matchedIds = new Set<number>();
+
+  // 仅在本地 IndexedDB 中检索，避免搜索动作频繁访问后端
+  try {
+    const localMatchedConvIds = await findConversationIdsByKeywordFromDB(normalizedKeyword, {
+      convIds: conversations.value.map((c) => c.convId)
+    });
+    localMatchedConvIds.forEach((id) => matchedIds.add(id));
+  } catch (error) {
+    console.warn("本地 IndexedDB 消息搜索失败:", error);
+  }
+
+  messageMatchedConversationIds.value = matchedIds;
 };
 
 // 加载会话列表
@@ -163,6 +190,34 @@ const handleConversationClick = async (convId: number) => {
 onMounted(async () => {
   await loadConversations();
 });
+
+onUnmounted(() => {
+  if (searchTimer) {
+    clearTimeout(searchTimer);
+    searchTimer = null;
+  }
+});
+
+watch(
+  () => props.searchQuery,
+  (newQuery) => {
+    const keyword = newQuery?.trim() || "";
+    if (searchTimer) {
+      clearTimeout(searchTimer);
+      searchTimer = null;
+    }
+
+    if (!keyword) {
+      messageMatchedConversationIds.value = new Set();
+      return;
+    }
+
+    searchTimer = setTimeout(() => {
+      searchConversationByMessages(keyword);
+    }, 250);
+  },
+  { immediate: true }
+);
 
 
 // 定义事件
