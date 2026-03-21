@@ -10,7 +10,7 @@ export function getMessageDetailsByConvIdApi(
   params: GetMessageDetailsRequest
 ): Promise<GetMessageDetailsResponse> {
   return service({
-    url: '/messageDetail/getMessageDetailsByConvId',
+    url: '/messages/summary',
     method: 'get',
     params
   });
@@ -43,7 +43,7 @@ export function getHistoryMessagesByConvIdApi(params: {
   pageSize?: number;
 }): Promise<GetMessageDetailsResponse> {
   return service({
-    url: '/messageDetail/getHistoryMessagesByConvId',
+    url: '/messages/loadMore',
     method: 'get',
     params
   });

@@ -15,7 +15,7 @@ import type {
  */
 export function loginApi(data: LoginRequest): Promise<LoginResponse> {
   return service({
-    url: '/user/loginCheck',
+    url: '/auth/sessions',
     method: 'post',
     data,
     withCredentials: true
@@ -25,7 +25,7 @@ export function loginApi(data: LoginRequest): Promise<LoginResponse> {
 // 新增：Token验证API（依赖cookie自动传递token）
 export function checkTokenApi(): Promise<CheckTokenResponse> {
   return service({
-    url: '/user/checkToken',
+    url: '/auth/sessions/current',
     method: 'get',
     withCredentials: true
   })
@@ -38,7 +38,7 @@ export function checkTokenApi(): Promise<CheckTokenResponse> {
  */
 export function registerApi(data: RegisterRequest): Promise<RegisterResponse> {
   return service({
-    url: '/user/insertUser',
+    url: '/registrations',
     method: 'post',
     data,
     withCredentials: true

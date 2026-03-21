@@ -11,7 +11,7 @@ export function getConversationDetailsViaTokenApi(
   convId?: number
 ): Promise<GetConversationDetailsResponse> {
   return service({
-    url: "/conversationDetail/getConversationDetailsViaToken",
+    url: "/conversations/summary",
     method: "get",
     params: convId != null ? { convId } : undefined,
   });

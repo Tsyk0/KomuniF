@@ -8,7 +8,7 @@ import type { GetFriendListResponse, GetFriendInfoResponse } from "@/types/dto/f
  */
 export function getFriendListByUserIdApi(): Promise<GetFriendListResponse> {
   return service({
-    url: "/friendRelationDetail/getFriendListbyUserId",
+    url: "/friends",
     method: "get"
   });
 }
@@ -22,9 +22,8 @@ export function getFriendInfoByUserIdAndFriendIdApi(
   friendId: number
 ): Promise<GetFriendInfoResponse> {
   return service({
-    url: "/friendInfo/getFriendInfoByUserIdAndFriendId",
+    url: `/friends/${friendId}/profile`,
     method: "get",
-    params: { friendId }
   });
 }
 
@@ -34,17 +33,17 @@ export function getFriendInfoByUserIdAndFriendIdApi(
  * 请求体：{ friendId: number, remarkName?: string | null, friendGroup?: string | null }
  */
 export interface UpdateFriendRemarkAndGroupPayload {
-  friendId: number;
   remarkName?: string | null;
   friendGroup?: string | null;
 }
 
 export function updateFriendRemarkAndGroupApi(
+  friendId: number,
   payload: UpdateFriendRemarkAndGroupPayload
 ): Promise<BaseResponse<string>> {
   return service({
-    url: "/friendInfo/updateRemarkAndGroup",
-    method: "post",
+    url: `/friends/${friendId}`,
+    method: "patch",
     data: payload,
   });
 }

@@ -29,6 +29,9 @@ export interface ConversationMemberDTO {
   role: number;
 }
 
+// RESTful 命名兼容别名
+export type MessageDisplayMemberDTO = ConversationMemberDTO;
+
 /**
  * 会话+成员详情数据
  */

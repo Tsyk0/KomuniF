@@ -39,6 +39,9 @@ export interface ConversationDetailDTO {
   updateTime: string;
 }
 
+// RESTful 命名兼容别名
+export type ConversationSummaryDTO = ConversationDetailDTO;
+
 /**
  * 群成员信息 DTO
  */
@@ -50,6 +53,9 @@ export interface CompressedCM {
   role?: number;                 // 角色 (1-群主, 2-管理员, 3-普通成员)
   joinTime?: string;
 }
+
+// RESTful 命名兼容别名
+export type MessageDisplayMemberDTO = CompressedCM;
 
 /**
  * 获取会话详情响应

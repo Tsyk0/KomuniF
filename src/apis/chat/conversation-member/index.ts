@@ -10,9 +10,8 @@ export function getConversationWithMembersApi(
   convId: number
 ): Promise<GetConversationWithMembersResponse> {
   return service({
-    url: "/conversationMember/getConversationWithMembers",
+    url: `/conversations/${convId}/members`,
     method: "get",
-    params: { convId },
   });
 }
 

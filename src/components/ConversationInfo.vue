@@ -9,7 +9,10 @@
         <p v-if="isFriendMode && friendInfo" class="conversation-info-subtitle">
           {{ friendDisplayName }}
         </p>
-        <p v-else-if="!isFriendMode && conversation" class="conversation-info-subtitle">
+        <p
+          v-else-if="!isFriendMode && conversation"
+          class="conversation-info-subtitle"
+        >
           {{ conversation.convDescription || "暂无群简介" }}
         </p>
       </div>
@@ -39,7 +42,10 @@
     </div>
 
     <!-- 好友信息内容（单聊） -->
-    <div v-else-if="isFriendMode && friendInfo" class="conversation-info-content">
+    <div
+      v-else-if="isFriendMode && friendInfo"
+      class="conversation-info-content"
+    >
       <section class="conversation-section">
         <h3 class="section-title">基本信息</h3>
         <div class="conversation-fields">
@@ -104,9 +110,17 @@
         <div class="conversation-fields">
           <div class="conversation-field-row" v-if="friendInfo.friendSignature">
             <div class="field-label">个性签名</div>
-            <div class="field-value multiline">{{ friendInfo.friendSignature }}</div>
+            <div class="field-value multiline">
+              {{ friendInfo.friendSignature }}
+            </div>
           </div>
-          <div class="conversation-field-row" v-if="friendInfo.friendGender !== undefined && friendInfo.friendGender !== null">
+          <div
+            class="conversation-field-row"
+            v-if="
+              friendInfo.friendGender !== undefined &&
+              friendInfo.friendGender !== null
+            "
+          >
             <div class="field-label">性别</div>
             <div class="field-value">{{ friendGenderText }}</div>
           </div>
@@ -126,7 +140,10 @@
             <div class="field-label">邮箱</div>
             <div class="field-value">{{ friendInfo.friendEmail }}</div>
           </div>
-          <div class="conversation-field-row" v-if="friendInfo.friendLastLoginTime">
+          <div
+            class="conversation-field-row"
+            v-if="friendInfo.friendLastLoginTime"
+          >
             <div class="field-label">最后登录</div>
             <div class="field-value">{{ friendInfo.friendLastLoginTime }}</div>
           </div>
@@ -321,9 +338,16 @@
 
     <!-- 悬浮操作按钮：群聊有改动且有权限时 / 好友模式有改动时显示 -->
     <div
-      v-if="(isFriendMode && hasFriendPendingChanges) || (!isFriendMode && canEditConversation)"
+      v-if="
+        (isFriendMode && hasFriendPendingChanges) ||
+        (!isFriendMode && canEditConversation)
+      "
       class="info-actions-float"
-      :class="{ visible: (isFriendMode && hasFriendPendingChanges) || (!isFriendMode && hasPendingChanges) }"
+      :class="{
+        visible:
+          (isFriendMode && hasFriendPendingChanges) ||
+          (!isFriendMode && hasPendingChanges),
+      }"
     >
       <button
         class="info-action-btn apply"
@@ -387,8 +411,7 @@ const members = ref<ConversationMemberDTO[]>([]);
 const friendInfo = ref<FriendInfoDTO | null>(null);
 
 const isFriendMode = computed(
-  () =>
-    props.friendId != null && props.friendId > 0
+  () => props.friendId != null && props.friendId > 0
 );
 
 const currentUserId = computed(() => authStore.user?.userId ?? null);
@@ -602,11 +625,13 @@ const handleFriendApply = async () => {
   const sameGroup = (friendInfo.value.friendGroup ?? "") === group;
   if (sameRemark && sameGroup) return;
   try {
-    const resp = await friendApi.updateFriendRemarkAndGroup({
-      friendId: props.friendId,
+    const resp = await friendApi.updateFriendRemarkAndGroup(
+      props.friendId,
+      {
       remarkName: sameRemark ? undefined : remark || null,
       friendGroup: sameGroup ? undefined : group || null,
-    });
+      }
+    );
     if (resp.code === 200) {
       await loadFriendInfo();
       await friendStore.loadFriends();

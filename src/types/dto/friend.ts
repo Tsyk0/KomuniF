@@ -22,6 +22,9 @@ export interface FriendRelationDetailDTO {
   friendOnlineStatus?: number | null;
 }
 
+// RESTful 命名兼容别名
+export type FriendSummaryDTO = FriendRelationDetailDTO;
+
 /**
  * 获取好友列表响应
  */
@@ -71,5 +74,8 @@ export interface FriendInfoDTO {
   friendOnlineStatus?: number | null;
   friendLastLoginTime?: string | null;
 }
+
+// RESTful 命名兼容别名
+export type FriendProfileDTO = FriendInfoDTO;
 
 export type GetFriendInfoResponse = BaseResponse<FriendInfoDTO>;

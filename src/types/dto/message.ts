@@ -63,6 +63,9 @@ export interface MessageDetailDTO {
   recallTime?: string | null;
 }
 
+// RESTful 命名兼容别名
+export type MessageSummaryDTO = MessageDetailDTO;
+
 /**
  * 获取消息详情请求参数
  */

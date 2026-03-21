@@ -4,18 +4,20 @@ import type { UpdateUserRequest, UpdateUserResponse } from '@/types/dto/user'
 
 // 原有的更新用户信息接口
 export function updateUserApi(data: UpdateUserRequest): Promise<UpdateUserResponse> {
+  const { userPassword: _userPassword, ...payload } = data as UpdateUserRequest & {
+    userPassword?: string
+  }
   return service({
-    url: '/user/updateUserAllAttriByUserId',
+    url: '/user/updateAllAttri',
     method: 'post',
-    data
+    data: payload
   })
 }
 
 // 原有的获取用户信息接口
-export function getUserByIdApi(): Promise<any> {
+export function getUserByIdApi(userId: number): Promise<any> {
   return service({
-    // 通过时间戳参数避免浏览器/中间缓存命中，确保拿到最新资料
-    url: `/user/selectUserByUserId?t=${Date.now()}`,
+    url: `/user/${userId}`,
     method: 'get'
   })
 }
@@ -34,7 +36,7 @@ export function getUserByIdApi(): Promise<any> {
 // 修改：更新用户密码接口 - 通过cookie自动识别用户
 export function updateUserPasswordApi(oldPwd: string, newPwd: string): Promise<any> {
   return service({
-    url: '/user/updateUserPwdByOldPwd',
+    url: '/user/updatePwdWithOldPwd',
     method: 'post',
     data: {
       oldPwd: oldPwd,

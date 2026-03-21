@@ -69,7 +69,9 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { displayName, avatar } = useConversationDisplay(() => props.conversation);
+const { displayName, avatar } = useConversationDisplay(
+  () => props.conversation
+);
 
 // 处理头像URL
 const processedAvatar = computed(() => {

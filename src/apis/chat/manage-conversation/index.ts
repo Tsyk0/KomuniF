@@ -7,19 +7,21 @@ import type { BaseResponse } from "@/types/dto/base";
  * 对应后端接口：POST /conversation/updateConversationAttriUserOrientedByConvId
  * 仅可更新 convType、convName、convAvatar、convDescription、enableReadReceipt 等字段
  */
-export function updateConversationAttriUserOrientedByConvIdApi(
+export function updateConversationSummaryApi(
   payload: Partial<ConversationEntity> & { convId: number }
 ): Promise<BaseResponse<string>> {
+  const { convId, ...data } = payload;
   return service({
-    url: "/conversation/updateConversationAttriUserOrientedByConvId",
-    method: "post",
-    data: payload,
+    url: `/conversations/${convId}`,
+    method: "patch",
+    data,
   });
 }
 
 export const manageConversationApi = {
+  updateConversationSummary: updateConversationSummaryApi,
   updateConversationAttriUserOrientedByConvId:
-    updateConversationAttriUserOrientedByConvIdApi,
+    updateConversationSummaryApi,
 };
 
 export default manageConversationApi;

@@ -9,10 +9,11 @@ import type { SendMessageRequest, SendMessageResponseData } from '@/types/dto/me
 export function sendMessageApi(
     data: SendMessageRequest
 ): Promise<BaseResponse<SendMessageResponseData>> {
+    const { convId, ...payload } = data;
     return service({
-        url: '/message/sendMessage',
+        url: `/conversations/${convId}/messages`,
         method: 'post',
-        data
+        data: payload
     });
 }
 

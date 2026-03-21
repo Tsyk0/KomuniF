@@ -7,9 +7,14 @@ import type { GetCompressedCMResponse } from '@/types/dto/conversation';
  */
 export function getCompressedCMApi(convId: number): Promise<GetCompressedCMResponse> {
     return service({
-        url: '/compressedCM/getCompressedCM',
+        url: `/conversations/${convId}/members`,
         method: 'get',
-        params: { convId }
+    }).then((resp: any) => {
+        const members = resp?.data?.members || [];
+        return {
+            ...resp,
+            data: members
+        } as GetCompressedCMResponse;
     });
 }
 
