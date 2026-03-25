@@ -83,26 +83,40 @@
         <!-- 消息列表区域 -->
         <div
           class="messages-container"
+          :class="{ 'search-open': isSearchOpen }"
           ref="messagesContainer"
-          @scroll="handleMessagesScroll"
+          @scroll="!isSearchOpen && !isRestoringScroll && handleMessagesScroll()"
         >
-          <!-- 加载状态 -->
-          <div v-if="isLoading" class="loading-indicator">加载消息中...</div>
-
-          <!-- 消息列表 -->
-          <div class="messages-list">
-            <!-- 每条消息使用MessageItem组件 -->
-            <MessageItem
-              v-for="message in messages"
-              :key="message.messageId"
-              :message="message"
+          <!-- 搜索打开时：只显示搜索面板（通过 v-if 彻底隐藏原消息列表） -->
+          <Transition name="chat-search-slide">
+            <ChatSearchPanel
+              v-if="isSearchOpen"
+              :open="isSearchOpen"
+              :conv-id="convId"
+              @close="isSearchOpen = false; void restoreMessageScrollPosition()"
             />
+          </Transition>
 
-            <!-- 没有消息的提示 -->
-            <div v-if="!isLoading && messages.length === 0" class="no-messages">
-              暂无消息
+          <!-- 搜索关闭时：显示正常消息列表 -->
+          <template v-if="!isSearchOpen">
+            <!-- 加载状态 -->
+            <div v-if="isLoading" class="loading-indicator">加载消息中...</div>
+
+            <!-- 消息列表 -->
+            <div class="messages-list">
+              <!-- 每条消息使用MessageItem组件 -->
+              <MessageItem
+                v-for="message in messages"
+                :key="message.messageId"
+                :message="message"
+              />
+
+              <!-- 没有消息的提示 -->
+              <div v-if="!isLoading && messages.length === 0" class="no-messages">
+                暂无消息
+              </div>
             </div>
-          </div>
+          </template>
         </div>
 
         <!-- 发送消息区域 -->
@@ -201,6 +215,7 @@ import {
   type WebSocketMessage,
 } from "@/stores/chat/websocket-store";
 import MessageItem from "./MessageItem.vue";
+import ChatSearchPanel from "./ChatSearchPanel.vue";
 import ConversationInfo from "./ConversationInfo.vue";
 import { useConversationDisplay } from "@/composables/useConversationDisplay";
 import type { DisplayMessage } from "@/entity/message";
@@ -244,6 +259,38 @@ const messagesContainer = ref<HTMLElement | null>(null);
 const messageInputRef = ref<HTMLTextAreaElement | null>(null);
 const messageText = ref("");
 const isSending = computed(() => sendMessageStore.isSending);
+const isSearchOpen = ref(false);
+const savedScrollTop = ref(0);
+const savedWasAtBottom = ref(true);
+const isRestoringScroll = ref(false);
+
+const snapshotMessageScrollPosition = () => {
+  const el = messagesContainer.value;
+  if (!el) return;
+  savedScrollTop.value = el.scrollTop;
+  const bottomGap = el.scrollHeight - (el.scrollTop + el.clientHeight);
+  savedWasAtBottom.value = bottomGap <= 6;
+};
+
+const restoreMessageScrollPosition = async () => {
+  const el = messagesContainer.value;
+  if (!el) return;
+
+  isRestoringScroll.value = true;
+  await nextTick();
+
+  // 如果之前用户就在底部，则恢复到底部；否则恢复到原 scrollTop
+  if (savedWasAtBottom.value) {
+    scrollToBottom();
+  } else {
+    el.scrollTop = savedScrollTop.value;
+  }
+
+  // 下一帧再解除，避免恢复过程中触发历史加载
+  requestAnimationFrame(() => {
+    isRestoringScroll.value = false;
+  });
+};
 
 // 群聊信息面板状态
 const isGroupInfoOpen = ref(false);
@@ -837,7 +884,16 @@ const scrollToBottom = () => {
  * 事件处理
  */
 const handleBack = () => emit("back");
-const handleSearch = () => emit("search");
+const handleSearch = () => {
+  if (!isSearchOpen.value) {
+    snapshotMessageScrollPosition();
+    isSearchOpen.value = true;
+  } else {
+    isSearchOpen.value = false;
+    void restoreMessageScrollPosition();
+  }
+  emit("search");
+};
 const handleMenu = () => emit("menu");
 const handleCall = () => emit("call");
 
@@ -981,11 +1037,13 @@ watch(
     if (newConvId) {
       loadMessages();
       messageText.value = "";
+      isSearchOpen.value = false;
     } else {
       // 当没有会话时，只清空消息，不断开WebSocket连接
       showMessageStore.clearMessages();
       cleanupWebSocketListeners();
       isGroupInfoOpen.value = false;
+      isSearchOpen.value = false;
     }
   },
   { immediate: true }
@@ -1047,6 +1105,22 @@ onUnmounted(() => {
 <style scoped>
 /* 使用外部样式文件 */
 @import "@/assets/styles/chat-container.css";
+
+/* 搜索面板展开动画（作用于 messages-container 内覆盖层） */
+.chat-search-slide-enter-active,
+.chat-search-slide-leave-active {
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.chat-search-slide-enter-from,
+.chat-search-slide-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+.chat-search-slide-enter-to,
+.chat-search-slide-leave-from {
+  transform: translateY(0);
+  opacity: 1;
+}
 
 /* 加载状态和空消息提示样式 */
 .loading-indicator {

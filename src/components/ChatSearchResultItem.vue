@@ -1,0 +1,149 @@
+<template>
+  <div class="search-result-item">
+    <div class="avatar">
+      <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" @error="onImgError" />
+      <span v-else class="avatar-fallback">{{ fallbackChar }}</span>
+    </div>
+
+    <div class="content">
+      <div class="top-row">
+        <div class="name" :title="displayName">{{ displayName }}</div>
+        <div class="time">{{ timeText }}</div>
+      </div>
+      <div class="message" :title="message.messageContent">{{ message.messageContent }}</div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, ref } from "vue";
+import type { DisplayMessage } from "@/entity/message";
+
+const props = defineProps<{
+  message: DisplayMessage;
+}>();
+
+const imgOk = ref(true);
+
+const displayName = computed(() => props.message.senderName || String(props.message.senderId ?? ""));
+
+const fallbackChar = computed(() => {
+  const n = displayName.value || "";
+  return n ? n.charAt(0) : "?";
+});
+
+const avatarUrl = computed(() => {
+  if (!imgOk.value) return "";
+  const raw = props.message.senderAvatar || "";
+  if (!raw) return "";
+  if (raw.startsWith("http") || raw.startsWith("data:image/")) return raw;
+  const trimmed = raw.trim();
+  const withSlash = trimmed.startsWith("/") ? trimmed : "/" + trimmed;
+  return "http://localhost:8081" + withSlash;
+});
+
+const onImgError = () => {
+  imgOk.value = false;
+};
+
+const timeText = computed(() => {
+  const t = props.message.sendTime;
+  if (!t) return "";
+  try {
+    const d = new Date(t);
+    const hh = d.getHours().toString().padStart(2, "0");
+    const mm = d.getMinutes().toString().padStart(2, "0");
+    return `${hh}:${mm}`;
+  } catch {
+    return "";
+  }
+});
+</script>
+
+<style scoped>
+.search-result-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #007aff, #0056cc);
+  color: white;
+  font-weight: 600;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-fallback {
+  font-size: 14px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.top-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+  flex-shrink: 0;
+}
+
+.message {
+  margin-top: 4px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.night-mode .search-result-item {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(2, 6, 23, 0.55);
+}
+
+html.night-mode .name {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+html.night-mode .time {
+  color: rgba(226, 232, 240, 0.55);
+}
+
+html.night-mode .message {
+  color: rgba(226, 232, 240, 0.85);
+}
+</style>

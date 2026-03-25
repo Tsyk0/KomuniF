@@ -89,3 +89,33 @@ export interface GetMessageDetailsResponse {
   };
   timestamp?: number;
 }
+
+/**
+ * 搜索消息请求参数
+ * 对应后端：GET /messages/search
+ */
+export interface SearchMessagesRequest {
+  keyword?: string;
+  convId?: number;
+  senderId?: number;
+  fromTime?: string; // yyyy-MM-dd
+  toTime?: string; // yyyy-MM-dd
+  page?: number;
+  pageSize?: number;
+}
+
+/**
+ * 搜索消息响应
+ * 后端返回 MessageSummaryDTO 列表（等同于 MessageDetailDTO）
+ */
+export interface SearchMessagesResponse {
+  code: number;
+  message: string;
+  data: {
+    messages: MessageSummaryDTO[];
+    total: number;
+    page: number;
+    pageSize: number;
+  };
+  timestamp?: number;
+}
