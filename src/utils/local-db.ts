@@ -106,3 +106,93 @@ export async function findConversationIdsByKeywordFromDB(
   return sortedConvIds
 }
 
+export async function getMessageByIdFromDB(
+  messageId: number
+): Promise<(MessageDetailDTO & { sendTimeMs?: number }) | undefined> {
+  const db = await dbPromise
+  return db.get('messages', messageId)
+}
+
+/**
+ * 某会话在本地库中的全部消息（时间升序，不含已撤回）
+ */
+export async function getAllMessagesForConvFromDB(
+  convId: number
+): Promise<MessageDetailDTO[]> {
+  const db = await dbPromise
+  const tx = db.transaction('messages', 'readonly')
+  const index = tx.store.index('by-convId-sendTimeMs')
+  const range = IDBKeyRange.bound([convId, -Infinity], [convId, Infinity])
+  const all = await index.getAll(range)
+  if (!all?.length) return []
+
+  const filtered = all.filter((m) => !m.isRecalled)
+  return filtered.sort((a, b) => {
+    const aMs = (a as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs ?? Date.parse(a.sendTime)
+    const bMs = (b as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs ?? Date.parse(b.sendTime)
+    return aMs - bMs
+  })
+}
+
+/**
+ * 若锚点消息在本地且属于该会话，则截取 [anchor - windowSize, anchor + windowSize]（时间序，含锚点）
+ * 否则返回 null，由调用方请求后端 /around
+ */
+export async function tryGetMessagesAroundFromDB(
+  convId: number,
+  anchorMessageId: number,
+  windowSize: number
+): Promise<MessageDetailDTO[] | null> {
+  const anchor = await getMessageByIdFromDB(anchorMessageId)
+  if (!anchor || anchor.isRecalled || anchor.convId !== convId) {
+    return null
+  }
+
+  const ordered = await getAllMessagesForConvFromDB(convId)
+  const idx = ordered.findIndex((m) => m.messageId === anchorMessageId)
+  if (idx === -1) return null
+
+  const start = Math.max(0, idx - windowSize)
+  const end = Math.min(ordered.length, idx + windowSize + 1)
+  return ordered.slice(start, end)
+}
+
+/**
+ * 在当前会话本地缓存中按关键词搜索（正文 + 展示名相关字段），结果按时间倒序，支持分页
+ */
+export async function searchMessagesInConvFromDB(
+  convId: number,
+  keyword: string,
+  page: number,
+  pageSize: number
+): Promise<{ messages: MessageDetailDTO[]; total: number }> {
+  const normalized = (keyword || '').trim().toLowerCase()
+  if (!normalized) {
+    return { messages: [], total: 0 }
+  }
+
+  const ordered = await getAllMessagesForConvFromDB(convId)
+  const hits = ordered.filter((m) => {
+    const text = [
+      m.messageContent,
+      m.displayName,
+      m.memberNickname,
+      m.privateDisplayName
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+    return text.includes(normalized)
+  })
+
+  hits.sort((a, b) => {
+    const aMs = (a as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs ?? Date.parse(a.sendTime)
+    const bMs = (b as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs ?? Date.parse(b.sendTime)
+    return bMs - aMs
+  })
+
+  const total = hits.length
+  const start = (page - 1) * pageSize
+  const slice = hits.slice(start, start + pageSize)
+  return { messages: slice, total }
+}

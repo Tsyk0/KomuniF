@@ -1,13 +1,14 @@
 // src/stores/chat/show-message.ts
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import type { DisplayMessage } from '@/entity/message'; // 注意路径是否正确
 import type { MessageDetailDTO } from '@/types/dto/message';
 import { messageDetailApi } from '@/apis/chat/message-detail';
+import { messageAnchorApi } from '@/apis/chat/message-anchor';
 import { useAuthStore } from '@/stores/auth';
 import { useFriendStore } from '@/stores/friend/show-friend';
 import { useConversationStore } from '@/stores/chat/show-conversation';
-import { getRecentMessagesFromDB, saveMessagesToDB } from '@/utils/local-db';
+import { getRecentMessagesFromDB, saveMessagesToDB, tryGetMessagesAroundFromDB } from '@/utils/local-db';
 
 export const useShowMessageStore = defineStore('message', () => {
   const authStore = useAuthStore();
@@ -25,6 +26,25 @@ export const useShowMessageStore = defineStore('message', () => {
 
   // 历史消息加载中标记（与普通 loading 区分）
   const historyLoading = ref(false);
+
+  /** 锚点视图：向下分页 append 期间，避免 messages watch 误触发滚到底 */
+  const anchorNewerPaginateLoading = ref(false);
+
+  /** 由搜索结果「跳到锚点」进入：向上用 /messages/{id}/before，向下用 /after */
+  const anchorViewActive = ref(false);
+  const canLoadOlderAnchor = ref(true);
+  const canLoadNewerAnchor = ref(true);
+  const ANCHOR_BOUNDARY_PAGE_SIZE = 50;
+
+  /** 并发多次「跳到锚点」时只应用最后一次请求的结果 */
+  let anchorAroundRequestSeq = 0;
+
+  const resetAnchorView = () => {
+    anchorViewActive.value = false;
+    canLoadOlderAnchor.value = true;
+    canLoadNewerAnchor.value = true;
+    anchorNewerPaginateLoading.value = false;
+  };
 
   const mapDtoToDisplayMessage = (
     msg: MessageDetailDTO,
@@ -163,6 +183,12 @@ export const useShowMessageStore = defineStore('message', () => {
   ) => {
     if (!convId) return;
 
+    if (loadType === 'initial') {
+      resetAnchorView();
+      // 使进行中的「锚点 around」请求结果丢弃，避免慢响应覆盖新会话列表
+      anchorAroundRequestSeq++;
+    }
+
     // 如果是加载历史且已经没有更多数据，则直接返回
     if (loadType === 'history' && !hasMoreHistory.value) {
       console.log('没有更多历史消息可加载');
@@ -273,7 +299,14 @@ export const useShowMessageStore = defineStore('message', () => {
       console.error('加载消息异常:', error);
     } finally {
       loading.value = false;
-      historyLoading.value = false;
+      // 必须在 nextTick 再清 historyLoading：否则 messages 已更新但 watch 读到已是 false，会误执行 scrollToBottom
+      if (loadType === 'history') {
+        void nextTick(() => {
+          historyLoading.value = false;
+        });
+      } else {
+        historyLoading.value = false;
+      }
     }
   };
 
@@ -400,7 +433,10 @@ export const useShowMessageStore = defineStore('message', () => {
    * 按发送时间排序（升序：从旧到新）
    */
   const sortMessagesByTime = () => {
-    messages.value.sort((a, b) => {
+    const arr = messages.value;
+    if (arr.length <= 1) return;
+    // 新数组赋值，避免原地 sort 触发 deep watch 多跑一次（易与 historyLoading 时序竞态）
+    messages.value = [...arr].sort((a, b) => {
       const timeA = new Date(a.sendTime).getTime();
       const timeB = new Date(b.sendTime).getTime();
       return timeA - timeB;
@@ -428,6 +464,8 @@ export const useShowMessageStore = defineStore('message', () => {
    */
   const clearMessages = () => {
     messages.value = [];
+    resetAnchorView();
+    anchorAroundRequestSeq++;
     console.log('✅ [show-message] 消息列表已清空');
   };
 
@@ -440,15 +478,168 @@ export const useShowMessageStore = defineStore('message', () => {
     hasMoreHistory.value = true;
   };
 
+  /**
+   * GET /messages/{anchorMessageId}/around — 搜索命中后进入会话并展示锚点前后文
+   */
+  const loadMessagesAroundAnchor = async (
+    anchorMessageId: number,
+    windowSize = 25,
+    convId?: number | null
+  ) => {
+    const seq = ++anchorAroundRequestSeq;
+    loading.value = true;
+
+    try {
+      const expectedConvId =
+        convId ?? conversationStore.currentConversation?.convId ?? null;
+
+      let raw: MessageDetailDTO[] = [];
+
+      if (expectedConvId != null) {
+        const localSlice = await tryGetMessagesAroundFromDB(
+          expectedConvId,
+          anchorMessageId,
+          windowSize
+        );
+        if (seq !== anchorAroundRequestSeq) return;
+        if (localSlice && localSlice.length > 0) {
+          raw = localSlice;
+        }
+      }
+
+      if (raw.length === 0) {
+        const response = await messageAnchorApi.getAround(anchorMessageId, { windowSize });
+        if (seq !== anchorAroundRequestSeq) return;
+        if (response.code !== 200) {
+          throw new Error(response.message || '加载锚点上下文失败');
+        }
+        raw = (response.data?.messages || []) as MessageDetailDTO[];
+      }
+
+      if (seq !== anchorAroundRequestSeq) return;
+
+      anchorViewActive.value = true;
+      canLoadOlderAnchor.value = true;
+      canLoadNewerAnchor.value = true;
+      hasMoreHistory.value = true;
+
+      const currentUserId = authStore.user?.userId;
+      messages.value = raw.map(msg => mapDtoToDisplayMessage(msg, currentUserId));
+      sortMessagesByTime();
+      try {
+        await saveMessagesToDB(raw);
+      } catch (e) {
+        console.warn('锚点窗口写入本地缓存失败:', e);
+      }
+    } catch (e) {
+      if (seq === anchorAroundRequestSeq) {
+        resetAnchorView();
+        throw e;
+      }
+    } finally {
+      if (seq === anchorAroundRequestSeq) {
+        loading.value = false;
+      }
+    }
+  };
+
+  /**
+   * 锚点视图：向上衔接更旧消息（边界为当前列表最早一条 messageId）
+   */
+  const loadOlderMessagesBeforeBoundary = async (boundaryMessageId: number) => {
+    if (!anchorViewActive.value || !canLoadOlderAnchor.value) return;
+    if (historyLoading.value) return;
+
+    historyLoading.value = true;
+    try {
+      const response = await messageAnchorApi.getBefore(boundaryMessageId, {
+        pageSize: ANCHOR_BOUNDARY_PAGE_SIZE
+      });
+      if (response.code !== 200) {
+        throw new Error(response.message || '加载更早消息失败');
+      }
+      const raw = (response.data?.messages || []) as MessageDetailDTO[];
+      const pageSize = response.data?.pageSize ?? ANCHOR_BOUNDARY_PAGE_SIZE;
+      const total = response.data?.total ?? raw.length;
+      if (total < pageSize) {
+        canLoadOlderAnchor.value = false;
+      }
+      const currentUserId = authStore.user?.userId;
+      const processed = raw.map(msg => mapDtoToDisplayMessage(msg, currentUserId));
+      mergeMessages(processed, 'prepend');
+      sortMessagesByTime();
+      try {
+        await saveMessagesToDB(raw);
+      } catch (err) {
+        console.warn('before 分页写入本地缓存失败:', err);
+      }
+      if (raw.length === 0) {
+        canLoadOlderAnchor.value = false;
+      }
+    } finally {
+      void nextTick(() => {
+        historyLoading.value = false;
+      });
+    }
+  };
+
+  /**
+   * 锚点视图：向下衔接更新消息（边界为当前列表最晚一条 messageId）
+   */
+  const loadNewerMessagesAfterBoundary = async (boundaryMessageId: number) => {
+    if (!anchorViewActive.value || !canLoadNewerAnchor.value) return;
+
+    anchorNewerPaginateLoading.value = true;
+    try {
+      const response = await messageAnchorApi.getAfter(boundaryMessageId, {
+        pageSize: ANCHOR_BOUNDARY_PAGE_SIZE
+      });
+      if (response.code !== 200) {
+        throw new Error(response.message || '加载更新消息失败');
+      }
+      const raw = (response.data?.messages || []) as MessageDetailDTO[];
+      const pageSize = response.data?.pageSize ?? ANCHOR_BOUNDARY_PAGE_SIZE;
+      const total = response.data?.total ?? raw.length;
+      if (total < pageSize) {
+        canLoadNewerAnchor.value = false;
+      }
+      const currentUserId = authStore.user?.userId;
+      const processed = raw.map(msg => mapDtoToDisplayMessage(msg, currentUserId));
+      mergeMessages(processed, 'append');
+      sortMessagesByTime();
+      try {
+        await saveMessagesToDB(raw);
+      } catch (err) {
+        console.warn('after 分页写入本地缓存失败:', err);
+      }
+      if (raw.length === 0) {
+        canLoadNewerAnchor.value = false;
+      }
+    } catch (e) {
+      console.error('加载 after 分页失败:', e);
+    } finally {
+      void nextTick(() => {
+        anchorNewerPaginateLoading.value = false;
+      });
+    }
+  };
+
   return {
     // 状态
     messages,
     loading,
     hasMoreHistory,
     historyLoading,
+    anchorNewerPaginateLoading,
+    anchorViewActive,
+    canLoadOlderAnchor,
+    canLoadNewerAnchor,
 
     // 方法
     loadMessages,
+    loadMessagesAroundAnchor,
+    loadOlderMessagesBeforeBoundary,
+    loadNewerMessagesAfterBoundary,
     addMessage,
     addMessages,
     replaceTempMessage,

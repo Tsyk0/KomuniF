@@ -8,7 +8,7 @@
             v-model="keyword"
             class="chat-search-input"
             type="text"
-            placeholder="搜索消息（至少 2 个字）"
+            placeholder="搜索消息"
             autocomplete="off"
           />
           <button
@@ -33,7 +33,12 @@
         <div v-else-if="error" class="chat-search-hint error">{{ error }}</div>
 
         <div v-else class="chat-search-results">
-          <ChatSearchResultItem v-for="m in results" :key="m.messageId" :message="m" />
+          <ChatSearchResultItem
+            v-for="m in results"
+            :key="m.messageId"
+            :message="m"
+            @select="onSelectResult"
+          />
 
           <div v-if="results.length === 0" class="chat-search-hint">未找到相关消息</div>
 
@@ -58,6 +63,7 @@ import ChatSearchResultItem from "@/components/ChatSearchResultItem.vue";
 import type { DisplayMessage } from "@/entity/message";
 import type { MessageSummaryDTO } from "@/types/dto/message";
 import { searchMessagesApi } from "@/apis/chat/message-search";
+import { searchMessagesInConvFromDB } from "@/utils/local-db";
 
 const props = defineProps<{
   open: boolean;
@@ -67,9 +73,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "close"): void;
+  (e: "jump-to-message", messageId: number): void;
 }>();
 
 const emitClose = () => emit("close");
+
+const onSelectResult = (m: DisplayMessage) => {
+  emit("jump-to-message", m.messageId);
+};
 
 const inputRef = ref<HTMLInputElement | null>(null);
 const keyword = ref("");
@@ -79,6 +90,8 @@ const page = ref(1);
 const loading = ref(false);
 const loadingMore = ref(false);
 const error = ref<string | null>(null);
+/** 当前关键词下，结果是否完全来自 IndexedDB（加载更多也只翻本地） */
+const searchSource = ref<"local" | "remote">("remote");
 
 const effectivePageSize = computed(() => props.pageSize ?? 20);
 
@@ -89,10 +102,8 @@ let debounceTimer: number | null = null;
 let latestRequestId = 0;
 let abortController: AbortController | null = null;
 
-const minKeywordLen = 2;
 const hintText = computed(() => {
-  if (!keyword.value) return "输入关键词开始搜索";
-  if (keyword.value.trim().length < minKeywordLen) return `至少输入 ${minKeywordLen} 个字`;
+  if (!keyword.value.trim()) return "输入关键词开始搜索";
   return "";
 });
 
@@ -130,16 +141,18 @@ const clearKeyword = () => {
   total.value = 0;
   page.value = 1;
   error.value = null;
+  searchSource.value = "remote";
   cancelInFlight();
 };
 
 const runSearch = async (nextPage: number) => {
   const kw = keyword.value.trim();
-  if (kw.length < minKeywordLen) {
+  if (!kw) {
     results.value = [];
     total.value = 0;
     page.value = 1;
     error.value = null;
+    searchSource.value = "remote";
     cancelInFlight();
     return;
   }
@@ -156,6 +169,40 @@ const runSearch = async (nextPage: number) => {
   else loading.value = true;
 
   try {
+    if (!isLoadMore && props.convId) {
+      const localFirst = await searchMessagesInConvFromDB(
+        props.convId,
+        kw,
+        1,
+        effectivePageSize.value
+      );
+      if (requestId !== latestRequestId) return;
+      if (localFirst.total > 0) {
+        searchSource.value = "local";
+        results.value = localFirst.messages.map(toDisplayMessage);
+        total.value = localFirst.total;
+        page.value = 1;
+        return;
+      }
+      searchSource.value = "remote";
+    }
+
+    if (isLoadMore && searchSource.value === "local" && props.convId) {
+      const localPage = await searchMessagesInConvFromDB(
+        props.convId,
+        kw,
+        nextPage,
+        effectivePageSize.value
+      );
+      if (requestId !== latestRequestId) return;
+      total.value = localPage.total;
+      page.value = nextPage;
+      results.value = results.value.concat(
+        localPage.messages.map(toDisplayMessage)
+      );
+      return;
+    }
+
     const resp = await searchMessagesApi(
       {
         keyword: kw,
@@ -173,6 +220,7 @@ const runSearch = async (nextPage: number) => {
     page.value = resp.data?.page ?? nextPage;
 
     results.value = isLoadMore ? results.value.concat(incoming) : incoming;
+    searchSource.value = "remote";
   } catch (e: any) {
     if (e?.name === "CanceledError" || e?.code === "ERR_CANCELED") return;
     if (e?.name === "AbortError") return;

@@ -85,7 +85,7 @@
           class="messages-container"
           :class="{ 'search-open': isSearchOpen }"
           ref="messagesContainer"
-          @scroll="!isSearchOpen && !isRestoringScroll && handleMessagesScroll()"
+          @scroll="!isSearchOpen && !isRestoringScroll && scheduleMessagesScrollPagination()"
         >
           <!-- 搜索打开时：只显示搜索面板（通过 v-if 彻底隐藏原消息列表） -->
           <Transition name="chat-search-slide">
@@ -94,6 +94,7 @@
               :open="isSearchOpen"
               :conv-id="convId"
               @close="isSearchOpen = false; void restoreMessageScrollPosition()"
+              @jump-to-message="handleJumpToSearchMessage"
             />
           </Transition>
 
@@ -109,6 +110,7 @@
                 v-for="message in messages"
                 :key="message.messageId"
                 :message="message"
+                :flash-anchor="anchorFlashMessageId === message.messageId"
               />
 
               <!-- 没有消息的提示 -->
@@ -263,6 +265,19 @@ const isSearchOpen = ref(false);
 const savedScrollTop = ref(0);
 const savedWasAtBottom = ref(true);
 const isRestoringScroll = ref(false);
+/** 搜索跳锚点期间禁止「消息 watch 自动滚到底部」，避免抢滚动位置 */
+const suppressAutoScrollForAnchorJump = ref(false);
+/** 顶/底分页单次飞行，避免滚动事件连触发多次加载 */
+const paginationInFlight = ref(false);
+/** 一次分页结束后的冷却（ms），防止纠正 scrollTop 后又立刻命中边界再次加载 */
+const edgePaginationCooldownUntil = ref(0);
+const EDGE_PAGINATION_COOLDOWN_MS = 480;
+let messagesScrollRafId: number | null = null;
+/** 连续多次点击搜索结果时，只让最后一次跳转做滚动定位 */
+let searchJumpSeq = 0;
+/** 搜索跳转后高亮锚点条（约 3s 闪烁） */
+const anchorFlashMessageId = ref<number | null>(null);
+let anchorFlashClearTimer: ReturnType<typeof setTimeout> | null = null;
 
 const snapshotMessageScrollPosition = () => {
   const el = messagesContainer.value;
@@ -516,6 +531,7 @@ const setupWebSocketEventListeners = () => {
           serverMessage
         );
         console.log("临时消息已更新为服务器消息");
+        void nextTick(() => scrollToBottom());
       }
     }
   };
@@ -608,8 +624,10 @@ const handleIncomingWebSocketMessage = (message: any) => {
   console.log("将WebSocket消息添加到Store:", displayMessage);
   showMessageStore.addMessage(displayMessage);
 
-  // 如果是自己发送的消息，自动滚动到底部
+  const box = messagesContainer.value;
   if (displayMessage.isSentByMe) {
+    scrollToBottom();
+  } else if (box && isNearBottom(box)) {
     scrollToBottom();
   }
 };
@@ -805,6 +823,7 @@ const fallbackToHttpSend = async (
     };
 
     showMessageStore.replaceTempMessage(tempMessage.messageId, serverMessage);
+    void nextTick(() => scrollToBottom());
 
     // 触发消息发送事件
     emit("message-sent", response);
@@ -828,6 +847,9 @@ const loadMessages = async () => {
 
   // 1. 使用HTTP获取历史消息
   await showMessageStore.loadMessages(props.convId);
+  await nextTick();
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  scrollToBottom();
 
   // 2. WebSocket：未连接则建立连接；已连接则同步当前会话并发送 subscribe（便于后端更新 currentConvId 并回传在线人数）
   if (!websocketStore.isConnected && !isWebSocketConnecting.value) {
@@ -878,6 +900,97 @@ const scrollToBottom = () => {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
   });
+};
+
+const isNearBottom = (el: HTMLElement, px = 72) => {
+  const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+  return gap <= px;
+};
+
+/**
+ * 将锚点元素垂直中心对齐到消息容器的垂直中心（比 scrollIntoView 在嵌套滚动里更稳）
+ */
+const scrollAnchorToContainerCenter = (
+  container: HTMLElement,
+  anchorEl: HTMLElement
+) => {
+  const cRect = container.getBoundingClientRect();
+  const aRect = anchorEl.getBoundingClientRect();
+  const anchorCenterY = aRect.top + aRect.height / 2;
+  const containerCenterY = cRect.top + cRect.height / 2;
+  const delta = anchorCenterY - containerCenterY;
+  const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+  const next = container.scrollTop + delta;
+  container.scrollTop = Math.max(0, Math.min(next, maxScroll));
+};
+
+/**
+ * DOM 渲染略晚于 messages 赋值时，querySelector 会暂时找不到节点；多帧重试。
+ * 居中后会在下一帧再校正一次，减轻图片/字体布局导致的偏移。
+ */
+const scrollAnchorIntoViewWhenReady = async (messageId: number, maxTries = 24) => {
+  const waitLayout = async () => {
+    await nextTick();
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  };
+
+  for (let i = 0; i < maxTries; i++) {
+    await waitLayout();
+    const container = messagesContainer.value;
+    const el = container?.querySelector(
+      `[data-message-id="${messageId}"]`
+    ) as HTMLElement | null;
+    if (el && container) {
+      scrollAnchorToContainerCenter(container, el);
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      scrollAnchorToContainerCenter(container, el);
+      return true;
+    }
+  }
+  return false;
+};
+
+const startAnchorFlash = (messageId: number) => {
+  if (anchorFlashClearTimer != null) {
+    clearTimeout(anchorFlashClearTimer);
+    anchorFlashClearTimer = null;
+  }
+  anchorFlashMessageId.value = messageId;
+  anchorFlashClearTimer = window.setTimeout(() => {
+    anchorFlashMessageId.value = null;
+    anchorFlashClearTimer = null;
+  }, 3100);
+};
+
+const handleJumpToSearchMessage = async (messageId: number) => {
+  const mySeq = ++searchJumpSeq;
+  isSearchOpen.value = false;
+  suppressAutoScrollForAnchorJump.value = true;
+  try {
+    await showMessageStore.loadMessagesAroundAnchor(
+      messageId,
+      25,
+      props.convId ?? null
+    );
+    if (mySeq !== searchJumpSeq) return;
+    const ok = await scrollAnchorIntoViewWhenReady(messageId);
+    if (mySeq !== searchJumpSeq) return;
+    if (ok) {
+      startAnchorFlash(messageId);
+    } else {
+      console.warn("锚点消息节点未找到，messageId:", messageId);
+    }
+  } catch (e: unknown) {
+    if (mySeq === searchJumpSeq) {
+      const msg = e instanceof Error ? e.message : "无法定位到该消息";
+      alert(msg);
+    }
+  } finally {
+    if (mySeq === searchJumpSeq) {
+      suppressAutoScrollForAnchorJump.value = false;
+    }
+  }
 };
 
 /**
@@ -974,38 +1087,145 @@ const stopInfoPanelResize = () => {
   }
 };
 
+/** 顶部 prepend 加载后保持视口锚点 */
+const preserveScrollAfterPrepend = async (runLoad: () => Promise<void>) => {
+  const el = messagesContainer.value;
+  if (!el) {
+    await runLoad();
+    return;
+  }
+  const h0 = el.scrollHeight;
+  const top0 = el.scrollTop;
+  await runLoad();
+  await nextTick();
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  const c = messagesContainer.value;
+  if (!c) return;
+  const dh = c.scrollHeight - h0;
+  if (dh > 0) {
+    c.scrollTop = top0 + dh;
+  }
+};
+
+/** 底部 append 后保持距底距离 */
+const preserveScrollAfterAppend = async (runLoad: () => Promise<void>) => {
+  const el = messagesContainer.value;
+  if (!el) {
+    await runLoad();
+    return;
+  }
+  const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+  await runLoad();
+  await nextTick();
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  const c = messagesContainer.value;
+  if (!c) return;
+  const maxTop = Math.max(0, c.scrollHeight - c.clientHeight);
+  c.scrollTop = Math.max(
+    0,
+    Math.min(maxTop, c.scrollHeight - c.clientHeight - gap)
+  );
+};
+
+/** rAF 合并滚动事件，避免一帧内多次判定边界 */
+const scheduleMessagesScrollPagination = () => {
+  if (messagesScrollRafId != null) return;
+  messagesScrollRafId = requestAnimationFrame(() => {
+    messagesScrollRafId = null;
+    void runMessagesScrollPagination();
+  });
+};
+
 /**
- * 消息容器滚动事件：到达顶部时自动加载更旧的历史消息
+ * 顶/底加载更多：单次飞行 + 冷却，与「禁止 watch 自动滚底」配合（标准聊天实现）
  */
-const handleMessagesScroll = async () => {
+const runMessagesScrollPagination = async () => {
   const container = messagesContainer.value;
   if (!container || !props.convId) return;
+  if (paginationInFlight.value) return;
+  if (Date.now() < edgePaginationCooldownUntil.value) return;
 
-  // 只有在接近顶部时才触发（给一点阈值，避免频繁触发）
-  const threshold = 10;
-  if (container.scrollTop > threshold) return;
+  const threshold = 40;
+  const bottomGap =
+    container.scrollHeight - container.scrollTop - container.clientHeight;
 
-  // 如果正在加载（任意类型）或没有更多历史，则不再触发
-  if (
-    showMessageStore.loading ||
-    showMessageStore.historyLoading ||
-    !showMessageStore.hasMoreHistory
-  ) {
+  if (container.scrollTop <= threshold) {
+    if (showMessageStore.loading) return;
+
+    if (showMessageStore.anchorViewActive) {
+      if (
+        showMessageStore.historyLoading ||
+        !showMessageStore.canLoadOlderAnchor
+      ) {
+        return;
+      }
+      const oldest = showMessageStore.getOldestMessage();
+      if (!oldest) return;
+      paginationInFlight.value = true;
+      try {
+        await preserveScrollAfterPrepend(() =>
+          showMessageStore.loadOlderMessagesBeforeBoundary(oldest.messageId)
+        );
+      } finally {
+        paginationInFlight.value = false;
+        edgePaginationCooldownUntil.value =
+          Date.now() + EDGE_PAGINATION_COOLDOWN_MS;
+      }
+      return;
+    }
+
+    if (
+      showMessageStore.historyLoading ||
+      !showMessageStore.hasMoreHistory
+    ) {
+      return;
+    }
+    const oldest = showMessageStore.getOldestMessage();
+    if (!oldest) return;
+    paginationInFlight.value = true;
+    try {
+      await preserveScrollAfterPrepend(() =>
+        showMessageStore.loadMessages(
+          props.convId,
+          "history",
+          oldest.messageId
+        )
+      );
+    } finally {
+      paginationInFlight.value = false;
+      edgePaginationCooldownUntil.value =
+        Date.now() + EDGE_PAGINATION_COOLDOWN_MS;
+    }
     return;
   }
 
-  const oldest = showMessageStore.getOldestMessage();
-  if (!oldest) return;
-
-  console.log(
-    "滚动到顶部，加载更早的历史消息，beforeMessageId:",
-    oldest.messageId
-  );
-  await showMessageStore.loadMessages(
-    props.convId,
-    "history",
-    oldest.messageId
-  );
+  if (
+    bottomGap <= threshold &&
+    showMessageStore.anchorViewActive &&
+    showMessageStore.canLoadNewerAnchor
+  ) {
+    if (
+      showMessageStore.loading ||
+      showMessageStore.historyLoading ||
+      showMessageStore.anchorNewerPaginateLoading
+    ) {
+      return;
+    }
+    const newest = showMessageStore.getLatestMessage();
+    if (!newest) return;
+    paginationInFlight.value = true;
+    try {
+      await preserveScrollAfterAppend(() =>
+        showMessageStore.loadNewerMessagesAfterBoundary(newest.messageId)
+      );
+    } finally {
+      paginationInFlight.value = false;
+      edgePaginationCooldownUntil.value =
+        Date.now() + EDGE_PAGINATION_COOLDOWN_MS;
+    }
+  }
 };
 
 /**
@@ -1049,19 +1269,8 @@ watch(
   { immediate: true }
 );
 
-// 监听消息列表变化，自动滚动到底部
-watch(
-  () => showMessageStore.messages,
-  () => {
-    // 加载历史消息（向上翻）时不自动滚动到底部，避免打断用户位置
-    if (showMessageStore.historyLoading) return;
-
-    nextTick(() => {
-      scrollToBottom();
-    });
-  },
-  { deep: true }
-);
+// 不在此对 messages 做 deep watch + scrollToBottom（会与顶/底分页、异步写库等产生竞态，导致瞬间滚底、连触发加载）。
+// 滚底仅在：进入会话初始 load、用户发送、贴底收新消息、WS/HTTP 发送确认等路径显式调用 scrollToBottom。
 
 // 监听认证状态变化
 watch(
@@ -1098,6 +1307,14 @@ onMounted(() => {
 
 onUnmounted(() => {
   console.log("ChatContainer unmounted");
+  if (messagesScrollRafId != null) {
+    cancelAnimationFrame(messagesScrollRafId);
+    messagesScrollRafId = null;
+  }
+  if (anchorFlashClearTimer != null) {
+    clearTimeout(anchorFlashClearTimer);
+    anchorFlashClearTimer = null;
+  }
   // 组件卸载时只清理监听器，不断开全局连接
   cleanupWebSocketListeners();
 });

@@ -119,3 +119,40 @@ export interface SearchMessagesResponse {
   };
   timestamp?: number;
 }
+
+/**
+ * GET /messages/{messageId}/around
+ * 锚点消息前后窗口（时间正序，含锚点）
+ */
+export interface MessagesAroundResponseData {
+  anchorMessageId: number;
+  windowSize: number;
+  messages: MessageSummaryDTO[];
+  total: number;
+}
+
+export interface MessagesAroundResponse {
+  code: number;
+  message: string;
+  data: MessagesAroundResponseData;
+  timestamp?: number;
+}
+
+/**
+ * GET /messages/{boundaryMessageId}/before | /after
+ * 边界外分页（时间正序，不含边界消息本身）
+ */
+export interface MessagesBoundaryPageResponseData {
+  boundaryMessageId: number;
+  direction: "before" | "after";
+  messages: MessageSummaryDTO[];
+  total: number;
+  pageSize: number;
+}
+
+export interface MessagesBoundaryPageResponse {
+  code: number;
+  message: string;
+  data: MessagesBoundaryPageResponseData;
+  timestamp?: number;
+}

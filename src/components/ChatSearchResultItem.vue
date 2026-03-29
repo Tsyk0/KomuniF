@@ -1,5 +1,12 @@
 <template>
-  <div class="search-result-item">
+  <div
+    class="search-result-item"
+    role="button"
+    tabindex="0"
+    @click="emitSelect"
+    @keydown.enter.prevent="emitSelect"
+    @keydown.space.prevent="emitSelect"
+  >
     <div class="avatar">
       <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" @error="onImgError" />
       <span v-else class="avatar-fallback">{{ fallbackChar }}</span>
@@ -22,6 +29,14 @@ import type { DisplayMessage } from "@/entity/message";
 const props = defineProps<{
   message: DisplayMessage;
 }>();
+
+const emit = defineEmits<{
+  (e: "select", message: DisplayMessage): void;
+}>();
+
+const emitSelect = () => {
+  emit("select", props.message);
+};
 
 const imgOk = ref(true);
 
@@ -68,6 +83,12 @@ const timeText = computed(() => {
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  outline: none;
+}
+
+.search-result-item:focus-visible {
+  box-shadow: 0 0 0 2px rgba(51, 144, 236, 0.45);
 }
 
 .avatar {
