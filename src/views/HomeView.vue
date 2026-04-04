@@ -208,6 +208,8 @@ import ConversationList from "@/components/ConversationList.vue";
 import FriendInfo from "@/components/FriendInfo.vue";
 import FriendList from "@/components/FriendList.vue";
 import SearchBar from "@/components/SearchBar.vue";
+import toast from "@/commons/utils/toast";
+import { conversationCreateApi } from "@/apis/chat/conversation-create";
 
 // 引入样式
 import "@/assets/styles/homeview.css";
@@ -457,13 +459,48 @@ const handleAddFriend = () => {
   // TODO: 实现添加好友功能
 };
 
-const handleSendMessageToFriend = (friend) => {
-  console.log("发送消息给好友:", friend);
-  // TODO: 实现与好友开始聊天
-  // 这里应该切换到聊天列表，并选择与该好友的会话
-  currentListView.value = "chat";
-  currentMainView.value = null;
-  // 然后查找或创建与该好友的会话
+const handleSendMessageToFriend = async (friend) => {
+  const peerId = friend?.friendId;
+  if (peerId == null || Number.isNaN(Number(peerId))) {
+    toast.error("无法获取好友 ID，请返回列表重试");
+    return;
+  }
+
+  try {
+    const resp = await conversationCreateApi.createConversation({
+      single: true,
+      memberUserIds: [Number(peerId)],
+    });
+
+    if (resp.code !== 200 || !resp.data?.success || resp.data.convId == null) {
+      toast.error(resp.message || resp.data?.message || "创建会话失败");
+      return;
+    }
+
+    const convId = Number(resp.data.convId);
+    await conversationStore.refreshConversationById(convId);
+    if (!conversationStore.getConversationById(convId)) {
+      await conversationStore.loadConversations();
+    }
+    if (!conversationStore.getConversationById(convId)) {
+      toast.error("会话已创建，但拉取会话详情失败，请稍后在会话列表中打开");
+      return;
+    }
+
+    conversationStore.setCurrentConversation(convId);
+    await showMessageStore.loadMessages(convId);
+    conversationStore.markAsRead(convId);
+
+    currentListView.value = "chat";
+    currentMainView.value = null;
+    selectedFriend.value = null;
+  } catch (e) {
+    const msg =
+      e?.response?.data?.message ||
+      e?.message ||
+      "创建会话失败，请稍后重试";
+    toast.error(msg);
+  }
 };
 
 const handleDeleteFriend = (friend) => {
