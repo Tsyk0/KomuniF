@@ -4,6 +4,8 @@ import type { ConversationDetailDTO, CompressedCM } from '@/types/dto/conversati
 import { conversationDetailApi } from '@/apis/chat/conversation-detail';
 import { CompressedCMApi } from '@/apis/chat/compressed-convMem';
 import { useAuthStore } from '@/stores/auth';
+import { resolveConversationDisplayName } from '@/stores/chat/conversation-display-name';
+import { useSingleChatPeerAvatarStore } from '@/stores/chat/single-chat-peer-avatar';
 
 export const useConversationStore = defineStore('conversation', {
   state: () => ({
@@ -40,11 +42,18 @@ export const useConversationStore = defineStore('conversation', {
         const response = await conversationDetailApi.getConversationDetailsViaToken();
 
         if (response.code === 200) {
-          // 处理返回的数据
-          this.conversations = this.processConversations(response.data);
+          const authStore = useAuthStore();
+          this.conversations = this.processConversations(
+            response.data,
+            authStore.user?.userId ?? null
+          );
 
           // 更新缓存映射
           this.updateConversationMap();
+
+          // 紧跟 summary：批量拉取单聊对方头像，列表与头部可立即显示
+          const peerAvatarStore = useSingleChatPeerAvatarStore();
+          await peerAvatarStore.loadAllSingleChatPeerProfiles();
 
           return this.conversations;
         } else {
@@ -61,17 +70,13 @@ export const useConversationStore = defineStore('conversation', {
     /**
      * 处理会话数据，确保显示名称正确
      */
-    processConversations(conversations: ConversationDetailDTO[]): ConversationDetailDTO[] {
-      return conversations.map(conv => {
-        // 确保会话显示名称
+    processConversations(
+      conversations: ConversationDetailDTO[],
+      currentUserId: number | null = null
+    ): ConversationDetailDTO[] {
+      return conversations.map((conv) => {
         if (!conv.convName || conv.convName.trim() === '') {
-          if (conv.convType === 1) {
-            // 单聊：保留私有显示名称或空，展示名由 ConversationItem / HomeView 按好友备注或昵称解析
-            conv.convName = conv.privateDisplayName || '';
-          } else {
-            // 群聊：使用默认
-            conv.convName = '群聊会话';
-          }
+          conv.convName = resolveConversationDisplayName(conv, currentUserId);
         }
 
         // 确保最后消息不为空
@@ -226,11 +231,36 @@ export const useConversationStore = defineStore('conversation', {
      * 按 convId 单独刷新一条会话详情（如修改备注后更新会话项展示）
      * 使用 getConversationDetailsViaToken(convId) 只拉取该会话，不全局刷新
      */
+    /**
+     * 从好友页发起单聊后：摘要常缺 targetUserId / convName，用好友列表（/friends）补全会话对象，供列表与 ChatContainer 使用。
+     */
+    hydrateSingleChatPeerFromFriendList(
+      convId: number,
+      peerFriendUserId: number
+    ) {
+      const conv = this.getConversationById(convId);
+      if (!conv || conv.convType !== 1 || peerFriendUserId <= 0) return;
+      const authStore = useAuthStore();
+      if (conv.targetUserId == null || conv.targetUserId <= 0) {
+        conv.targetUserId = peerFriendUserId;
+      }
+      if (!String(conv.convName ?? "").trim()) {
+        conv.convName = resolveConversationDisplayName(
+          conv,
+          authStore.user?.userId ?? null
+        );
+      }
+    },
+
     async refreshConversationById(convId: number) {
       try {
         const response = await conversationDetailApi.getConversationDetailsViaToken(convId);
         if (response.code !== 200 || !response.data?.length) return;
-        const list = this.processConversations(response.data);
+        const authStore = useAuthStore();
+        const list = this.processConversations(
+          response.data,
+          authStore.user?.userId ?? null
+        );
         const updated = list.find((c) => c.convId === convId);
         if (!updated) return;
         const index = this.conversations.findIndex((c) => c.convId === convId);
@@ -242,6 +272,9 @@ export const useConversationStore = defineStore('conversation', {
         this.conversationMap.set(convId, updated);
         if (this.currentConversation?.convId === convId) {
           this.currentConversation = updated;
+        }
+        if (updated.convType === 1) {
+          void useSingleChatPeerAvatarStore().loadAllSingleChatPeerProfiles();
         }
       } catch (error) {
         console.error('[refreshConversationById] 刷新会话失败:', convId, error);

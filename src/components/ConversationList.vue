@@ -38,13 +38,16 @@
 import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import { useConversationStore } from "@/stores/chat/show-conversation";
 import { useShowMessageStore } from "@/stores/chat/show-message";
+import { useAuthStore } from "@/stores/auth";
 import { findConversationIdsByKeywordFromDB } from "@/utils/local-db";
+import { resolveConversationDisplayName } from "@/stores/chat/conversation-display-name";
 import ConversationItem from "./ConversationItem.vue";
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
 
 // Store
 const conversationStore = useConversationStore();
 const showMessageStore = useShowMessageStore();
+const authStore = useAuthStore();
 
 // Props
 const props = defineProps<{
@@ -73,7 +76,13 @@ const filteredConversations = computed(() => {
 
   const matchedConvIdSet = messageMatchedConversationIds.value;
   return conversations.value.filter((conversation) => {
-    // 搜索会话名称
+    const resolvedTitle = resolveConversationDisplayName(
+      conversation,
+      authStore.user?.userId ?? null
+    );
+    if (resolvedTitle.toLowerCase().includes(keyword)) {
+      return true;
+    }
     if (conversation.convName?.toLowerCase().includes(keyword)) {
       return true;
     }

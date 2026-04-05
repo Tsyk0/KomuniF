@@ -57,6 +57,32 @@
   overflow: hidden;
 }
 
+.homeview .nav-menu-item--notif {
+  overflow: visible;
+}
+
+.homeview .nav-menu-item.active {
+  background: rgba(102, 126, 234, 0.18);
+}
+
+.homeview .nav-notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 8px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
 .homeview .nav-menu-item:hover {
   background: rgba(102, 126, 234, 0.1);
 }
@@ -136,6 +162,14 @@
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
+}
+
+.homeview .friend-pick-sidebar-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* 用户资料区域 - 增加特异性 */
@@ -318,6 +352,26 @@
 .homeview .chat-main-area > * {
   position: relative;
   z-index: 1;
+}
+
+/* 新建群聊 / 添加好友占位：占满主区域（避免 align-items:center 导致缩成一列） */
+.homeview .chat-main-area .conv-create-panel {
+  align-self: stretch;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+/* 系统通知容器：与 ChatContainer 一样占满主区域 */
+.homeview .chat-main-area .sys-notif-container {
+  align-self: stretch;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
 }
 
 /* 聊天区域标注 */

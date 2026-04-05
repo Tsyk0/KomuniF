@@ -8,7 +8,7 @@
     <!-- 头像 -->
     <div class="avatar-container">
       <img
-        v-if="conversation.convAvatar"
+        v-if="processedAvatar"
         :src="processedAvatar"
         alt="头像"
         class="avatar-img"
@@ -60,6 +60,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useConversationDisplay } from "@/composables/useConversationDisplay";
+import { normalizeAvatarUrl } from "@/utils/avatar-url";
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
 
 interface Props {
@@ -73,11 +74,7 @@ const { displayName, avatar } = useConversationDisplay(
   () => props.conversation
 );
 
-// 处理头像URL
-const processedAvatar = computed(() => {
-  if (!avatar.value) return "";
-  return processAvatarUrl(avatar.value);
-});
+const processedAvatar = computed(() => normalizeAvatarUrl(avatar.value));
 
 // 头像占位符文本（与显示名一致）
 const avatarText = computed(() => {
@@ -160,25 +157,6 @@ const unreadDisplay = computed(() => {
 const handleAvatarError = (event: Event) => {
   const img = event.target as HTMLImageElement;
   img.style.display = "none";
-};
-
-// 处理头像URL
-const processAvatarUrl = (avatarUrl: string): string => {
-  if (!avatarUrl || avatarUrl === "") {
-    return "";
-  }
-
-  if (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:image/")) {
-    return avatarUrl;
-  }
-
-  avatarUrl = avatarUrl.trim();
-
-  if (!avatarUrl.startsWith("/")) {
-    avatarUrl = "/" + avatarUrl;
-  }
-
-  return "http://localhost:8081" + avatarUrl;
 };
 
 // 点击事件

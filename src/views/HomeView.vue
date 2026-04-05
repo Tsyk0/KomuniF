@@ -12,7 +12,12 @@
             @click="goToChat"
             v-ripple
             title="聊天"
-            :class="{ active: currentListView === 'chat' }"
+            :class="{
+              active:
+                currentListView === 'chat' &&
+                !convCreateStore.active &&
+                currentMainView !== 'notifications',
+            }"
           >
             <span class="menu-icon">💬</span>
           </button>
@@ -23,16 +28,39 @@
             @click="goToFriends"
             v-ripple
             title="好友"
-            :class="{ active: currentListView === 'friends' }"
+            :class="{
+              active:
+                currentListView === 'friends' &&
+                !convCreateStore.active &&
+                currentMainView !== 'notifications',
+            }"
           >
             <span class="menu-icon">👥</span>
+          </button>
+
+          <button
+            class="nav-menu-item nav-menu-item--notif"
+            @click="goToNotifications"
+            v-ripple
+            title="系统通知"
+            :class="{ active: currentMainView === 'notifications' }"
+          >
+            <span class="menu-icon">🔔</span>
+            <span
+              v-if="notificationUnreadCount > 0"
+              class="nav-notification-badge"
+              aria-label="未读通知"
+            >
+              {{ notificationUnreadCount > 99 ? "99+" : notificationUnreadCount }}
+            </span>
           </button>
 
           <button
             class="nav-menu-item"
             @click="startNewChat"
             v-ripple
-            title="新聊天"
+            title="新建群聊"
+            :class="{ active: convCreateStore.active }"
           >
             <span class="menu-icon">➕</span>
           </button>
@@ -110,17 +138,22 @@
           <SearchBar v-model="searchKeyword" :placeholder="searchPlaceholder" />
         </div>
 
-        <!-- 内容切换：会话列表或好友列表 -->
+        <!-- 内容切换：新建群聊时为好友多选侧栏，否则会话/好友列表 -->
         <div class="sidebar-content">
-          <!-- 会话列表（聊天视图时显示） -->
-          <div v-if="currentListView === 'chat'" class="chat-list-container">
+          <div
+            v-if="convCreateStore.active"
+            class="friend-pick-sidebar-wrap"
+          >
+            <FriendPickSidebar :search-query="searchKeyword" />
+          </div>
+
+          <div v-else-if="currentListView === 'chat'" class="chat-list-container">
             <ConversationList
               @conversation-click="handleConversationClick"
               :search-query="searchKeyword"
             />
           </div>
 
-          <!-- 好友列表（好友视图时显示） -->
           <div
             v-else-if="currentListView === 'friends'"
             class="friend-list-container"
@@ -170,6 +203,26 @@
           @delete-friend="handleDeleteFriend"
         />
 
+        <!-- 系统通知（主区域，与 ChatContainer 同为透明根容器 + 顶栏） -->
+        <SystemNotificationContainer
+          v-else-if="currentMainView === 'notifications'"
+        />
+
+        <!-- 新建群聊（主区域：群名 + 创建按钮） -->
+        <ConvCreatePanel
+          v-else-if="convCreateStore.active && convCreateStore.panel === 'group'"
+          @exit="exitConvCreate"
+          @created="handleGroupCreated"
+        />
+
+        <!-- 添加好友占位（右上角「添加好友」进入） -->
+        <ConvCreateAddFriendPlaceholder
+          v-else-if="
+            convCreateStore.active && convCreateStore.panel === 'add-friend'
+          "
+          @exit="exitConvCreate"
+        />
+
         <!-- 聊天组件（当有选中会话时显示） -->
         <ChatContainer
           v-else-if="currentConversationId"
@@ -200,6 +253,9 @@ import { useConversationStore } from "@/stores/chat/show-conversation";
 import { useShowMessageStore } from "@/stores/chat/show-message";
 import { useSendMessageStore } from "@/stores/chat/send-message";
 import { useFriendStore } from "@/stores/friend/show-friend";
+import { useConvCreateStore } from "@/stores/chat/conv-create";
+import { useSystemNotificationsStore } from "@/stores/chat/system-notifications";
+import { useSingleChatPeerAvatarStore } from "@/stores/chat/single-chat-peer-avatar";
 import UserProfileEdit from "@/components/UserProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
@@ -207,6 +263,10 @@ import ChatContainer from "@/components/ChatContainer.vue";
 import ConversationList from "@/components/ConversationList.vue";
 import FriendInfo from "@/components/FriendInfo.vue";
 import FriendList from "@/components/FriendList.vue";
+import ConvCreatePanel from "@/components/ConvCreatePanel.vue";
+import ConvCreateAddFriendPlaceholder from "@/components/ConvCreateAddFriendPlaceholder.vue";
+import FriendPickSidebar from "@/components/FriendPickSidebar.vue";
+import SystemNotificationContainer from "@/components/SystemNotificationContainer.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import toast from "@/commons/utils/toast";
 import { conversationCreateApi } from "@/apis/chat/conversation-create";
@@ -224,6 +284,9 @@ const conversationStore = useConversationStore();
 const showMessageStore = useShowMessageStore();
 const sendMessageStore = useSendMessageStore();
 const friendStore = useFriendStore();
+const convCreateStore = useConvCreateStore();
+const notificationStore = useSystemNotificationsStore();
+const singleChatPeerAvatarStore = useSingleChatPeerAvatarStore();
 const router = useRouter();
 
 // 响应式数据
@@ -333,12 +396,14 @@ const loadSidebarWidth = () => {
 };
 
 // 视图状态分离：
-const currentListView = ref("chat"); // 控制中间列表区域：'chat' | 'friends'
+const currentListView = ref("chat"); // 'chat' | 'friends' | 'create-group'
 const currentMainView = ref(null); // 控制右侧主区域：'profile' | 'more' | 'password' | 'friends-detail' | null
 
 const searchKeyword = ref("");
 const searchPlaceholder = computed(() => {
-  return currentListView.value === "friends" ? "搜索好友..." : "搜索会话...";
+  if (convCreateStore.active) return "搜索好友...";
+  if (currentListView.value === "friends") return "搜索好友...";
+  return "搜索会话...";
 });
 
 // 监听视图切换，清空搜索框
@@ -379,16 +444,22 @@ const isGroupChat = computed(() => {
   return conversationStore.currentConversation?.convType === 2;
 });
 
-/** 单聊时对方用户 ID（好友 userId），用于在聊天中打开好友信息面板；优先用会话的 targetUserId，否则从消息列表推断 */
+/** 单聊时对方用户 ID：摘要 targetUserId（含 hydrateSingleChatPeerFromFriendList 补全），否则从消息推断 */
 const currentFriendId = computed(() => {
   const c = conversationStore.currentConversation;
   if (c?.convType !== 1) return null;
-  if (c.targetUserId != null) return c.targetUserId;
+  if (c.targetUserId != null && c.targetUserId > 0) return c.targetUserId;
   const myId = authStore.user?.userId;
   const messages = showMessageStore.messages || [];
-  const otherIds = [...new Set(messages.map((m) => m.senderId).filter((id) => id !== myId && id > 0))];
+  const otherIds = [
+    ...new Set(
+      messages.map((m) => m.senderId).filter((id) => id !== myId && id > 0)
+    ),
+  ];
   return otherIds.length > 0 ? otherIds[0] : null;
 });
+
+const notificationUnreadCount = computed(() => notificationStore.unreadCount);
 
 // 主题切换
 const toggleTheme = () => {
@@ -397,6 +468,9 @@ const toggleTheme = () => {
 
 // 视图切换方法
 const goToChat = () => {
+  if (convCreateStore.active) {
+    convCreateStore.exit();
+  }
   console.log("点击聊天按钮，切换到聊天列表");
   currentListView.value = "chat";
   currentMainView.value = null; // 清空主视图
@@ -405,10 +479,61 @@ const goToChat = () => {
 };
 
 const goToFriends = () => {
+  if (convCreateStore.active) {
+    convCreateStore.exit();
+  }
   console.log("切换到好友列表");
   currentListView.value = "friends";
   currentMainView.value = null; // 清空主视图
   conversationStore.clearCurrentConversation(); // 清空选中的会话
+};
+
+const goToNotifications = () => {
+  if (convCreateStore.active) {
+    convCreateStore.exit();
+  }
+  currentListView.value = "chat";
+  selectedFriend.value = null;
+  conversationStore.clearCurrentConversation();
+  currentMainView.value = "notifications";
+  void notificationStore.fetchRecent(50);
+};
+
+/** 退出新建群聊流程，恢复进入前的侧栏视图（聊天/好友列表） */
+const exitConvCreate = () => {
+  const restore = convCreateStore.savedListView;
+  convCreateStore.exit();
+  currentListView.value = restore;
+  currentMainView.value = null;
+  conversationStore.clearCurrentConversation();
+  selectedFriend.value = null;
+};
+
+const handleGroupCreated = async (convId) => {
+  const id = Number(convId);
+  if (Number.isNaN(id)) {
+    toast.error("无效的会话 ID");
+    return;
+  }
+  convCreateStore.exit();
+  try {
+    await conversationStore.refreshConversationById(id);
+    if (!conversationStore.getConversationById(id)) {
+      await conversationStore.loadConversations();
+    }
+    if (!conversationStore.getConversationById(id)) {
+      toast.error("群聊已创建，但拉取会话详情失败，请稍后在列表中打开");
+      return;
+    }
+    conversationStore.setCurrentConversation(id);
+    await showMessageStore.loadMessages(id);
+    conversationStore.markAsRead(id);
+    currentListView.value = "chat";
+    currentMainView.value = null;
+    selectedFriend.value = null;
+  } catch (e) {
+    toast.error(e?.message || "打开群聊失败，请稍后重试");
+  }
 };
 
 const enterEditMode = () => {
@@ -482,9 +607,15 @@ const handleSendMessageToFriend = async (friend) => {
     if (!conversationStore.getConversationById(convId)) {
       await conversationStore.loadConversations();
     }
-    if (!conversationStore.getConversationById(convId)) {
+    const conv = conversationStore.getConversationById(convId);
+    if (!conv) {
       toast.error("会话已创建，但拉取会话详情失败，请稍后在会话列表中打开");
       return;
+    }
+
+    const pid = Number(peerId);
+    if (conv.convType === 1 && pid > 0) {
+      conversationStore.hydrateSingleChatPeerFromFriendList(convId, pid);
     }
 
     conversationStore.setCurrentConversation(convId);
@@ -662,7 +793,12 @@ const handleEditSuccess = (message) => {
 
 // 工具方法
 const startNewChat = () => {
-  alert("开始新聊天功能开发中...");
+  const from =
+    currentListView.value === "friends" ? "friends" : "chat";
+  convCreateStore.enter(from);
+  currentMainView.value = null;
+  selectedFriend.value = null;
+  conversationStore.clearCurrentConversation();
 };
 
 // 核心登出方法
@@ -673,6 +809,9 @@ const handleLogout = async () => {
 
       // 1. 清除会话和消息数据
       console.log("🧹 清理会话数据...");
+      convCreateStore.exit();
+      notificationStore.reset();
+      singleChatPeerAvatarStore.reset();
       conversationStore.resetConversations();
       showMessageStore.resetMessages();
 
@@ -696,6 +835,7 @@ onMounted(() => {
   console.log("HomeView mounted, initial list view:", currentListView.value);
   loadConversations();
   friendStore.loadFriends();
+  void notificationStore.fetchRecent(30);
 
   // 加载保存的侧边栏宽度
   loadSidebarWidth();

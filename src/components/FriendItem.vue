@@ -8,8 +8,8 @@
     <!-- 头像 -->
     <div class="friend-item-avatar">
       <img
-        v-if="friend.avatar"
-        :src="friend.avatar"
+        v-if="avatarSrc"
+        :src="avatarSrc"
         :alt="displayName"
         class="friend-item-avatar-img"
       />
@@ -63,6 +63,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { FriendListItem } from "@/types/dto/friend";
+import { normalizeAvatarUrl } from "@/utils/avatar-url";
 
 type FriendItemData = FriendListItem & {
   unreadCount?: number;
@@ -85,6 +86,8 @@ const emit = defineEmits<{
 const displayName = computed(() => {
   return props.friend.remarkName || props.friend.nickname;
 });
+
+const avatarSrc = computed(() => normalizeAvatarUrl(props.friend.avatar));
 
 const isActive = computed(() => {
   return Boolean(props.isActive);

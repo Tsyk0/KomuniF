@@ -220,6 +220,7 @@ import MessageItem from "./MessageItem.vue";
 import ChatSearchPanel from "./ChatSearchPanel.vue";
 import ConversationInfo from "./ConversationInfo.vue";
 import { useConversationDisplay } from "@/composables/useConversationDisplay";
+import { normalizeAvatarUrl } from "@/utils/avatar-url";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
 import BaseIcon from "./BaseIcon.vue";
@@ -253,6 +254,7 @@ const currentConversation = computed(() => {
   if (cur?.convId === props.convId) return cur;
   return conversationStore.conversationMap.get(props.convId) ?? null;
 });
+
 const { displayName: conversationDisplayName, avatar: conversationAvatar } =
   useConversationDisplay(currentConversation);
 
@@ -331,29 +333,9 @@ const webSocketListenersInitialized = ref(false);
 const isWebSocketConnecting = ref(false);
 let globalWebSocketCleanup: (() => void) | null = null;
 
-// 计算属性
-const processAvatarUrl = (avatarUrl: string): string => {
-  if (!avatarUrl || avatarUrl === "") {
-    return "";
-  }
-
-  if (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:image/")) {
-    return avatarUrl;
-  }
-
-  avatarUrl = avatarUrl.trim();
-
-  if (!avatarUrl.startsWith("/")) {
-    avatarUrl = "/" + avatarUrl;
-  }
-
-  return "http://localhost:8081" + avatarUrl;
-};
-
-const avatarUrl = computed(() => {
-  if (!conversationAvatar.value) return "";
-  return processAvatarUrl(conversationAvatar.value);
-});
+const avatarUrl = computed(() =>
+  normalizeAvatarUrl(conversationAvatar.value)
+);
 
 const firstChar = computed(() => {
   const name = conversationDisplayName.value || "";

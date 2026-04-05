@@ -1,33 +1,54 @@
-import { computed, type MaybeRefOrGetter, toValue, type Ref } from "vue";
-import { useFriendStore } from "@/stores/friend/show-friend";
+import {
+  computed,
+  watch,
+  type MaybeRefOrGetter,
+  toValue,
+} from "vue";
+import { useAuthStore } from "@/stores/auth";
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
+import { resolveConversationDisplayName } from "@/stores/chat/conversation-display-name";
+import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { useSingleChatPeerAvatarStore } from "@/stores/chat/single-chat-peer-avatar";
 
 /**
- * 根据会话与好友列表解析展示名称与头像（与 ConversationItem 一致）。
- * 单聊：好友备注/昵称优先；群聊：会话名。头像为会话头像。
+ * 会话列表 / 聊天顶栏：展示名 + 头像。
+ * 单聊（convType===1）：头像仅来自 {@link useSingleChatPeerAvatarStore}（按 convId 对方接口，失败则按对方 userId 拉好友资料），
+ * 不使用 convAvatar、消息 senderAvatar、好友列表扫描等兜底。
  */
 export function useConversationDisplay(
   conversation: MaybeRefOrGetter<ConversationDetailDTO | null | undefined>
 ) {
-  const friendStore = useFriendStore();
+  const authStore = useAuthStore();
+  const peerAvatarStore = useSingleChatPeerAvatarStore();
+
+  watch(
+    () => toValue(conversation),
+    (c) => {
+      if (c && Number(c.convType) === 1) {
+        void peerAvatarStore.ensurePeerAvatar(c, authStore.user?.userId ?? null);
+      }
+    },
+    { immediate: true }
+  );
 
   const displayName = computed(() => {
     const c = toValue(conversation);
     if (!c) return "";
-    if (c.convType === 1) {
-      const friendId = c.targetUserId;
-      if (friendId != null) {
-        const friend = friendStore.friends.find((f) => f.friendId === friendId);
-        if (friend) return friend.displayName;
-      }
-      return c.convName || c.privateDisplayName || "";
-    }
-    return c.convName || "";
+    return resolveConversationDisplayName(
+      c,
+      authStore.user?.userId ?? null
+    );
   });
 
   const avatar = computed(() => {
     const c = toValue(conversation);
-    return c?.convAvatar ?? "";
+    if (!c) return "";
+    if (Number(c.convType) === 1) {
+      // 直接读 avatarByConvId，保证异步 ensurePeerAvatar 写入后 computed 会更新
+      const id = Math.floor(Number(c.convId));
+      return peerAvatarStore.avatarByConvId[id] || "";
+    }
+    return normalizeAvatarUrl(c.convAvatar ?? "");
   });
 
   return { displayName, avatar };

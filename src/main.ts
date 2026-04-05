@@ -51,7 +51,11 @@ const loadNightStyles = () => {
     'friend-list-night.css',
     'friend-item-night.css',
     'friend-group-night.css',
-    'searchbar-night.css'
+    'searchbar-night.css',
+    'conv-create-panel-night.css',
+    'friend-pick-sidebar-night.css',
+    'system-notification-container-night.css',
+    'system-notification-item-night.css'
   ]
 
   // TypeScript安全的方式检查href

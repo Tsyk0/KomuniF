@@ -1,0 +1,193 @@
+/* 新建群聊面板 — 夜间（html.night-mode） */
+
+html.night-mode .conv-create-panel {
+  --cc-bg: #1a1f2e;
+  --cc-surface: rgba(30, 35, 48, 0.98);
+  --cc-border: rgba(148, 163, 184, 0.12);
+  --cc-border-strong: rgba(148, 163, 184, 0.22);
+  --cc-text: #f1f5f9;
+  --cc-text-muted: #94a3b8;
+  --cc-text-sub: #64748b;
+  --cc-accent: #60a5fa;
+  --cc-accent-hover: #93c5fd;
+  --cc-accent-soft: rgba(96, 165, 250, 0.18);
+  --cc-row-hover: rgba(96, 165, 250, 0.08);
+  --cc-row-selected: rgba(96, 165, 250, 0.16);
+  --cc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --cc-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --cc-radius: 14px;
+  --cc-radius-sm: 12px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(36, 40, 55, 0.98) 0%,
+    #1e2230 45%,
+    #181c28 100%
+  );
+}
+
+html.night-mode .conv-create-top {
+  background: var(--cc-surface);
+  border-bottom-color: #334155;
+  box-shadow: var(--cc-shadow-sm);
+}
+
+html.night-mode .conv-create-back {
+  color: var(--cc-accent);
+}
+
+html.night-mode .conv-create-back:hover {
+  background: var(--cc-accent-soft);
+}
+
+html.night-mode .conv-create-title {
+  color: var(--cc-text);
+}
+
+html.night-mode .conv-create-label {
+  color: var(--cc-text-muted);
+}
+
+html.night-mode .conv-create-input {
+  border-color: #475569;
+  background: rgba(15, 23, 42, 0.65);
+  color: var(--cc-text);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+html.night-mode .conv-create-input::placeholder {
+  color: var(--cc-text-sub);
+}
+
+html.night-mode .conv-create-input:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+html.night-mode .conv-create-input:focus {
+  border-color: var(--cc-accent);
+  box-shadow: 0 0 0 3px var(--cc-accent-soft), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+html.night-mode .conv-create-hint {
+  color: var(--cc-text-muted);
+  background: rgba(51, 65, 85, 0.45);
+  border-color: #334155;
+}
+
+html.night-mode .conv-create-empty {
+  color: var(--cc-text-muted);
+  background: rgba(30, 41, 59, 0.5);
+  border-color: #475569;
+}
+
+html.night-mode .conv-create-row:hover {
+  background: var(--cc-row-hover);
+}
+
+html.night-mode .conv-create-row:has(.conv-create-check:checked) {
+  background: var(--cc-row-selected);
+  border-color: rgba(96, 165, 250, 0.35);
+  box-shadow: var(--cc-shadow-sm);
+}
+
+html.night-mode .conv-create-check {
+  accent-color: var(--cc-accent);
+}
+
+html.night-mode .conv-create-row-avatar {
+  background: linear-gradient(145deg, #334155, #1e293b);
+  border-color: rgba(30, 41, 59, 0.9);
+  outline-color: #475569;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html.night-mode .conv-create-avatar-ph {
+  color: var(--cc-text-muted);
+}
+
+html.night-mode .conv-create-row-name {
+  color: var(--cc-text);
+}
+
+html.night-mode .conv-create-row-sub {
+  color: var(--cc-text-sub);
+}
+
+html.night-mode .conv-create-footer {
+  background: var(--cc-surface);
+  border-top-color: #334155;
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.35);
+}
+
+html.night-mode .conv-create-btn.secondary {
+  background: rgba(51, 65, 85, 0.6);
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+html.night-mode .conv-create-btn.secondary:hover {
+  background: rgba(71, 85, 105, 0.75);
+  border-color: #64748b;
+}
+
+html.night-mode .conv-create-btn.primary {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.45);
+}
+
+html.night-mode .conv-create-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+  box-shadow: 0 4px 18px rgba(96, 165, 250, 0.4);
+}
+
+html.night-mode .conv-create-body::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.45);
+}
+
+html.night-mode .conv-create-body {
+  scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+}
+
+html.night-mode .conv-create-toolbar {
+  background: var(--cc-surface);
+  border-bottom-color: #334155;
+}
+
+html.night-mode .conv-create-tool-btn {
+  color: var(--cc-text-muted);
+}
+
+html.night-mode .conv-create-tool-btn:hover {
+  background: var(--cc-row-hover);
+  color: var(--cc-text);
+}
+
+html.night-mode .conv-create-tool-btn--accent {
+  color: var(--cc-accent);
+}
+
+html.night-mode .conv-create-toolbar-title {
+  color: var(--cc-text);
+}
+
+html.night-mode .conv-create-submit-btn {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.45);
+}
+
+html.night-mode .conv-create-submit-btn:hover:not(:disabled) {
+  box-shadow: 0 6px 22px rgba(96, 165, 250, 0.35);
+}
+
+html.night-mode .conv-add-friend-placeholder {
+  background: linear-gradient(
+    180deg,
+    rgba(36, 40, 55, 0.98) 0%,
+    #1e2230 100%
+  );
+}
+
+html.night-mode .conv-add-friend-tip {
+  color: var(--cc-text-muted);
+}

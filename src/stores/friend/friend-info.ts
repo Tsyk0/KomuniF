@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { friendApi } from "@/apis/friend/index";
+import { normalizeAvatarUrl } from "@/utils/avatar-url";
 import type { FriendInfoDTO } from "@/types/dto/friend";
 
 export const useFriendInfoStore = defineStore("friendInfo", {
@@ -45,22 +46,7 @@ export const useFriendInfoStore = defineStore("friendInfo", {
     },
 
     getters: {
-        avatarUrl: (state) => {
-            const avatar = state.friendInfo?.friendAvatar;
-            if (!avatar) return "";
-            const trimmed = avatar.trim();
-            if (
-                trimmed.startsWith("http") ||
-                trimmed.startsWith("data:image/")
-            ) {
-                return trimmed;
-            }
-            const prefix = import.meta.env.VITE_API_BASE_URL || "";
-            if (!prefix) return trimmed;
-            if (trimmed.startsWith("/")) {
-                return `${prefix}${trimmed}`;
-            }
-            return `${prefix}/${trimmed}`;
-        }
+        avatarUrl: (state) =>
+            normalizeAvatarUrl(state.friendInfo?.friendAvatar ?? "")
     }
 });

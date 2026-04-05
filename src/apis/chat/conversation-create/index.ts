@@ -31,8 +31,8 @@ export function createConversationApi(
     single: payload.single,
     memberUserIds: payload.memberUserIds,
   };
-  if (!payload.single && payload.convName != null) {
-    body.convName = payload.convName;
+  if (!payload.single) {
+    body.convName = (payload.convName ?? "").trim();
   }
   return service({
     url: "/conversations/create",

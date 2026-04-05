@@ -1,0 +1,32 @@
+/* 新建群聊侧栏好友多选 — 夜间 */
+
+html.night-mode .friend-pick-sidebar {
+  --fp-bg: transparent;
+  --fp-muted: #94a3b8;
+  --fp-text: #f1f5f9;
+  --fp-sub: #64748b;
+  --fp-row-hover: rgba(96, 165, 250, 0.08);
+  --fp-row-selected: rgba(96, 165, 250, 0.16);
+}
+
+html.night-mode .friend-pick-avatar {
+  background: linear-gradient(145deg, #334155, #1e293b);
+  border-color: rgba(30, 41, 59, 0.9);
+  outline-color: #475569;
+}
+
+html.night-mode .friend-pick-avatar-ph {
+  color: #94a3b8;
+}
+
+html.night-mode .friend-pick-check {
+  accent-color: #60a5fa;
+}
+
+html.night-mode .friend-pick-scroll::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.45);
+}
+
+html.night-mode .friend-pick-scroll {
+  scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+}

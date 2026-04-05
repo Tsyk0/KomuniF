@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { friendApi } from "@/apis/friend/index";
+import { normalizeAvatarUrl } from "@/utils/avatar-url";
 import type {
   FriendListItem,
   FriendOnlineStatus,
@@ -12,20 +13,6 @@ const normalizeOnlineStatus = (
   if (status === 1) return "online";
   if (status === 2) return "away";
   return "offline";
-};
-
-const buildAvatarUrl = (avatar?: string | null): string => {
-  if (!avatar) return "";
-  const trimmed = avatar.trim();
-  if (trimmed.startsWith("http") || trimmed.startsWith("data:image/")) {
-    return trimmed;
-  }
-  const prefix = import.meta.env.VITE_API_BASE_URL || "";
-  if (!prefix) return trimmed;
-  if (trimmed.startsWith("/")) {
-    return `${prefix}${trimmed}`;
-  }
-  return `${prefix}/${trimmed}`;
 };
 
 const mapToFriendListItem = (
@@ -43,7 +30,7 @@ const mapToFriendListItem = (
     displayName,
     nickname,
     remarkName,
-    avatar: buildAvatarUrl(dto.friendAvatar),
+    avatar: normalizeAvatarUrl(dto.friendAvatar),
     signature: dto.friendSignature || "",
     onlineStatus: normalizeOnlineStatus(dto.friendOnlineStatus),
     group: dto.friendGroup || "",

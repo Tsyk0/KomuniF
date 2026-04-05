@@ -1,0 +1,116 @@
+/* SystemNotificationItem：单条卡片（继承父级 .sys-notif-container 上的 --sn-* 变量） */
+
+.sys-notif-item {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  background: var(--sn-surface-elevated, #ffffff);
+  border: 1px solid var(--sn-border-strong, rgba(15, 23, 42, 0.12));
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 4px 16px rgba(15, 23, 42, 0.06);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+
+.sys-notif-item:hover {
+  border-color: rgba(79, 70, 229, 0.25);
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.06),
+    0 8px 24px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.sys-notif-item__accent {
+  width: 5px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+  border-radius: 14px 0 0 14px;
+}
+
+.sys-notif-item--unread .sys-notif-item__accent {
+  background: linear-gradient(180deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
+  box-shadow: 2px 0 16px var(--sn-unread-glow, rgba(99, 102, 241, 0.35));
+}
+
+.sys-notif-item__inner {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sys-notif-item__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sys-notif-item__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: var(--sn-text-muted, #64748b);
+  border: 1px solid var(--sn-border, rgba(15, 23, 42, 0.08));
+}
+
+.sys-notif-item--unread .sys-notif-item__badge {
+  background: var(--sn-accent-soft, rgba(79, 70, 229, 0.12));
+  color: var(--sn-accent, #4f46e5);
+  border-color: rgba(79, 70, 229, 0.22);
+}
+
+.sys-notif-item__unread-tag {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(90deg, #6366f1, #7c3aed);
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.sys-notif-item__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sys-notif-item__title {
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: var(--sn-text, #0f172a);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.sys-notif-item__body {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--sn-text-secondary, #475569);
+}
+
+.sys-notif-item__time {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--sn-text-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}

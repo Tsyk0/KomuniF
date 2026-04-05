@@ -60,6 +60,20 @@ html.night-mode .homeview .nav-menu-item {
   border: 1px solid #475569;
 }
 
+html.night-mode .homeview .nav-menu-item--notif {
+  overflow: visible;
+}
+
+html.night-mode .homeview .nav-menu-item.active {
+  background: rgba(96, 165, 250, 0.22);
+  border-color: #60a5fa;
+}
+
+html.night-mode .homeview .nav-notification-badge {
+  background: #dc2626;
+  color: #fff;
+}
+
 html.night-mode .homeview .nav-menu-item:hover {
   background: rgba(96, 165, 250, 0.2);
   border-color: #60a5fa;
@@ -297,6 +311,24 @@ html.night-mode .homeview .chat-main-area::before {
 html.night-mode .homeview .chat-main-area > * {
   position: relative;
   z-index: 1;
+}
+
+html.night-mode .homeview .chat-main-area .conv-create-panel {
+  align-self: stretch;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+html.night-mode .homeview .chat-main-area .sys-notif-container {
+  align-self: stretch;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
 }
 
 /* 聊天区域标注 */
