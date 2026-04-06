@@ -37,6 +37,7 @@
             v-for="m in results"
             :key="m.messageId"
             :message="m"
+            :conv-type="convType ?? null"
             @select="onSelectResult"
           />
 
@@ -68,6 +69,8 @@ import { searchMessagesInConvFromDB } from "@/utils/local-db";
 const props = defineProps<{
   open: boolean;
   convId: number | null;
+  /** 与当前聊天一致，单聊时搜索结果头像与对方对齐 */
+  convType?: number | null;
   pageSize?: number;
 }>();
 

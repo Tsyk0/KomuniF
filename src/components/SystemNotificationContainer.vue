@@ -50,9 +50,22 @@
           </p>
         </div>
 
-        <ul v-else class="sys-notif-list" aria-label="系统通知列表">
+        <div v-else-if="store.items.length > 0" class="sys-notif-pagination">
+          <button
+            v-if="store.hasMore"
+            type="button"
+            class="sys-notif-load-more"
+            :disabled="store.loadingMore"
+            @click="loadMore"
+          >
+            {{ store.loadingMore ? "加载中…" : "加载更多" }}
+          </button>
+          <p v-else class="sys-notif-pagination__end">没有更多通知了</p>
+        </div>
+
+        <ul v-if="displayItems.length > 0" class="sys-notif-list" aria-label="系统通知列表">
           <li
-            v-for="n in store.items"
+            v-for="n in displayItems"
             :key="n.notificationId"
             class="sys-notif-list-row"
           >
@@ -60,18 +73,21 @@
               class="sys-notif-list-row__card"
               :class="{
                 'sys-notif-list-row__card--activatable':
-                  notificationRequiresAction(n.notificationType),
+                  rowCanToggleActions(n),
               }"
               role="presentation"
               @click="onItemCardClick(n)"
             >
               <SystemNotificationItem
-                :notification="n"
-                :related-label="resolveRelatedLabel(n.relatedUserId)"
+                :notification="n.notification"
+                :handle="n.handle"
+                :related-label="resolveRelatedLabel(n.notification.relatedUserId)"
+                :accent-variant="rowAccentVariant(n)"
+                :show-unread-meta="rowShowUnreadMeta(n)"
               />
             </div>
             <div
-              v-if="notificationRequiresAction(n.notificationType)"
+              v-if="rowShowsActionButtons(n)"
               class="sys-notif-external-actions"
               :class="{
                 'sys-notif-external-actions--open':
@@ -114,13 +130,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useSystemNotificationsStore } from "@/stores/chat/system-notifications";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import SystemNotificationItem from "./SystemNotificationItem.vue";
 import {
   notificationRequiresAction,
-  type SystemNotification,
+  type NotificationHandleSummaryDTO,
   type NotificationHandleAction,
 } from "@/types/dto/notification";
 
@@ -130,7 +146,10 @@ const friendStore = useFriendStore();
 /** 点击某条 item 后才展开右侧按钮；再次点击同一条收起 */
 const openedActionId = ref<number | null>(null);
 
-const LIMIT = 50;
+const PAGE_SIZE = 10;
+const displayItems = computed(() =>
+  [...store.items].sort((a, b) => a.notificationId - b.notificationId)
+);
 
 function resolveRelatedLabel(relatedUserId: number | null | undefined) {
   if (relatedUserId == null || relatedUserId <= 0) return null;
@@ -140,11 +159,46 @@ function resolveRelatedLabel(relatedUserId: number | null | undefined) {
 
 function refresh() {
   openedActionId.value = null;
-  store.fetchRecent(LIMIT);
+  store.fetchRecent(1, PAGE_SIZE);
 }
 
-function onItemCardClick(n: SystemNotification) {
-  if (!notificationRequiresAction(n.notificationType)) {
+function loadMore() {
+  void store.fetchOlderByAnchor(PAGE_SIZE);
+}
+
+function rowCanToggleActions(n: NotificationHandleSummaryDTO) {
+  return (
+    notificationRequiresAction(n.notification.notificationType) &&
+    !store.isNotificationProcessed(n)
+  );
+}
+
+function rowShowsActionButtons(n: NotificationHandleSummaryDTO) {
+  return rowCanToggleActions(n);
+}
+
+/** 竖条颜色：pending(灰) / accept(绿) / reject(红) / dismiss(黑) */
+function rowAccentVariant(n: NotificationHandleSummaryDTO) {
+  const action = n.handle?.handleAction?.trim().toLowerCase();
+  if (action === "accept") return "accept";
+  if (action === "reject") return "reject";
+  if (action === "dismiss" || action === "block") return "dismiss";
+  return "pending";
+}
+
+/** 未读角标：同上，与 isRead===false 对齐（含 null 视为未读） */
+function rowShowUnreadMeta(n: NotificationHandleSummaryDTO) {
+  return (
+    !store.isNotificationProcessed(n) &&
+    (n.notification.isRead === false || n.notification.isRead === null)
+  );
+}
+
+function onItemCardClick(n: NotificationHandleSummaryDTO) {
+  if (!rowCanToggleActions(n)) {
+    if (openedActionId.value === n.notificationId) {
+      openedActionId.value = null;
+    }
     return;
   }
   openedActionId.value =
@@ -155,11 +209,12 @@ function isHandling(notificationId: number) {
   return store.handlingNotificationId === notificationId;
 }
 
-function onHandle(
+async function onHandle(
   notificationId: number,
   handleAction: NotificationHandleAction
 ) {
-  void store.submitNotificationHandle(notificationId, handleAction);
+  await store.submitNotificationHandle(notificationId, handleAction);
+  openedActionId.value = null;
 }
 </script>
 

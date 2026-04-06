@@ -3,7 +3,16 @@
     <!-- 他人发送的消息 -->
     <div v-if="!isSentByMe" class="message-wrapper message-left">
       <div class="avatar-section left">
-        <div class="avatar-placeholder"></div>
+        <div class="avatar-face">
+          <img
+            v-if="avatarDisplayUrl"
+            :src="avatarDisplayUrl"
+            alt=""
+            class="message-avatar-img"
+            @error="onAvatarError"
+          />
+          <div v-else class="avatar-placeholder"></div>
+        </div>
         <div class="display-name">{{ displayName }}</div>
       </div>
 
@@ -22,7 +31,7 @@
     </div>
 
     <!-- 自己发送的消息 -->
-    <div v-else class="message-wrapper message-right">
+    <div v-else class="message-wrapper message-right message-sent">
       <div
         class="message-bubble sent"
         :class="{ 'message-bubble--flash': flashAnchor }"
@@ -37,7 +46,16 @@
       </div>
 
       <div class="avatar-section right">
-        <div class="avatar-placeholder"></div>
+        <div class="avatar-face">
+          <img
+            v-if="avatarDisplayUrl"
+            :src="avatarDisplayUrl"
+            alt=""
+            class="message-avatar-img"
+            @error="onAvatarError"
+          />
+          <div v-else class="avatar-placeholder"></div>
+        </div>
         <div class="display-name">{{ displayName }}</div>
       </div>
     </div>
@@ -46,6 +64,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useMessageItemAvatar } from "@/composables/useMessageItemAvatar";
 import { useShowMessageStore } from "@/stores/chat/show-message";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import type { DisplayMessage } from "@/entity/message";
@@ -54,11 +73,18 @@ interface Props {
   message: DisplayMessage;
   /** 搜索跳转锚点：灰色与默认背景交替闪烁约 3 秒 */
   flashAnchor?: boolean;
+  /** 1 单聊 2 群聊；与 ChatContainer 当前会话一致 */
+  convType?: number | null;
 }
 
 const props = defineProps<Props>();
 const showMessageStore = useShowMessageStore();
 const friendStore = useFriendStore();
+
+const { avatarDisplayUrl, onAvatarError } = useMessageItemAvatar(
+  () => props.message,
+  () => props.convType ?? null
+);
 
 const isSentByMe = computed(() => props.message.isSentByMe);
 

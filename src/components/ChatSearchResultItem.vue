@@ -23,11 +23,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
+import { useMessageItemAvatar } from "@/composables/useMessageItemAvatar";
 import type { DisplayMessage } from "@/entity/message";
 
 const props = defineProps<{
   message: DisplayMessage;
+  convType?: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -38,8 +40,6 @@ const emitSelect = () => {
   emit("select", props.message);
 };
 
-const imgOk = ref(true);
-
 const displayName = computed(() => props.message.senderName || String(props.message.senderId ?? ""));
 
 const fallbackChar = computed(() => {
@@ -47,19 +47,11 @@ const fallbackChar = computed(() => {
   return n ? n.charAt(0) : "?";
 });
 
-const avatarUrl = computed(() => {
-  if (!imgOk.value) return "";
-  const raw = props.message.senderAvatar || "";
-  if (!raw) return "";
-  if (raw.startsWith("http") || raw.startsWith("data:image/")) return raw;
-  const trimmed = raw.trim();
-  const withSlash = trimmed.startsWith("/") ? trimmed : "/" + trimmed;
-  return "http://localhost:8081" + withSlash;
-});
-
-const onImgError = () => {
-  imgOk.value = false;
-};
+const { avatarDisplayUrl: avatarUrl, onAvatarError: onImgError } =
+  useMessageItemAvatar(
+    () => props.message,
+    () => props.convType ?? null
+  );
 
 const timeText = computed(() => {
   const t = props.message.sendTime;

@@ -10,7 +10,7 @@ export function searchMessagesApi(
   options?: { signal?: AbortSignal }
 ): Promise<SearchMessagesResponse> {
   return service({
-    url: "/messages/search",
+    url: "/message-search/search",
     method: "get",
     params,
     signal: options?.signal,

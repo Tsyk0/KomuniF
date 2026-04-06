@@ -55,6 +55,16 @@ export interface NotificationHandleRecord {
   updateTime: string;
 }
 
+/** 后端聚合后的处理记录 DTO（字段与 NotificationHandleRecord 保持一致） */
+export type NotificationHandle = NotificationHandleRecord;
+
+/** 通知列表聚合 DTO：同一 notificationId 下的通知 + 处理记录 */
+export interface NotificationHandleSummaryDTO {
+  notificationId: number;
+  notification: SystemNotification;
+  handle: NotificationHandle | null;
+}
+
 /** 需要展示「通过 / 拒绝 / 拉黑」的类型（与后端一致） */
 export const REQUIRES_ACTION_TYPES = [
   "friend_add_request",

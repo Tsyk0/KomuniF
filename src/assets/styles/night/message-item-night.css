@@ -51,6 +51,30 @@ html.night-mode .message-item .avatar-section.right {
   order: 1; /* 确保头像在右侧 */
 }
 
+html.night-mode .message-item .avatar-face {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+
+html.night-mode .message-item .message-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+html.night-mode .message-item .avatar-face .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  margin-bottom: 0;
+}
+
 /* 圆形头像占位符 */
 html.night-mode .message-item .avatar-placeholder {
   width: 36px;

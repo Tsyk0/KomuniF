@@ -215,12 +215,13 @@
           @created="handleGroupCreated"
         />
 
-        <!-- 添加好友占位（右上角「添加好友」进入） -->
-        <ConvCreateAddFriendPlaceholder
+        <!-- 添加好友：用户搜索与好友申请 -->
+        <UserSearch
           v-else-if="
             convCreateStore.active && convCreateStore.panel === 'add-friend'
           "
           @exit="exitConvCreate"
+          @send-message="onUserSearchSendMessage"
         />
 
         <!-- 聊天组件（当有选中会话时显示） -->
@@ -264,7 +265,7 @@ import ConversationList from "@/components/ConversationList.vue";
 import FriendInfo from "@/components/FriendInfo.vue";
 import FriendList from "@/components/FriendList.vue";
 import ConvCreatePanel from "@/components/ConvCreatePanel.vue";
-import ConvCreateAddFriendPlaceholder from "@/components/ConvCreateAddFriendPlaceholder.vue";
+import UserSearch from "@/components/UserSearch.vue";
 import FriendPickSidebar from "@/components/FriendPickSidebar.vue";
 import SystemNotificationContainer from "@/components/SystemNotificationContainer.vue";
 import SearchBar from "@/components/SearchBar.vue";
@@ -496,7 +497,7 @@ const goToNotifications = () => {
   selectedFriend.value = null;
   conversationStore.clearCurrentConversation();
   currentMainView.value = "notifications";
-  void notificationStore.fetchRecent(50);
+  void notificationStore.fetchRecent(1, 10);
 };
 
 /** 退出新建群聊流程，恢复进入前的侧栏视图（聊天/好友列表） */
@@ -506,6 +507,81 @@ const exitConvCreate = () => {
   currentListView.value = restore;
   currentMainView.value = null;
   conversationStore.clearCurrentConversation();
+  selectedFriend.value = null;
+};
+
+/**
+ * 创建/打开与指定 userId 的单聊（POST /conversations/create，single: true）
+ */
+const openSingleChatWithPeerUserId = async (peerUserId) => {
+  const pid = Number(peerUserId);
+  if (!Number.isFinite(pid) || pid <= 0) {
+    toast.error("无效的用户 ID");
+    return false;
+  }
+
+  try {
+    const resp = await conversationCreateApi.createConversation({
+      single: true,
+      memberUserIds: [pid],
+    });
+
+    if (resp.code !== 200 || !resp.data?.success || resp.data.convId == null) {
+      toast.error(resp.message || resp.data?.message || "创建会话失败");
+      return false;
+    }
+
+    const convId = Number(resp.data.convId);
+    await conversationStore.refreshConversationById(convId);
+    if (!conversationStore.getConversationById(convId)) {
+      await conversationStore.loadConversations();
+    }
+    const conv = conversationStore.getConversationById(convId);
+    if (!conv) {
+      toast.error("会话已创建，但拉取会话详情失败，请稍后在会话列表中打开");
+      return false;
+    }
+
+    if (conv.convType === 1 && pid > 0) {
+      conversationStore.hydrateSingleChatPeerFromFriendList(convId, pid);
+    }
+
+    conversationStore.setCurrentConversation(convId);
+    await showMessageStore.loadMessages(convId);
+    conversationStore.markAsRead(convId);
+    return true;
+  } catch (e) {
+    const msg =
+      e?.response?.data?.message ||
+      e?.message ||
+      "创建会话失败，请稍后重试";
+    toast.error(msg);
+    return false;
+  }
+};
+
+/** UserSearch 内「发送消息」：退出添加好友流程并打开单聊 */
+const onUserSearchSendMessage = async (user) => {
+  const peerId = user?.userId;
+  if (peerId == null || Number.isNaN(Number(peerId))) {
+    toast.error("无法获取用户 ID");
+    return;
+  }
+  const n = Number(peerId);
+  const me =
+    authStore.user?.userId != null ? Number(authStore.user.userId) : NaN;
+  if (Number.isFinite(me) && n === me) {
+    toast.error("不能与自己发起会话");
+    return;
+  }
+
+  const ok = await openSingleChatWithPeerUserId(n);
+  if (!ok) return;
+
+  const restore = convCreateStore.savedListView;
+  convCreateStore.exit();
+  currentListView.value = restore;
+  currentMainView.value = null;
   selectedFriend.value = null;
 };
 
@@ -591,47 +667,12 @@ const handleSendMessageToFriend = async (friend) => {
     return;
   }
 
-  try {
-    const resp = await conversationCreateApi.createConversation({
-      single: true,
-      memberUserIds: [Number(peerId)],
-    });
+  const ok = await openSingleChatWithPeerUserId(Number(peerId));
+  if (!ok) return;
 
-    if (resp.code !== 200 || !resp.data?.success || resp.data.convId == null) {
-      toast.error(resp.message || resp.data?.message || "创建会话失败");
-      return;
-    }
-
-    const convId = Number(resp.data.convId);
-    await conversationStore.refreshConversationById(convId);
-    if (!conversationStore.getConversationById(convId)) {
-      await conversationStore.loadConversations();
-    }
-    const conv = conversationStore.getConversationById(convId);
-    if (!conv) {
-      toast.error("会话已创建，但拉取会话详情失败，请稍后在会话列表中打开");
-      return;
-    }
-
-    const pid = Number(peerId);
-    if (conv.convType === 1 && pid > 0) {
-      conversationStore.hydrateSingleChatPeerFromFriendList(convId, pid);
-    }
-
-    conversationStore.setCurrentConversation(convId);
-    await showMessageStore.loadMessages(convId);
-    conversationStore.markAsRead(convId);
-
-    currentListView.value = "chat";
-    currentMainView.value = null;
-    selectedFriend.value = null;
-  } catch (e) {
-    const msg =
-      e?.response?.data?.message ||
-      e?.message ||
-      "创建会话失败，请稍后重试";
-    toast.error(msg);
-  }
+  currentListView.value = "chat";
+  currentMainView.value = null;
+  selectedFriend.value = null;
 };
 
 const handleDeleteFriend = (friend) => {
@@ -835,7 +876,7 @@ onMounted(() => {
   console.log("HomeView mounted, initial list view:", currentListView.value);
   loadConversations();
   friendStore.loadFriends();
-  void notificationStore.fetchRecent(30);
+  void notificationStore.fetchRecent(1, 10);
 
   // 加载保存的侧边栏宽度
   loadSidebarWidth();

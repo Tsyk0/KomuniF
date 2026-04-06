@@ -19,8 +19,19 @@ html.night-mode .sys-notif-item__accent {
   background: linear-gradient(180deg, #64748b 0%, #475569 100%);
 }
 
-html.night-mode .sys-notif-item--unread .sys-notif-item__accent {
-  background: linear-gradient(180deg, #a5b4fc 0%, #6366f1 50%, #4f46e5 100%);
+html.night-mode .sys-notif-item--accent-accept .sys-notif-item__accent {
+  background: linear-gradient(180deg, #4ade80 0%, #22c55e 45%, #166534 100%);
+  box-shadow: 2px 0 14px rgba(74, 222, 128, 0.28);
+}
+
+html.night-mode .sys-notif-item--accent-reject .sys-notif-item__accent {
+  background: linear-gradient(180deg, #f87171 0%, #ef4444 45%, #7f1d1d 100%);
+  box-shadow: 2px 0 14px rgba(248, 113, 113, 0.3);
+}
+
+html.night-mode .sys-notif-item--accent-dismiss .sys-notif-item__accent {
+  background: linear-gradient(180deg, #52525b 0%, #27272a 45%, #09090b 100%);
+  box-shadow: 2px 0 14px rgba(0, 0, 0, 0.42);
 }
 
 html.night-mode .sys-notif-item__badge {
@@ -41,6 +52,14 @@ html.night-mode .sys-notif-item__title {
 
 html.night-mode .sys-notif-item__body {
   color: var(--sn-text-secondary);
+}
+
+html.night-mode .sys-notif-item__status {
+  color: #facc15;
+}
+
+html.night-mode .sys-notif-item__status.is-processed {
+  color: #4ade80;
 }
 
 html.night-mode .sys-notif-item__time {

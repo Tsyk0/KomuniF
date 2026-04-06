@@ -92,7 +92,7 @@ export interface GetMessageDetailsResponse {
 
 /**
  * 搜索消息请求参数
- * 对应后端：GET /messages/search
+ * 对应后端：GET /message-search/search
  */
 export interface SearchMessagesRequest {
   keyword?: string;

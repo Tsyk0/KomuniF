@@ -114,3 +114,26 @@ html.night-mode .sys-notif-action-btn--block {
     0 2px 18px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
+
+html.night-mode .sys-notif-load-more {
+  background: rgba(15, 23, 42, 0.18);
+  border-color: rgba(148, 163, 184, 0.32);
+  color: var(--sn-text-secondary);
+  box-shadow: none;
+}
+
+html.night-mode .sys-notif-load-more:hover:not(:disabled) {
+  border-color: rgba(129, 140, 248, 0.5);
+  background: rgba(15, 23, 42, 0.34);
+  color: #c7d2fe;
+  box-shadow: none;
+}
+
+html.night-mode .sys-notif-pagination__end {
+  color: var(--sn-text-muted);
+}
+
+html.night-mode .sys-notif-pagination {
+  background: transparent;
+  border-bottom-color: transparent;
+}

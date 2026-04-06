@@ -31,13 +31,26 @@
 .sys-notif-item__accent {
   width: 5px;
   flex-shrink: 0;
-  background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+  background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
   border-radius: 14px 0 0 14px;
 }
 
-.sys-notif-item--unread .sys-notif-item__accent {
-  background: linear-gradient(180deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%);
-  box-shadow: 2px 0 16px var(--sn-unread-glow, rgba(99, 102, 241, 0.35));
+/* 已接受：绿色 */
+.sys-notif-item--accent-accept .sys-notif-item__accent {
+  background: linear-gradient(180deg, #86efac 0%, #22c55e 50%, #15803d 100%);
+  box-shadow: 2px 0 16px rgba(34, 197, 94, 0.35);
+}
+
+/* 已拒绝：红色 */
+.sys-notif-item--accent-reject .sys-notif-item__accent {
+  background: linear-gradient(180deg, #fca5a5 0%, #ef4444 50%, #b91c1c 100%);
+  box-shadow: 2px 0 16px rgba(239, 68, 68, 0.35);
+}
+
+/* dismiss / block：黑色 */
+.sys-notif-item--accent-dismiss .sys-notif-item__accent {
+  background: linear-gradient(180deg, #52525b 0%, #27272a 45%, #09090b 100%);
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.35);
 }
 
 .sys-notif-item__inner {
@@ -106,6 +119,17 @@
   font-size: 0.9375rem;
   line-height: 1.55;
   color: var(--sn-text-secondary, #475569);
+}
+
+.sys-notif-item__status {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #ca8a04;
+  font-weight: 600;
+}
+
+.sys-notif-item__status.is-processed {
+  color: #16a34a;
 }
 
 .sys-notif-item__time {

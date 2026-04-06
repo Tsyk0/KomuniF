@@ -93,6 +93,7 @@
               v-if="isSearchOpen"
               :open="isSearchOpen"
               :conv-id="convId"
+              :conv-type="currentConversation?.convType ?? null"
               @close="isSearchOpen = false; void restoreMessageScrollPosition()"
               @jump-to-message="handleJumpToSearchMessage"
             />
@@ -110,6 +111,7 @@
                 v-for="message in messages"
                 :key="message.messageId"
                 :message="message"
+                :conv-type="currentConversation?.convType ?? null"
                 :flash-anchor="anchorFlashMessageId === message.messageId"
               />
 

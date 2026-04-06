@@ -39,6 +39,31 @@
   transform: scale(1.05);
 }
 
+/* 头像外框：与占位同尺寸，内嵌图片或渐变占位 */
+.message-item .avatar-face {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  position: relative;
+}
+
+.message-item .message-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.message-item .avatar-face .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  margin-bottom: 0;
+}
+
 /* 他人消息：头像在左侧 */
 .message-item .avatar-section.left {
   margin-right: 8px;
