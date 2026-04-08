@@ -368,3 +368,32 @@ html, body {
   color: #6b7280;
   font-size: 20px;
 }
+
+/* ========== 9. 全局输入框边界（白天） ========== */
+#app input:not([type="checkbox"]):not([type="radio"]),
+#app textarea,
+#app select {
+  border: 1px solid #d5deea;
+  border-radius: 10px;
+  background-color: #edf3fb;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+#app input:not([type="checkbox"]):not([type="radio"]):hover,
+#app textarea:hover,
+#app select:hover {
+  border-color: #b6c7de;
+  background-color: #e4eefb;
+}
+
+#app input:not([type="checkbox"]):not([type="radio"]):focus,
+#app textarea:focus,
+#app select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+  background-color: #dceafe;
+}

@@ -3,9 +3,11 @@ html.night-mode .conversation-item {
   display: flex;
   align-items: center;
   padding: 12px 16px; /* 关键：与白天模式相同的padding */
+  margin: 6px 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border-bottom: 1px solid #334155; /* 只改颜色 */
+  border: 1px solid #334155;
   background-color: transparent;
   position: relative;
   overflow: hidden;
@@ -27,14 +29,16 @@ html.night-mode .conversation-item:hover::before {
 }
 
 html.night-mode .conversation-item:hover {
-  background-color: rgba(51, 65, 85, 0.5);
-  transform: translateX(4px); /* 关键：与白天模式相同的transform值 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background-color: rgba(51, 65, 85, 0.58);
+  border-color: #475569;
+  transform: translateX(2px);
+  box-shadow: 0 6px 16px rgba(2, 6, 23, 0.42);
 }
 
 html.night-mode .conversation-item.active {
   background-color: rgba(96, 165, 250, 0.2);
   border-left: 3px solid #60a5fa; /* 关键：与白天模式相同的border宽度 */
+  border-color: #3b82f6;
   box-shadow: inset 4px 0 0 rgba(96, 165, 250, 0.15),
               0 4px 12px rgba(0, 0, 0, 0.4);
 }
@@ -129,27 +133,6 @@ html.night-mode .conversation-item .online-indicator {
 html.night-mode .conversation-item .online-indicator.offline {
   background-color: #64748b;
   animation: none;
-}
-
-/* 未读消息计数 - 夜晚模式 */
-html.night-mode .conversation-item .unread-badge {
-  position: absolute;
-  top: -4px; /* 关键：与白天模式相同的位置 */
-  right: -4px; /* 关键：与白天模式相同的位置 */
-  min-width: 18px; /* 关键：与白天模式相同的尺寸 */
-  height: 18px; /* 关键：与白天模式相同的尺寸 */
-  padding: 0 4px; /* 关键：与白天模式相同的padding */
-  border-radius: 9px; /* 关键：与白天模式相同的圆角 */
-  background-color: #ef4444;
-  color: white;
-  font-size: 11px; /* 关键：与白天模式相同的字体大小 */
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #1e293b; /* 只改颜色 */
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  z-index: 1;
 }
 
 /* ========== 会话信息区域 - 夜晚模式 ========== */

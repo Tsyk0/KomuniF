@@ -95,11 +95,17 @@ html.night-mode .homeview .conversation-sidebar {
   width: 400px;
    height: 100%;
   background-color: rgba(30, 30, 30, 0.95);
-  border-right: 1px solid #334155;
+  border-right: 1px solid #475569;
+  box-shadow: 8px 0 18px -14px rgba(2, 6, 23, 0.75);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   height: 100%;
+}
+
+html.night-mode .homeview .conversation-sidebar.resizing {
+  border-right-color: #60a5fa;
+  box-shadow: 10px 0 22px -12px rgba(59, 130, 246, 0.45);
 }
 
 html.night-mode .homeview .sidebar-header {
@@ -306,6 +312,15 @@ html.night-mode .homeview .chat-main-area::before {
   -webkit-mask-repeat: repeat;
   mask-repeat: repeat;
   opacity: 0.9;
+}
+
+/* 夜间：编辑个人信息时使用纯色背景，并隐藏蒙版纹理 */
+html.night-mode .homeview .chat-main-area.is-profile-editing {
+  background: #111827;
+}
+
+html.night-mode .homeview .chat-main-area.is-profile-editing::before {
+  display: none;
 }
 
 html.night-mode .homeview .chat-main-area > * {

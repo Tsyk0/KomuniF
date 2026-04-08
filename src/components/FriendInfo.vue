@@ -150,15 +150,21 @@ const displayInitial = computed(() =>
   displayName.value.charAt(0).toUpperCase()
 );
 
+const normalizedOnlineStatus = computed(() => {
+  const raw = info.value?.friendOnlineStatus;
+  const status = typeof raw === "number" ? raw : Number(raw);
+  return Number.isFinite(status) ? status : 0;
+});
+
 const onlineStatusText = computed(() => {
-  const s = info.value?.friendOnlineStatus;
+  const s = normalizedOnlineStatus.value;
   if (s === 1) return "在线";
   if (s === 2) return "离开";
   return "离线";
 });
 
 const onlineStatusClass = computed(() => {
-  const s = info.value?.friendOnlineStatus;
+  const s = normalizedOnlineStatus.value;
   if (s === 1) return "online";
   if (s === 2) return "away";
   return "offline";

@@ -1,7 +1,7 @@
 <template>
   <div
     class="conversation-item"
-    :class="{ active: isActive, 'has-unread': conversation.unreadCount > 0 }"
+    :class="{ active: isActive }"
     @click="handleClick"
     v-ripple
   >
@@ -21,10 +21,6 @@
       <!-- 在线状态指示器（单聊时显示）- 暂时移除 -->
       <!-- <div v-if="showOnlineStatus" class="online-indicator" :class="{ online: isOnline }"></div> -->
 
-      <!-- 未读消息计数 -->
-      <div v-if="conversation.unreadCount > 0" class="unread-badge">
-        {{ unreadDisplay }}
-      </div>
     </div>
 
     <!-- 会话信息 -->
@@ -144,13 +140,6 @@ const lastMessageTime = computed(() => {
 // 是否需要显示发送者名称（群聊显示）
 const showSenderName = computed(() => {
   return props.conversation.convType === 2; // 群聊
-});
-
-// 未读消息显示
-const unreadDisplay = computed(() => {
-  const count = props.conversation.unreadCount || 0;
-  if (count > 99) return "99+";
-  return count.toString();
 });
 
 // 处理头像加载错误

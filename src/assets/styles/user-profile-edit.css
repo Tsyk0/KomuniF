@@ -46,10 +46,11 @@
   align-items: center;
   flex-shrink: 0;
   padding: 30px;
-  border: none;
+  border-right: 1px solid rgba(214, 224, 236, 0.8);
   overflow-y: auto;
   height: 100%;
   box-sizing: border-box;
+  background: #edf4fd;
 }
 
 .user-profile-edit .avatar-display {
@@ -62,14 +63,14 @@
   margin-bottom: 20px;
   transition: transform 0.3s ease;
   flex-shrink: 0;
-  border: none;
+  border: 2px solid #d6e0ec;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }
 
 .user-profile-edit .avatar-display:hover {
-  border: none;
-
+  border-color: #8fb5e7;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.18);
 }
 
 .user-profile-edit .avatar-img-container {
@@ -160,6 +161,7 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+  background: #f5f9ff;
 }
 
 .user-profile-edit .form-section::before {
@@ -200,9 +202,9 @@
   min-height: 48px;
   line-height: 1.5;
   box-sizing: border-box;
-  background: transparent !important; /* 强制透明背景 */
-  border: 1px solid rgba(224, 224, 224, 0.8);
-  border-radius: 8px;
+  background: #eaf2fd !important;
+  border: 1px solid #cfdbea;
+  border-radius: 10px;
   color: #333 !important; /* 确保文本颜色 */
 }
 
@@ -222,21 +224,22 @@
 .el-input:hover,
 .el-textarea:hover {
   outline: none;
-  border-color: #007aff;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+  border-color: #76a9e8;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  background-color: #dceafe;
 }
 /* 特别针对 textarea */
 .user-profile-edit .el-textarea {
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid rgba(224, 224, 224, 0.8);
-  border-radius: 8px;
+  border: 1px solid #cfdbea;
+  border-radius: 10px;
   resize: vertical;
   font-family: inherit;
   box-sizing: border-box;
   min-height: 120px;
   line-height: 1.5;
-  background: transparent !important;
+  background: #eaf2fd !important;
   color: #333 !important;
 }
 
@@ -262,15 +265,16 @@
   min-width: 120px;
   min-height: 48px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e0e0e0;
+  border: 1px solid #cfdaea;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.8);
+  background: #e8f1fe;
 }
 
 .user-profile-edit .gender-option:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: #dceafe;
   color: #007aff;
-  border-color: #007aff;
+  border-color: #8ab6ee;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.14);
 }
 
 .user-profile-edit .gender-option.active {

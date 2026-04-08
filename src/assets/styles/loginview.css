@@ -16,8 +16,25 @@ html, body {
   justify-content: center;
   align-items: center;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #e9f1c7 0%, #9bcba5 50%, #e9f1c7 100%);
   overflow: hidden;
+  position: relative;
+}
+
+.loginview.login-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-color: rgba(62, 92, 62, 0.15);
+  -webkit-mask-image: url("../background/pattern_02-600x600.png");
+  mask-image: url("../background/pattern_02-600x600.png");
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
 }
 
 .loginview .login-card {
@@ -31,6 +48,8 @@ html, body {
   display: flex;
   flex-direction: column;
   max-height: 95vh;
+  position: relative;
+  z-index: 1;
 }
 
 /* ========== 3. Logo区域 ========== */

@@ -6,7 +6,6 @@
       <div class="logo-section">
         <div class="logo">💬</div>
         <h1>Komuni</h1>
-        <p class="tagline">安全、快速的即时通讯</p>
       </div>
 
       <!-- 表单区域 -->
@@ -63,7 +62,7 @@
 
       <!-- 页脚 -->
       <div class="footer">
-        <p>© 2026 Komuni. 基于Spring Boot + Vue的即时通讯平台</p>
+        <p>© 2026 Komuni.</p>
       </div>
     </div>
   </div>

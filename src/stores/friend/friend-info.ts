@@ -7,7 +7,8 @@ export const useFriendInfoStore = defineStore("friendInfo", {
     state: () => ({
         friendInfo: null as FriendInfoDTO | null,
         loading: false,
-        error: null as string | null
+        error: null as string | null,
+        currentFriendId: null as number | null
     }),
 
     actions: {
@@ -21,6 +22,7 @@ export const useFriendInfoStore = defineStore("friendInfo", {
             try {
                 this.loading = true;
                 this.error = null;
+                this.currentFriendId = friendId;
                 const response = await friendApi.getFriendInfoByUserIdAndFriendId(
                     friendId
                 );
@@ -29,19 +31,28 @@ export const useFriendInfoStore = defineStore("friendInfo", {
                     throw new Error(response.message || "获取好友详情失败");
                 }
 
-                this.friendInfo = response.data ?? null;
+                // 避免快速切换好友时旧请求回写覆盖当前详情
+                if (this.currentFriendId === friendId) {
+                    this.friendInfo = response.data ?? null;
+                }
             } catch (err: any) {
-                this.error = err?.message || "加载好友详情失败";
-                this.friendInfo = null;
+                if (this.currentFriendId === friendId) {
+                    this.error = err?.message || "加载好友详情失败";
+                    this.friendInfo = null;
+                }
                 throw err;
             } finally {
-                this.loading = false;
+                if (this.currentFriendId === friendId) {
+                    this.loading = false;
+                }
             }
         },
 
         clearFriendInfo() {
             this.friendInfo = null;
             this.error = null;
+            this.currentFriendId = null;
+            this.loading = false;
         }
     },
 

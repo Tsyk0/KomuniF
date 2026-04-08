@@ -16,36 +16,6 @@
       </div>
     </div>
 
-    <!-- 固定在底部的操作栏 -->
-    <div class="fixed-bottom-actions">
-      <div class="action-buttons">
-        <button class="action-btn add-friend-btn" @click="handleAddFriend">
-          <div class="action-btn-content">
-            <span class="action-icon">
-              <BaseIcon name="add" />
-            </span>
-            <span class="action-text">添加好友</span>
-          </div>
-          <div class="action-hover-bg"></div>
-        </button>
-
-        <button
-          class="action-btn friend-request-btn"
-          @click="handleFriendRequests"
-        >
-          <div class="action-btn-content">
-            <span class="action-icon">
-              <BaseIcon name="user" />
-            </span>
-            <span class="action-text">好友通知</span>
-            <span v-if="friendRequestCount > 0" class="notification-badge">
-              {{ friendRequestCount > 99 ? "99+" : friendRequestCount }}
-            </span>
-          </div>
-          <div class="action-hover-bg"></div>
-        </button>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -53,7 +23,6 @@
 import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import type { FriendListItem } from "@/types/dto/friend";
-import BaseIcon from "./BaseIcon.vue";
 
 const FriendItem = defineAsyncComponent(() => import("./FriendItem.vue"));
 
@@ -66,7 +35,6 @@ const emit = defineEmits<{
 }>();
 
 const friendStore = useFriendStore();
-const friendRequestCount = ref(2); // 测试数据，实际应该从API获取
 const activeFriendId = ref<number | null>(null);
 
 // 监听外部传入的搜索关键词并同步到 store
@@ -89,16 +57,6 @@ const handleFriendClick = (friend: FriendListItem) => {
 onMounted(() => {
   friendStore.loadFriends();
 });
-
-const handleAddFriend = () => {
-  console.log("添加好友");
-  // TODO: 弹出添加好友对话框
-};
-
-const handleFriendRequests = () => {
-  console.log("查看好友请求");
-  // TODO: 跳转到好友请求页面
-};
 </script>
 
 <style scoped>

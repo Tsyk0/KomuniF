@@ -177,6 +177,10 @@ export const useAuthStore = defineStore('auth', {
       data?: any
     }> {
       try {
+        console.group('🔍 [AuthStore.autoLogin] 开始')
+        console.log('hasRememberMeData:', !!localStorage.getItem('rememberMeData'))
+        console.log('hasAccessTokenBeforeCheck:', !!localStorage.getItem('access_token'))
+        console.groupEnd()
         console.log('🚀 尝试免密登录...')
 
         // 1. 获取记住我数据
@@ -193,7 +197,14 @@ export const useAuthStore = defineStore('auth', {
 
         // 2. 调用 checkToken API（需要现有 access token + refresh_token Cookie）
         const response: CheckTokenResponse = await checkTokenApi()
-        console.log('🔍 Token验证结果:', response)
+        console.group('🔍 [AuthStore.autoLogin] /auth/sessions/current 响应')
+        console.log('code:', response.code)
+        console.log('message:', response.message)
+        console.log('valid:', response?.data?.valid)
+        console.log('refreshed:', response?.data?.refreshed)
+        console.log('hasUser:', !!response?.data?.user)
+        console.log('hasToken:', !!response?.data?.token)
+        console.groupEnd()
 
         if (response.code === 200) {
           if (response.data.valid && response.data.user) {
@@ -229,7 +240,7 @@ export const useAuthStore = defineStore('auth', {
             }
           }
         } else {
-          localStorage.removeItem('rememberMeData')
+          // 非 200 时不立即清除记住我，避免网络抖动导致用户丢失快速登录入口
           return {
             success: false,
             message: response.message || '登录验证失败'
@@ -237,7 +248,16 @@ export const useAuthStore = defineStore('auth', {
         }
       } catch (error: any) {
         console.error('❌ 免密登录失败:', error)
-        localStorage.removeItem('rememberMeData')
+        console.group('🔍 [AuthStore.autoLogin] 异常详情')
+        console.log('status:', error?.response?.status)
+        console.log('responseData:', error?.response?.data)
+        console.log('hasRememberMeDataAfterError:', !!localStorage.getItem('rememberMeData'))
+        console.log('hasAccessTokenAfterError:', !!localStorage.getItem('access_token'))
+        console.groupEnd()
+        // 仅在明确 401（refresh 也失效）时清理记住我标记
+        if (error?.response?.status === 401) {
+          localStorage.removeItem('rememberMeData')
+        }
 
         let errorMessage = '免密登录失败'
         if (error.response) {
@@ -359,13 +379,12 @@ export const useAuthStore = defineStore('auth', {
     async ensureAccessTokenValid(): Promise<boolean> {
       const currentToken = localStorage.getItem('access_token')
 
-      if (!currentToken) {
-        console.warn('ensureAccessTokenValid: 未找到本地访问 token，视为未登录')
-        this.clearStorage()
-        return false
-      }
-
       try {
+        console.group('🔍 [AuthStore.ensureAccessTokenValid] 调用前状态')
+        console.log('hasAccessToken:', !!currentToken)
+        console.log('hasRememberMeData:', !!localStorage.getItem('rememberMeData'))
+        console.groupEnd()
+
         const response: CheckTokenResponse = await checkTokenApi()
         console.log('🔍 检查 access token 结果:', response)
 
@@ -395,10 +414,18 @@ export const useAuthStore = defineStore('auth', {
         // valid === false：刷新令牌也过期或其它原因，清理本地状态
         console.warn('ensureAccessTokenValid: token 无效，将清理本地登录状态')
         this.clearStorage()
+        this.clearRememberedAccount()
         return false
-      } catch (error) {
+      } catch (error: any) {
         console.error('ensureAccessTokenValid: 检查 access token 失败:', error)
-        // 网络异常等情况下，不强制清除本地状态，但返回 false 由调用方决定是否跳转登录
+        console.group('🔍 [AuthStore.ensureAccessTokenValid] 异常详情')
+        console.log('status:', error?.response?.status)
+        console.log('responseData:', error?.response?.data)
+        console.groupEnd()
+        // 网络异常等情况下，不强制清除本地状态；仅明确 401 时清理记住我
+        if (error?.response?.status === 401) {
+          this.clearRememberedAccount()
+        }
         return false
       }
     }

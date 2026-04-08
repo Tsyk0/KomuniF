@@ -167,7 +167,10 @@
       </div>
 
       <!-- 右侧聊天区域 (CMA) -->
-      <div class="chat-main-area">
+      <div
+        class="chat-main-area"
+        :class="{ 'is-profile-editing': currentMainView === 'profile' }"
+      >
         <!-- 用户资料编辑组件 -->
         <UserProfileEdit
           v-if="currentMainView === 'profile'"

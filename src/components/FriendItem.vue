@@ -10,11 +10,11 @@
       <img
         v-if="avatarSrc"
         :src="avatarSrc"
-        :alt="displayName"
+        :alt="displayRemarkName"
         class="friend-item-avatar-img"
       />
       <div v-else class="friend-item-avatar-default">
-        {{ displayName.charAt(0) }}
+        {{ displayRemarkName.charAt(0) }}
       </div>
       <span class="friend-item-online-dot" :class="friend.onlineStatus"></span>
     </div>
@@ -22,20 +22,20 @@
     <!-- 好友信息 -->
     <div class="friend-item-info">
       <div class="friend-item-name-row">
-        <span class="friend-item-name">{{ displayName }}</span>
+        <span class="friend-item-remarkname">{{ displayRemarkName }}</span>
         <span v-if="friend.unreadCount" class="friend-item-unread">
           {{ friend.unreadCount }}
         </span>
       </div>
       <div class="friend-item-details">
-        <span class="friend-item-signature" v-if="friend.signature">
-          {{ friend.signature }}
+        <span class="friend-item-nickname" v-if="friend.nickname">
+          {{ friend.nickname }}
         </span>
         <span v-else-if="friend.lastSeen" class="friend-item-last-seen">
           {{ friend.lastSeen }}
         </span>
         <span v-else class="friend-item-nickname">
-          {{ friend.nickname }}
+          {{ friend.displayName }}
         </span>
       </div>
     </div>
@@ -83,8 +83,8 @@ const emit = defineEmits<{
   "more-actions": [friend: any];
 }>();
 
-const displayName = computed(() => {
-  return props.friend.remarkName || props.friend.nickname;
+const displayRemarkName = computed(() => {
+  return props.friend.remarkName || props.friend.nickname || "未知用户";
 });
 
 const avatarSrc = computed(() => normalizeAvatarUrl(props.friend.avatar));

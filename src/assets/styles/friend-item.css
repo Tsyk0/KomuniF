@@ -4,10 +4,12 @@
   display: flex;
   align-items: center;
   padding: 12px 16px;
+  margin: 6px 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border-bottom: 1px solid #f0f0f0;
-  background-color: white;
+  border: 1px solid #e8edf5;
+  background-color: #eef4fb;
   position: relative;
   overflow: hidden;
 }
@@ -28,14 +30,18 @@
 }
 
 .friend-item-container:hover {
-  background-color: #f8f9fa;
-  transform: translateX(4px);
+  background-color: #e2ecfa;
+  border-color: #cddcf0;
+  transform: translateX(2px);
 }
 
 .friend-item-container.active {
-  background-color: #e8f4ff;
+  background-color: #d4e5fb;
   border-left: 3px solid #0084ff;
-  box-shadow: inset 4px 0 0 rgba(0, 132, 255, 0.1);
+  border-color: #bdd6f7;
+  box-shadow:
+    inset 4px 0 0 rgba(0, 132, 255, 0.1),
+    0 8px 18px rgba(0, 122, 255, 0.08);
 }
 
 .friend-item-container.active::before {
@@ -115,9 +121,12 @@
 }
 
 @keyframes pulseOnline {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 2px 4px rgba(76, 217, 100, 0.5);
   }
+
   50% {
     box-shadow: 0 2px 8px rgba(76, 217, 100, 0.8);
   }
@@ -129,9 +138,12 @@
 }
 
 @keyframes pulseAway {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 2px 4px rgba(255, 149, 0, 0.5);
   }
+
   50% {
     box-shadow: 0 2px 8px rgba(255, 149, 0, 0.8);
   }
@@ -159,7 +171,7 @@
   position: relative;
 }
 
-.friend-item-name {
+.friend-item-remarkname {
   font-size: 16px;
   font-weight: 500;
   color: #333;
@@ -174,7 +186,7 @@
   position: relative;
 }
 
-.friend-item-name::after {
+.friend-item-remarkname::after {
   content: '';
   position: absolute;
   left: 0;
@@ -185,7 +197,7 @@
   transition: width 0.3s ease;
 }
 
-.friend-item-container:hover .friend-item-name::after {
+.friend-item-container:hover .friend-item-remarkname::after {
   width: 100%;
 }
 
@@ -212,7 +224,7 @@
   gap: 2px;
 }
 
-.friend-item-signature {
+.friend-item-nickname {
   font-size: 13px;
   color: #666;
   overflow: hidden;
@@ -222,7 +234,7 @@
   transition: color 0.2s;
 }
 
-.friend-item-container:hover .friend-item-signature {
+.friend-item-container:hover .friend-item-nickname {
   color: #333;
 }
 
@@ -232,10 +244,10 @@
   font-style: italic;
 }
 
+.friend-item-last-seen,
 .friend-item-nickname {
   font-size: 13px;
-  color: #999;
-  font-style: italic;
+  color: #7b8798;
 }
 
 /* 操作按钮 */

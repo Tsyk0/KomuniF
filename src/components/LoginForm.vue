@@ -171,6 +171,14 @@ export default {
       this.hasError = false;
 
       try {
+        const rememberMeData = localStorage.getItem("rememberMeData");
+        const hasAccessToken = !!localStorage.getItem("access_token");
+        console.group("🔍 [AutoLogin] 点击免密登录");
+        console.log("rememberMeData:", rememberMeData);
+        console.log("hasAccessToken:", hasAccessToken);
+        console.log("currentRoute:", this.$route?.fullPath);
+        console.groupEnd();
+
         console.log("🚀 开始免密登录...");
         const result = await this.authStore.autoLogin();
 
@@ -181,7 +189,10 @@ export default {
           this.errorMessage = result.message;
           this.hasError = true;
           this.showAutoLoginHint = false;
-          console.error("免密登录失败:", result.message);
+          console.error("免密登录失败:", result.message, {
+            rememberMeData: localStorage.getItem("rememberMeData"),
+            hasAccessToken: !!localStorage.getItem("access_token"),
+          });
         }
       } catch (error) {
         console.error("免密登录异常:", error);

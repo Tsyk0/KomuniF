@@ -102,7 +102,8 @@
   width: 400px;
   height: 100%;
   background: white;
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid #cfd9e6;
+  box-shadow: 8px 0 18px -14px rgba(15, 23, 42, 0.28);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -145,6 +146,8 @@
   user-select: none;
   pointer-events: none;
   transition: none;
+  border-right-color: #7aa6df;
+  box-shadow: 10px 0 22px -12px rgba(37, 99, 235, 0.35);
 }
 
 .homeview .sidebar-header {
@@ -347,6 +350,15 @@
   mask-image: url('../background/pattern_02-600x600.png');
   -webkit-mask-repeat: repeat;
   mask-repeat: repeat;
+}
+
+/* 编辑个人信息时使用纯色背景，并隐藏蒙版纹理 */
+.homeview .chat-main-area.is-profile-editing {
+  background: #f5f7fb;
+}
+
+.homeview .chat-main-area.is-profile-editing::before {
+  display: none;
 }
 
 .homeview .chat-main-area > * {

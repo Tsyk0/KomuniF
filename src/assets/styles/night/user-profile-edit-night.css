@@ -46,10 +46,11 @@ html.night-mode .user-profile-edit .avatar-section {
   align-items: center;
   flex-shrink: 0;
   padding: 30px;
-  border: none;
+  border-right: 1px solid rgba(71, 85, 105, 0.8);
   overflow-y: auto;
   height: 100%;
   box-sizing: border-box;
+  background: #0f172a;
 }
 
 html.night-mode .user-profile-edit .avatar-display {
@@ -62,14 +63,14 @@ html.night-mode .user-profile-edit .avatar-display {
   margin-bottom: 20px;
   transition: border-color 0.3s ease;
   flex-shrink: 0;
-  border: none;
+  border: 2px solid #334155;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
 }
 
 html.night-mode .user-profile-edit .avatar-display:hover {
-  border: none;
-
+  border-color: #60a5fa;
+  box-shadow: 0 8px 22px rgba(59, 130, 246, 0.32);
 }
 
 html.night-mode .user-profile-edit .avatar-img-container {
@@ -162,6 +163,7 @@ html.night-mode .user-profile-edit .form-content {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+  background: #111827;
 }
 
 html.night-mode .user-profile-edit .form-section::before {
@@ -200,9 +202,9 @@ html.night-mode .user-profile-edit input[type="date"] {
   min-height: 48px;
   line-height: 1.5;
   box-sizing: border-box;
-  background: transparent !important;
-  border: 1px solid rgba(75, 85, 99, 0.8);
-  border-radius: 8px;
+  background: #1e293b !important;
+  border: 1px solid #475569;
+  border-radius: 10px;
   color: #ffffff !important;
 }
 
@@ -226,7 +228,8 @@ html.night-mode .user-profile-edit input[type="date"]:focus,
 html.night-mode .user-profile-edit input[type="date"]:hover {
   outline: none;
   border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  background: #172235 !important;
 }
 
 html.night-mode .user-profile-edit .el-textarea {
@@ -239,7 +242,7 @@ html.night-mode .user-profile-edit .el-textarea {
   box-sizing: border-box;
   min-height: 120px;
   line-height: 1.5;
-  background: transparent !important;
+  background: #1e293b !important;
   color: #ffffff !important;
 }
 
@@ -265,15 +268,16 @@ html.night-mode .user-profile-edit .gender-option {
   min-height: 48px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   color: #ffffff;
-  border: 1px solid #4b5563;
+  border: 1px solid #475569;
   box-sizing: border-box;
-  background: rgba(47, 47, 47, 0.7);
+  background: #1e293b;
 }
 
 html.night-mode .user-profile-edit .gender-option:hover {
-  background: rgba(75, 85, 99, 0.7);
+  background: #172235;
   color: #ffffff;
   border-color: #60a5fa;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.26);
 }
 
 html.night-mode .user-profile-edit .gender-option.active {

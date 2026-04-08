@@ -43,15 +43,10 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // 检查本地是否有 access token
-  const accessToken = localStorage.getItem('access_token')
-  if (!accessToken) {
-    authStore.clearStorage()
-    next('/') // 没有 token，直接跳转登录
-    return
-  }
-
-  // 调用 /user/checkToken 确保 access token 有效（如有需要会自动续签）
+  // 统一调用 /auth/sessions/current 检查会话：
+  // - access token 有效：直接放行
+  // - access token 失效但 refresh cookie 有效：自动续签并放行
+  // - refresh 也失效：回登录页
   const ok = await authStore.ensureAccessTokenValid()
   if (ok) {
     next()

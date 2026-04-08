@@ -5,7 +5,7 @@ html.night-mode .friend-list-container {
   flex-direction: column;
   height: 100%;
   position: relative;
-  background-color: (26, 26, 26)
+  background-color: rgb(26, 26, 26);
 }
 
 /* 搜索框样式已移除 */
@@ -14,156 +14,10 @@ html.night-mode .friend-list-container {
 html.night-mode .friend-list-container .friend-list-content {
   flex: 1;
   overflow-y: auto;
-  padding: 0 0 80px; /* 为底部操作栏留出空间 */
+  padding: 0;
   position: relative;
 }
 
 html.night-mode .friend-list-container .friend-groups {
   background-color: rgb(26,26,26);
-}
-
-
-
-/* ==================== 固定在底部的操作栏 - 夜晚模式 ==================== */
-
-html.night-mode .friend-list-container .fixed-bottom-actions {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: 16px;
-  background: linear-gradient(
-    to bottom,
-    rgba(37, 37, 37, 0) 0%,
-    rgba(37, 37, 37, 0.95) 20%,
-    rgba(37, 37, 37, 1) 100%
-  );
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-}
-
-html.night-mode .friend-list-container .action-buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-
-html.night-mode .friend-list-container .action-btn {
-  flex: 1;
-  position: relative;
-  border: none;
-  border-radius: 12px;
-  padding: 0;
-  cursor: pointer;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 52px;
-  max-width: 180px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-html.night-mode .friend-list-container .action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-}
-
-html.night-mode .friend-list-container .action-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-html.night-mode .friend-list-container .action-btn-content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 14px 20px;
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.3px;
-}
-
-html.night-mode .friend-list-container .action-hover-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: transparent;
-  z-index: 1;
-  transition: all 0.3s ease;
-}
-
-html.night-mode .friend-list-container .action-btn:hover .action-hover-bg {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* 添加好友按钮 - 夜晚模式 */
-html.night-mode .friend-list-container .add-friend-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-}
-
-html.night-mode .friend-list-container .add-friend-btn:hover {
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-}
-
-html.night-mode .friend-list-container .add-friend-btn:active {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);
-}
-
-/* 好友通知按钮 - 夜晚模式 */
-html.night-mode .friend-list-container .friend-request-btn {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-}
-
-html.night-mode .friend-list-container .friend-request-btn:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-}
-
-html.night-mode .friend-list-container .friend-request-btn:active {
-  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
-}
-
-/* 通知徽章 - 夜晚模式 */
-html.night-mode .friend-list-container .notification-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: white;
-  font-size: 11px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 12px;
-  min-width: 20px;
-  text-align: center;
-  box-shadow: 0 2px 6px rgba(251, 191, 36, 0.4);
-  border: 2px solid #252525;
-  animation: badgePulseNight 2s infinite;
-}
-
-@keyframes badgePulseNight {
-  0%, 100% { 
-    transform: scale(1);
-    box-shadow: 0 2px 6px rgba(251, 191, 36, 0.4);
-  }
-  50% { 
-    transform: scale(1.05);
-    box-shadow: 0 4px 10px rgba(251, 191, 36, 0.6);
-  }
-}
-
-html.night-mode .friend-list-container .action-icon {
-  font-size: 18px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-}
-
-html.night-mode .friend-list-container .action-text {
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
