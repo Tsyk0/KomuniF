@@ -3,7 +3,7 @@
     <div
       v-if="convId"
       class="chat-layout"
-      :class="{ 'info-open': isGroupInfoOpen && (isGroupChat || friendId) }"
+      :class="{ 'info-open': isGroupInfoOpen && (isGroupChat || singlePeerUserId) }"
     >
       <!-- 左侧聊天主区域 -->
       <div class="chat-main">
@@ -11,7 +11,7 @@
         <div class="chat-header">
           <div
             class="header-left"
-            :class="{ clickable: isGroupChat || !!friendId }"
+            :class="{ clickable: isGroupChat || !!singlePeerUserId }"
             @click="handleHeaderLeftClick"
           >
             <div class="chat-info">
@@ -65,9 +65,10 @@
 
           <div class="header-right">
             <button
+              v-if="canVoiceVideoCall"
               class="header-action"
               @click="handleCall"
-              title="音视频通话"
+              title="音视频通话（单聊）"
             >
               <BaseIcon class="action-icon" name="phone" />
             </button>
@@ -178,7 +179,7 @@
 
       <!-- 右侧会话/好友信息面板（群聊或单聊均可打开） -->
       <div
-        v-if="isGroupChat || friendId"
+        v-if="isGroupChat || singlePeerUserId"
         ref="infoPanelWrapper"
         class="chat-conversation-info-wrapper"
         :class="{ open: isGroupInfoOpen, resizing: isResizingInfoPanel }"
@@ -191,7 +192,7 @@
         ></div>
         <ConversationInfo
           :conv-id="convId"
-          :friend-id="friendId"
+          :friend-id="singlePeerUserId"
           @close="closeGroupInfo"
           @changes-pending="hasInfoPendingChanges = $event"
         />
@@ -225,6 +226,7 @@ import { useConversationDisplay } from "@/composables/useConversationDisplay";
 import { normalizeAvatarUrl } from "@/utils/avatar-url";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
+import type { SendMessageResponseData } from "@/types/dto/message";
 import BaseIcon from "./BaseIcon.vue";
 
 // Store
@@ -247,7 +249,13 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["back", "search", "menu", "message-sent", "call"]);
+const emit = defineEmits<{
+  back: [];
+  search: [];
+  menu: [];
+  "message-sent": [response: SendMessageResponseData];
+  call: [{ convId: number; peerUserId: number }];
+}>();
 
 // 当前会话（与会话列表同源，保证 chatinfo 与会话 item 显示一致）
 const currentConversation = computed(() => {
@@ -259,6 +267,38 @@ const currentConversation = computed(() => {
 
 const { displayName: conversationDisplayName, avatar: conversationAvatar } =
   useConversationDisplay(currentConversation);
+
+/**
+ * 单聊对端 userId：与 HomeView 的 currentFriendId 一致——
+ * 优先父组件传入的 friendId，否则用会话 targetUserId，再没有则从当前消息列表推断。
+ * 避免「无消息且摘要未带 targetUserId」时父组件传 null 导致不显示通话按钮 / 无法打开侧栏。
+ */
+const singlePeerUserId = computed((): number | null => {
+  if (props.friendId != null && props.friendId > 0) {
+    return props.friendId;
+  }
+  const c = currentConversation.value;
+  if (c?.convType !== 1) return null;
+  if (c.targetUserId != null && c.targetUserId > 0) {
+    return c.targetUserId;
+  }
+  const myId = authStore.user?.userId;
+  const msgs = showMessageStore.messages || [];
+  const otherIds = [
+    ...new Set(
+      msgs.map((m) => m.senderId).filter((id) => id !== myId && id > 0)
+    ),
+  ];
+  return otherIds.length > 0 ? otherIds[0]! : null;
+});
+
+/** 1 对 1 通话：单聊且能解析到对端 userId */
+const canVoiceVideoCall = computed(
+  () =>
+    currentConversation.value?.convType === 1 &&
+    singlePeerUserId.value != null &&
+    singlePeerUserId.value > 0
+);
 
 // 响应式数据
 const messagesContainer = ref<HTMLElement | null>(null);
@@ -395,7 +435,7 @@ const isGroupChat = computed(() => {
 const hasInfoPendingChanges = ref(false);
 
 const infoPanelStyle = computed(() => {
-  const showPanel = isGroupChat.value || props.friendId;
+  const showPanel = isGroupChat.value || singlePeerUserId.value;
   if (!showPanel) return {};
   const extra = hasInfoPendingChanges.value ? 80 : 0;
   return {
@@ -992,11 +1032,22 @@ const handleSearch = () => {
   emit("search");
 };
 const handleMenu = () => emit("menu");
-const handleCall = () => emit("call");
+const handleCall = () => {
+  const peer = singlePeerUserId.value;
+  if (
+    !canVoiceVideoCall.value ||
+    props.convId == null ||
+    peer == null ||
+    peer <= 0
+  ) {
+    return;
+  }
+  emit("call", { convId: props.convId, peerUserId: peer });
+};
 
 const handleHeaderLeftClick = () => {
   if (!props.convId) return;
-  if (!isGroupChat.value && !props.friendId) return;
+  if (!isGroupChat.value && !singlePeerUserId.value) return;
   isGroupInfoOpen.value = !isGroupInfoOpen.value;
 };
 

@@ -383,6 +383,7 @@ import { useConversationStore } from "@/stores/chat/show-conversation";
 import { conversationMemberApi } from "@/apis/chat/conversation-member";
 import { manageConversationApi } from "@/apis/chat/manage-conversation";
 import { friendApi } from "@/apis/friend";
+import { normalizeAvatarUrl } from "@/utils/avatar-url";
 import type {
   ConversationEntity,
   ConversationMemberDTO,
@@ -415,20 +416,6 @@ const isFriendMode = computed(
 );
 
 const currentUserId = computed(() => authStore.user?.userId ?? null);
-
-const buildAvatarUrl = (avatar?: string | null): string => {
-  if (!avatar) return "";
-  const trimmed = avatar.trim();
-  if (trimmed.startsWith("http") || trimmed.startsWith("data:image/")) {
-    return trimmed;
-  }
-  const prefix = import.meta.env.VITE_API_BASE_URL || "";
-  if (!prefix) return trimmed;
-  if (trimmed.startsWith("/")) {
-    return `${prefix}${trimmed}`;
-  }
-  return `${prefix}/${trimmed}`;
-};
 
 const resolveDisplayName = (member: ConversationMemberDTO): string => {
   // 1. 群昵称
@@ -466,13 +453,13 @@ const conversationFieldClass = computed(() =>
 
 const conversationAvatarUrl = computed(() => {
   if (!conversation.value?.convAvatar) return "";
-  return buildAvatarUrl(conversation.value.convAvatar);
+  return normalizeAvatarUrl(conversation.value.convAvatar);
 });
 
 // 好友模式下的展示
 const friendAvatarUrl = computed(() => {
   if (!friendInfo.value?.friendAvatar) return "";
-  return buildAvatarUrl(friendInfo.value.friendAvatar);
+  return normalizeAvatarUrl(friendInfo.value.friendAvatar);
 });
 const friendDisplayName = computed(() => {
   if (!friendInfo.value) return "";
@@ -534,7 +521,7 @@ const displayMembers = computed(() =>
     return {
       ...m,
       displayName,
-      avatarUrl: buildAvatarUrl(m.userAvatar),
+      avatarUrl: normalizeAvatarUrl(m.userAvatar),
       roleTag,
       isCurrentUser,
     };

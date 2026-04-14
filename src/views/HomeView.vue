@@ -51,7 +51,9 @@
               class="nav-notification-badge"
               aria-label="未读通知"
             >
-              {{ notificationUnreadCount > 99 ? "99+" : notificationUnreadCount }}
+              {{
+                notificationUnreadCount > 99 ? "99+" : notificationUnreadCount
+              }}
             </span>
           </button>
 
@@ -140,14 +142,14 @@
 
         <!-- 内容切换：新建群聊时为好友多选侧栏，否则会话/好友列表 -->
         <div class="sidebar-content">
-          <div
-            v-if="convCreateStore.active"
-            class="friend-pick-sidebar-wrap"
-          >
+          <div v-if="convCreateStore.active" class="friend-pick-sidebar-wrap">
             <FriendPickSidebar :search-query="searchKeyword" />
           </div>
 
-          <div v-else-if="currentListView === 'chat'" class="chat-list-container">
+          <div
+            v-else-if="currentListView === 'chat'"
+            class="chat-list-container"
+          >
             <ConversationList
               @conversation-click="handleConversationClick"
               :search-query="searchKeyword"
@@ -213,7 +215,9 @@
 
         <!-- 新建群聊（主区域：群名 + 创建按钮） -->
         <ConvCreatePanel
-          v-else-if="convCreateStore.active && convCreateStore.panel === 'group'"
+          v-else-if="
+            convCreateStore.active && convCreateStore.panel === 'group'
+          "
           @exit="exitConvCreate"
           @created="handleGroupCreated"
         />
@@ -555,9 +559,7 @@ const openSingleChatWithPeerUserId = async (peerUserId) => {
     return true;
   } catch (e) {
     const msg =
-      e?.response?.data?.message ||
-      e?.message ||
-      "创建会话失败，请稍后重试";
+      e?.response?.data?.message || e?.message || "创建会话失败，请稍后重试";
     toast.error(msg);
     return false;
   }
@@ -837,8 +839,7 @@ const handleEditSuccess = (message) => {
 
 // 工具方法
 const startNewChat = () => {
-  const from =
-    currentListView.value === "friends" ? "friends" : "chat";
+  const from = currentListView.value === "friends" ? "friends" : "chat";
   convCreateStore.enter(from);
   currentMainView.value = null;
   selectedFriend.value = null;
