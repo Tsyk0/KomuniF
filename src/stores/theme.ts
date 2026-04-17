@@ -1,3 +1,4 @@
+// File: src/stores/theme.ts
 // stores/theme.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -5,7 +6,7 @@ import { ref } from 'vue'
 export const useThemeStore = defineStore('theme', () => {
   const isDarkMode = ref(false)
   
-  // ✅ 关键方法：应用主题到HTML元素
+  // 关键方法：应用主题到 HTML 元素
   const applyTheme = (isDark: boolean): void => {
     const html = document.documentElement
     if (isDark) {
@@ -17,21 +18,21 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
   
-  // ✅ 初始化主题（从localStorage读取）
+  // 初始化主题（从 localStorage 读取）
   const initTheme = (): void => {
     const savedTheme = localStorage.getItem('komuni-theme')
     isDarkMode.value = savedTheme === 'dark'
     applyTheme(isDarkMode.value) // 应用初始主题
   }
   
-  // ✅ 切换主题
+  // 切换主题
   const toggleTheme = (): void => {
     isDarkMode.value = !isDarkMode.value
     applyTheme(isDarkMode.value) // 应用新主题
     localStorage.setItem('komuni-theme', isDarkMode.value ? 'dark' : 'light')
   }
   
-  // ✅ 设置特定主题
+  // 设置特定主题
   const setTheme = (dark: boolean): void => {
     isDarkMode.value = dark
     applyTheme(dark)

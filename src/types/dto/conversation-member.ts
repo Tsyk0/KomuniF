@@ -1,3 +1,4 @@
+// File: src/types/dto/conversation-member.ts
 import type { BaseResponse } from "./base";
 
 /**

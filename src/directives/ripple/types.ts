@@ -1,3 +1,4 @@
+// File: src/directives/ripple/types.ts
 // src/directives/ripple/types.ts
 
 export interface RippleDirectiveBinding {

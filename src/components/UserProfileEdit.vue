@@ -1,3 +1,4 @@
+<!-- File: src/components/UserProfileEdit.vue -->
 <template>
   <!-- 在根元素上添加 user-profile-edit 类名 -->
   <div class="user-profile-edit user-profile-edit-container">

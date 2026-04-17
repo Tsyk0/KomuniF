@@ -1,3 +1,4 @@
+// File: src/entity/conversation.ts
 // src/entity/conversation.ts
 export interface Conversation {
     convId: number;                   // 会话ID

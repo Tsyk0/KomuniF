@@ -1,3 +1,4 @@
+// File: src/apis/notification/index.ts
 import service from "@/apis/service";
 import type {
   ApiResponse,

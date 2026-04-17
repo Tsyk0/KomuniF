@@ -1,3 +1,4 @@
+// File: src/apis/user-search/index.ts
 import service from "@/apis/service";
 import type { BaseResponse } from "@/types/dto/base";
 import type { User } from "@/entity/user";
@@ -21,8 +22,8 @@ export function searchUsersApi(params: {
     method: "get",
     params: {
       keyword: params.keyword.trim(),
-      page: params.page ?? 1,
-      pageSize: params.pageSize ?? 20,
+      page: params.page || 1,
+      pageSize: params.pageSize || 20,
     },
   });
 }

@@ -1,3 +1,4 @@
+// File: src/apis/chat/manage-conversation/index.ts
 import service from "../../service";
 import type { ConversationEntity } from "@/types/dto/conversation-member";
 import type { BaseResponse } from "@/types/dto/base";

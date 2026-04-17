@@ -47,14 +47,14 @@
         title="发送消息"
         @click.stop="handleSendMessage"
       >
-        💬
+        &#128172;
       </button>
       <button
         class="friend-item-action-btn more"
         title="更多操作"
         @click.stop="handleMoreActions"
       >
-        ⋯
+        &#8943;
       </button>
     </div>
   </div>
@@ -64,6 +64,7 @@
 import { computed } from "vue";
 import type { FriendListItem } from "@/types/dto/friend";
 import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { displayNameResolver } from "@/capabilities/show-display-name";
 
 type FriendItemData = FriendListItem & {
   unreadCount?: number;
@@ -84,7 +85,11 @@ const emit = defineEmits<{
 }>();
 
 const displayRemarkName = computed(() => {
-  return props.friend.remarkName || props.friend.nickname || "未知用户";
+  return displayNameResolver.person({
+    remarkName: props.friend.remarkName,
+    userNickname: props.friend.nickname,
+    fallbackName: "未知用户",
+  });
 });
 
 const avatarSrc = computed(() => normalizeAvatarUrl(props.friend.avatar));
@@ -107,7 +112,7 @@ const handleMoreActions = () => {
 </script>
 
 <style scoped>
-/* 这里不需要引入CSS，因为FriendList组件已经引入了 */
+/* 这里不需要引入 CSS，因为 FriendList 组件已经引入。 */
 @import "@/assets/styles/friend-item.css";
 @import "@/assets/styles/night/friend-item-night.css";
 </style>

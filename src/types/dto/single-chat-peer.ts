@@ -1,3 +1,4 @@
+// File: src/types/dto/single-chat-peer.ts
 import type { BaseResponse } from "@/types/dto/base";
 
 /**

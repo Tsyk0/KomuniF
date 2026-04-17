@@ -1,3 +1,4 @@
+// File: src/types/dto/auth.ts
 import type { User } from '@/entity/user'
 
 /**

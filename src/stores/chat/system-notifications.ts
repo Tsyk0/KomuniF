@@ -1,6 +1,11 @@
+// File: src/stores/chat/system-notifications.ts
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
-import { notificationApi } from "@/apis/notification";
+import {
+  loadRecentNotifications,
+  loadRecentNotificationsBeforeAnchor,
+  submitNotificationHandleAction,
+} from "@/capabilities/notification";
 import type {
   NotificationHandleSummaryDTO,
   NotificationHandleAction,
@@ -60,6 +65,15 @@ export const useSystemNotificationsStore = defineStore(
       return [...list].sort((a, b) => a.notificationId - b.notificationId);
     }
 
+    function setNotifications(list: NotificationHandleSummaryDTO[]) {
+      items.value = toAscById(Array.isArray(list) ? list : []);
+      lastAnchorId.value = getOldestNotificationId();
+      currentPage.value = 1;
+      hasMore.value = items.value.length >= DEFAULT_PAGE_SIZE;
+      lastFetchedAt.value = Date.now();
+      errorMessage.value = "";
+    }
+
     async function submitNotificationHandle(
       notificationId: number,
       handleAction: NotificationHandleAction
@@ -69,14 +83,10 @@ export const useSystemNotificationsStore = defineStore(
       }
       handlingNotificationId.value = notificationId;
       try {
-        const resp = await notificationApi.handleNotification({
+        const resp = await submitNotificationHandleAction({
           notificationId,
           handleAction,
         });
-        if (resp.code !== 200) {
-          toast.error(resp.message || "操作失败");
-          return;
-        }
         const idx = items.value.findIndex(
           (n) => n.notificationId === notificationId
         );
@@ -86,17 +96,17 @@ export const useSystemNotificationsStore = defineStore(
             ...cur,
             notification: { ...cur.notification, isRead: true },
             handle: {
-              id: resp.data?.id ?? Date.now(),
+              id: resp.data?.id || Date.now(),
               notificationId: cur.notificationId,
-              handlerUserId: resp.data?.handlerUserId ?? 0,
-              handleAction: resp.data?.handleAction ?? handleAction,
-              handleStatus: resp.data?.handleStatus ?? 1,
-              handleTime: resp.data?.handleTime ?? new Date().toISOString(),
-              failureReason: resp.data?.failureReason ?? null,
-              bizPayload: resp.data?.bizPayload ?? null,
-              clientRequestId: resp.data?.clientRequestId ?? null,
-              createTime: resp.data?.createTime ?? new Date().toISOString(),
-              updateTime: resp.data?.updateTime ?? new Date().toISOString(),
+              handlerUserId: resp.data?.handlerUserId || 0,
+              handleAction: resp.data?.handleAction || handleAction,
+              handleStatus: resp.data?.handleStatus || 1,
+              handleTime: resp.data?.handleTime || new Date().toISOString(),
+              failureReason: resp.data?.failureReason || null,
+              bizPayload: resp.data?.bizPayload || null,
+              clientRequestId: resp.data?.clientRequestId || null,
+              createTime: resp.data?.createTime || new Date().toISOString(),
+              updateTime: resp.data?.updateTime || new Date().toISOString(),
             },
           };
         }
@@ -118,18 +128,10 @@ export const useSystemNotificationsStore = defineStore(
       loading.value = true;
       errorMessage.value = "";
       try {
-        const resp = await notificationApi.getRecentNotifications(page, pageSize);
-        if (resp.code !== 200) {
-          errorMessage.value = resp.message || "加载通知失败";
-          toast.error(resp.message || "加载失败，请稍后重试");
-          return;
-        }
-        const list = Array.isArray(resp.data) ? toAscById(resp.data) : [];
-        items.value = list;
+        const list = await loadRecentNotifications(page, pageSize);
+        setNotifications(list);
         currentPage.value = Math.max(1, Math.floor(page));
-        lastAnchorId.value = getOldestNotificationId();
-        hasMore.value = list.length >= Math.max(1, Math.floor(pageSize));
-        lastFetchedAt.value = Date.now();
+        hasMore.value = items.value.length >= Math.max(1, Math.floor(pageSize));
       } catch (e: unknown) {
         errorMessage.value = "加载失败，请稍后重试";
         toast.error("加载失败，请稍后重试");
@@ -140,7 +142,7 @@ export const useSystemNotificationsStore = defineStore(
 
     async function fetchOlderByAnchor(pageSize: number = DEFAULT_PAGE_SIZE) {
       if (loading.value || loadingMore.value || !hasMore.value) return;
-      const anchorId = lastAnchorId.value ?? getOldestNotificationId();
+      const anchorId = lastAnchorId.value || getOldestNotificationId();
       if (anchorId == null) {
         hasMore.value = false;
         return;
@@ -148,16 +150,10 @@ export const useSystemNotificationsStore = defineStore(
 
       loadingMore.value = true;
       try {
-        const resp = await notificationApi.getRecentNotificationsBeforeAnchor(
+        const incoming = await loadRecentNotificationsBeforeAnchor(
           anchorId,
           pageSize
         );
-        if (resp.code !== 200) {
-          toast.error(resp.message || "加载失败，请稍后重试");
-          return;
-        }
-
-        const incoming = Array.isArray(resp.data) ? toAscById(resp.data) : [];
         if (!incoming.length) {
           hasMore.value = false;
           return;
@@ -193,6 +189,7 @@ export const useSystemNotificationsStore = defineStore(
       isNotificationProcessed,
       unreadCount,
       reset,
+      setNotifications,
       submitNotificationHandle,
       fetchRecent,
       fetchOlderByAnchor,

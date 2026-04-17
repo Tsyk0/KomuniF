@@ -1,3 +1,4 @@
+// File: src/apis/chat/message-search/index.ts
 import service from "../../service";
 import type { SearchMessagesRequest, SearchMessagesResponse } from "@/types/dto/message";
 

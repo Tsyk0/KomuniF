@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:encoding": "node scripts/check-encoding.cjs",
+    "check:garbled": "node scripts/check-garbled-text.cjs",
+    "fix:encoding": "node scripts/convert-gbk-to-utf8.cjs",
+    "verify:encoding": "npm run check:encoding && npm run check:garbled"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

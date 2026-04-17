@@ -1,3 +1,4 @@
+// File: src/services/websocket/websocket.service.ts
 // src/services/websocket/websocket.service.ts
 
 /**

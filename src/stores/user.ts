@@ -1,3 +1,4 @@
+// File: src/stores/user.ts
 // src/stores/user.ts
 import { defineStore } from 'pinia'
 import { 

@@ -1,3 +1,4 @@
+<!-- File: src/components/ConvCreatePanel.vue -->
 <template>
   <div class="conv-create-panel conv-create-panel--main-area">
     <header class="conv-create-toolbar">

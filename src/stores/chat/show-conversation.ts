@@ -1,8 +1,7 @@
-// src/stores/chat/show-conversation.ts
+// File: src/stores/chat/show-conversation.ts
 import { defineStore } from 'pinia';
 import type { ConversationDetailDTO, CompressedCM } from '@/types/dto/conversation';
-import { conversationDetailApi } from '@/apis/chat/conversation-detail';
-import { CompressedCMApi } from '@/apis/chat/compressed-convMem';
+import { loadConversationMembers, loadConversationSummaries } from '@/capabilities/conversation';
 import { useAuthStore } from '@/stores/auth';
 import { resolveConversationDisplayName } from '@/stores/chat/conversation-display-name';
 import { useSingleChatPeerAvatarStore } from '@/stores/chat/single-chat-peer-avatar';
@@ -31,6 +30,14 @@ export const useConversationStore = defineStore('conversation', {
   }),
 
   actions: {
+    setConversations(
+      conversations: ConversationDetailDTO[],
+      currentUserId: number | null = null
+    ) {
+      this.conversations = this.processConversations(conversations, currentUserId);
+      this.updateConversationMap();
+    },
+
     /**
      * 加载用户的会话列表（使用复合查询）
      */
@@ -38,27 +45,15 @@ export const useConversationStore = defineStore('conversation', {
       try {
         this.loadingConversations = true;
 
-        // 使用新的复合查询API
-        const response = await conversationDetailApi.getConversationDetailsViaToken();
+        const authStore = useAuthStore();
+        const summaries = await loadConversationSummaries();
+        this.setConversations(summaries, authStore.user?.userId || null);
 
-        if (response.code === 200) {
-          const authStore = useAuthStore();
-          this.conversations = this.processConversations(
-            response.data,
-            authStore.user?.userId ?? null
-          );
+        // 紧跟 summary：批量拉取单聊对方头像，列表与头部可立即显示
+        const peerAvatarStore = useSingleChatPeerAvatarStore();
+        await peerAvatarStore.loadAllSingleChatPeerProfiles();
 
-          // 更新缓存映射
-          this.updateConversationMap();
-
-          // 紧跟 summary：批量拉取单聊对方头像，列表与头部可立即显示
-          const peerAvatarStore = useSingleChatPeerAvatarStore();
-          await peerAvatarStore.loadAllSingleChatPeerProfiles();
-
-          return this.conversations;
-        } else {
-          throw new Error(response.message || '加载会话失败');
-        }
+        return this.conversations;
       } catch (error) {
         console.error('加载会话列表失败:', error);
         throw error;
@@ -119,14 +114,10 @@ export const useConversationStore = defineStore('conversation', {
       this.loadingCompressedCM = true;
       try {
         console.log(`[loadCompressedCM] 开始加载会话 ${convId} 的群成员`);
-        const response = await CompressedCMApi.getCompressedCM(convId);
-        if (response.code === 200) {
-          this.compressedCMMap.set(convId, response.data);
-          console.log(`[loadCompressedCM] 会话 ${convId} 群成员加载成功，数量: ${response.data.length}`);
-          console.log(`[loadCompressedCM] 群成员数据:`, response.data);
-        } else {
-          console.warn(`[loadCompressedCM] 加载群成员失败: ${response.message}`);
-        }
+        const members = await loadConversationMembers(convId);
+        this.compressedCMMap.set(convId, members);
+        console.log(`[loadCompressedCM] 会话 ${convId} 群成员加载成功，数量: ${members.length}`);
+        console.log(`[loadCompressedCM] 群成员数据:`, members);
       } catch (error) {
         console.error('[loadCompressedCM] 加载群成员出错:', error);
       } finally {
@@ -244,22 +235,22 @@ export const useConversationStore = defineStore('conversation', {
       if (conv.targetUserId == null || conv.targetUserId <= 0) {
         conv.targetUserId = peerFriendUserId;
       }
-      if (!String(conv.convName ?? "").trim()) {
+      if (!String(conv.convName || "").trim()) {
         conv.convName = resolveConversationDisplayName(
           conv,
-          authStore.user?.userId ?? null
+          authStore.user?.userId || null
         );
       }
     },
 
     async refreshConversationById(convId: number) {
       try {
-        const response = await conversationDetailApi.getConversationDetailsViaToken(convId);
-        if (response.code !== 200 || !response.data?.length) return;
+        const summaries = await loadConversationSummaries(convId);
+        if (!summaries.length) return;
         const authStore = useAuthStore();
         const list = this.processConversations(
-          response.data,
-          authStore.user?.userId ?? null
+          summaries,
+          authStore.user?.userId || null
         );
         const updated = list.find((c) => c.convId === convId);
         if (!updated) return;

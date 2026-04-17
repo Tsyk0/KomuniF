@@ -1,3 +1,4 @@
+// File: src/stores/auth.ts
 // src/stores/auth.ts
 import { defineStore } from 'pinia'
 import { loginApi, checkTokenApi, registerApi } from '@/apis/auth'
@@ -46,7 +47,7 @@ export const useAuthStore = defineStore('auth', {
       data?: any
     }> {
       try {
-        console.log('🔄 调用登录接口...', { userId, rememberMe })
+        console.log('调用登录接口...', { userId, rememberMe })
 
         // 登录前先清理之前的认证状态（解决多账号冲突）
         this.forceClearAuth()
@@ -59,16 +60,16 @@ export const useAuthStore = defineStore('auth', {
 
         const response = await loginApi(loginRequest) as LoginResponse
 
-        console.log('✅ 后端响应:', response)
+        console.log('后端响应:', response)
 
         if (response.code === 200) {
           // 0. 保存访问 token（access token）
           const accessToken = response.data.token
           if (accessToken) {
             localStorage.setItem('access_token', accessToken)
-            console.log('🔐 已保存访问 token')
+            console.log('已保存访问 token')
           } else {
-            console.warn('⚠️ 登录成功但未返回访问 token')
+            console.warn('登录成功但未返回访问 token')
           }
 
           // 1. 保存用户信息到 sessionStorage
@@ -81,9 +82,9 @@ export const useAuthStore = defineStore('auth', {
           // 3. 可选：发送一次 checkToken，用于让后端基于 refresh_token 做一次保活
           try {
             await checkTokenApi()
-            console.log('✅ 已调用 /user/checkToken 进行会话保活')
+            console.log('已调用 /user/checkToken 进行会话保活')
           } catch (error) {
-            console.warn('⚠️ 调用 /user/checkToken 失败，但不影响本次登录:', error)
+            console.warn('调用 /user/checkToken 失败，但不影响本次登录:', error)
           }
 
           // 4. 根据 rememberMe 处理 localStorage
@@ -92,10 +93,10 @@ export const useAuthStore = defineStore('auth', {
               userId: userId
             }
             localStorage.setItem('rememberMeData', JSON.stringify(rememberMeData))
-            console.log('💾 已保存记住我数据')
+            console.log('已保存记住我数据')
           } else {
             localStorage.removeItem('rememberMeData')
-            console.log('🗑️ 未保存记住我数据')
+            console.log('未保存记住我数据')
           }
 
           return {
@@ -109,7 +110,7 @@ export const useAuthStore = defineStore('auth', {
           }
         }
       } catch (error: any) {
-        console.error('❌ 登录失败:', error)
+        console.error('登录失败:', error)
 
         let errorMessage = '登录失败'
         if (error.response) {
@@ -150,7 +151,7 @@ export const useAuthStore = defineStore('auth', {
           message: response.message || '注册失败'
         }
       } catch (error: any) {
-        console.error('❌ 注册失败:', error)
+        console.error('注册失败:', error)
 
         let errorMessage = '注册失败'
         if (error.response?.data?.message) {
@@ -177,11 +178,11 @@ export const useAuthStore = defineStore('auth', {
       data?: any
     }> {
       try {
-        console.group('🔍 [AuthStore.autoLogin] 开始')
+        console.group('[AuthStore.autoLogin] 开始')
         console.log('hasRememberMeData:', !!localStorage.getItem('rememberMeData'))
         console.log('hasAccessTokenBeforeCheck:', !!localStorage.getItem('access_token'))
         console.groupEnd()
-        console.log('🚀 尝试免密登录...')
+        console.log('尝试免密登录...')
 
         // 1. 获取记住我数据
         const savedDataStr = localStorage.getItem('rememberMeData')
@@ -193,11 +194,11 @@ export const useAuthStore = defineStore('auth', {
         }
 
         const rememberMeData: RememberMeData = JSON.parse(savedDataStr)
-        console.log('🔑 找到记住的账户:', rememberMeData.userId)
+        console.log('找到记住的账户:', rememberMeData.userId)
 
         // 2. 调用 checkToken API（需要现有 access token + refresh_token Cookie）
         const response: CheckTokenResponse = await checkTokenApi()
-        console.group('🔍 [AuthStore.autoLogin] /auth/sessions/current 响应')
+        console.group('[AuthStore.autoLogin] /auth/sessions/current 响应')
         console.log('code:', response.code)
         console.log('message:', response.message)
         console.log('valid:', response?.data?.valid)
@@ -212,17 +213,17 @@ export const useAuthStore = defineStore('auth', {
             const newToken = response.data.token
             if (newToken) {
               localStorage.setItem('access_token', newToken)
-              console.log('🔐 免密登录：已刷新访问 token')
+              console.log('免密登录：已刷新访问 token')
             }
 
-            // 3. Token有效，直接登录
-            this.user = response.data.user  // ✅ 使用checkToken返回的完整user信息
+            // 3. Token 有效，直接登录
+            this.user = response.data.user  // 使用 checkToken 返回的完整 user 信息
             this.rememberMe = true
 
             // 4. 保存用户信息到 sessionStorage
             sessionStorage.setItem('user', JSON.stringify(response.data.user))
 
-            console.log('✅ 免密登录成功')
+            console.log('免密登录成功')
 
             return {
               success: true,
@@ -232,7 +233,7 @@ export const useAuthStore = defineStore('auth', {
               }
             }
           } else {
-            // Token无效或过期
+            // Token 无效或过期
             localStorage.removeItem('rememberMeData')
             return {
               success: false,
@@ -247,8 +248,8 @@ export const useAuthStore = defineStore('auth', {
           }
         }
       } catch (error: any) {
-        console.error('❌ 免密登录失败:', error)
-        console.group('🔍 [AuthStore.autoLogin] 异常详情')
+        console.error('免密登录失败:', error)
+        console.group('[AuthStore.autoLogin] 异常详情')
         console.log('status:', error?.response?.status)
         console.log('responseData:', error?.response?.data)
         console.log('hasRememberMeDataAfterError:', !!localStorage.getItem('rememberMeData'))
@@ -285,7 +286,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const rememberMeData: RememberMeData = JSON.parse(savedDataStr)
 
-        // 如果传入了当前用户ID，需要匹配
+        // 如果传入了当前用户 ID，需要匹配
         if (currentUserId && currentUserId !== rememberMeData.userId) {
           return false
         }
@@ -303,7 +304,7 @@ export const useAuthStore = defineStore('auth', {
     clearRememberedAccount(): void {
       localStorage.removeItem('rememberMeData')
       this.rememberMe = false
-      console.log('🗑️ 已清除记住的账户')
+      console.log('已清除记住的账户')
     },
 
     /**
@@ -317,9 +318,9 @@ export const useAuthStore = defineStore('auth', {
       // 尝试清理cookie（通过发送一个登出请求）
       try {
         // 这里可以调用后端的登出接口来清理服务端session
-        console.log('🔄 强制清理认证状态完成')
+        console.log('强制清理认证状态完成')
       } catch (error) {
-        console.warn('⚠️ 清理认证状态时出现警告:', error)
+        console.warn('清理认证状态时出现警告:', error)
       }
     },
 
@@ -331,7 +332,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('access_token')
       this.user = null
       this.rememberMe = false
-      console.log('🗑️ 已清除会话存储')
+      console.log('已清除会话存储')
     },
 
     /**
@@ -339,14 +340,14 @@ export const useAuthStore = defineStore('auth', {
      */
     logout(): void {
       this.clearStorage()
-      console.log('👋 用户已登出')
+      console.log('用户已登出')
     },
 
     /**
      * 初始化认证状态
      */
     initAuth(): void {
-      console.log('🔄 初始化认证状态...')
+      console.log('初始化认证状态...')
 
       const sessionUser = sessionStorage.getItem('user')
 
@@ -354,7 +355,7 @@ export const useAuthStore = defineStore('auth', {
         try {
           this.user = JSON.parse(sessionUser)
           this.rememberMe = false
-          console.log('✅ 从 sessionStorage 恢复登录状态')
+          console.log('已从 sessionStorage 恢复登录状态')
           return
         } catch (error) {
           console.error('解析 sessionStorage 用户数据失败:', error)
@@ -364,9 +365,9 @@ export const useAuthStore = defineStore('auth', {
 
       const hasRememberedAccount = localStorage.getItem('rememberMeData')
       if (hasRememberedAccount) {
-        console.log('📋 发现记住的账户，等待用户选择是否免密登录')
+        console.log('发现记住的账户，等待用户选择是否免密登录')
       } else {
-        console.log('📭 没有存储的登录状态')
+        console.log('没有存储的登录状态')
       }
     },
 
@@ -380,13 +381,13 @@ export const useAuthStore = defineStore('auth', {
       const currentToken = localStorage.getItem('access_token')
 
       try {
-        console.group('🔍 [AuthStore.ensureAccessTokenValid] 调用前状态')
+        console.group('[AuthStore.ensureAccessTokenValid] 调用前状态')
         console.log('hasAccessToken:', !!currentToken)
         console.log('hasRememberMeData:', !!localStorage.getItem('rememberMeData'))
         console.groupEnd()
 
         const response: CheckTokenResponse = await checkTokenApi()
-        console.log('🔍 检查 access token 结果:', response)
+        console.log('检查 access token 结果:', response)
 
         if (response.code !== 200 || !response.data) {
           console.warn('ensureAccessTokenValid: 检查失败，code != 200')
@@ -399,7 +400,7 @@ export const useAuthStore = defineStore('auth', {
           // 如果通过 refresh_token 刷新出了新的 access token，则覆盖本地保存
           if (token && (refreshed || token !== currentToken)) {
             localStorage.setItem('access_token', token)
-            console.log('🔐 access token 已更新')
+            console.log('access token 已更新')
           }
 
           // 如果后端返回了最新的用户信息，同步到本地
@@ -418,7 +419,7 @@ export const useAuthStore = defineStore('auth', {
         return false
       } catch (error: any) {
         console.error('ensureAccessTokenValid: 检查 access token 失败:', error)
-        console.group('🔍 [AuthStore.ensureAccessTokenValid] 异常详情')
+        console.group('[AuthStore.ensureAccessTokenValid] 异常详情')
         console.log('status:', error?.response?.status)
         console.log('responseData:', error?.response?.data)
         console.groupEnd()

@@ -1,3 +1,4 @@
+<!-- File: src/components/BaseIcon.vue -->
 <template>
   <svg
     class="kf-icon"
@@ -83,7 +84,12 @@ const ICON_PATHS: Record<IconName, string[]> = {
   ],
 };
 
-const iconPaths = computed(() => ICON_PATHS[props.name] ?? ICON_PATHS.search);
+const iconPaths = computed(() => {
+  const key = props.name;
+  return Object.prototype.hasOwnProperty.call(ICON_PATHS, key)
+    ? ICON_PATHS[key]
+    : ICON_PATHS.search;
+});
 </script>
 
 <style scoped>

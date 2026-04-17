@@ -1,3 +1,4 @@
+<!-- File: src/components/LoginForm.vue -->
 <template>
   <!-- 在根元素上添加 loginform 类名 -->
   <div class="loginform login-form">

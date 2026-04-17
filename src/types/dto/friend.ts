@@ -1,3 +1,4 @@
+// File: src/types/dto/friend.ts
 import type { BaseResponse } from "./base";
 
 export type FriendOnlineStatus = "online" | "offline" | "away";

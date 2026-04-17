@@ -1,3 +1,4 @@
+// File: src/commons/utils/toast.ts
 // Toast服务 - 添加防止滚动功能
 class Toast {
   private container: HTMLElement | null = null;

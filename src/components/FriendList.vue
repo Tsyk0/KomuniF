@@ -37,7 +37,7 @@ const emit = defineEmits<{
 const friendStore = useFriendStore();
 const activeFriendId = ref<number | null>(null);
 
-// 监听外部传入的搜索关键词并同步到 store
+// 监听外部搜索词，实时同步到 store
 watch(
   () => props.searchQuery,
   (newVal) => {
@@ -55,7 +55,7 @@ const handleFriendClick = (friend: FriendListItem) => {
 };
 
 onMounted(() => {
-  friendStore.loadFriends();
+  void friendStore.loadFriends();
 });
 </script>
 

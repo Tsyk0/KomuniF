@@ -1,3 +1,4 @@
+// File: src/entity/message.ts
 // src/types/entity/message.ts
 export interface RealMessage {
     // 数据库基础字段

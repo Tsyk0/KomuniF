@@ -1,3 +1,4 @@
+// File: src/utils/local-db.ts
 import { openDB, type DBSchema } from 'idb'
 import type { MessageDetailDTO } from '@/types/dto/message'
 
@@ -128,8 +129,8 @@ export async function getAllMessagesForConvFromDB(
 
   const filtered = all.filter((m) => !m.isRecalled)
   return filtered.sort((a, b) => {
-    const aMs = (a as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs ?? Date.parse(a.sendTime)
-    const bMs = (b as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs ?? Date.parse(b.sendTime)
+    const aMs = (a as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(a.sendTime)
+    const bMs = (b as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(b.sendTime)
     return aMs - bMs
   })
 }
@@ -186,8 +187,8 @@ export async function searchMessagesInConvFromDB(
   })
 
   hits.sort((a, b) => {
-    const aMs = (a as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs ?? Date.parse(a.sendTime)
-    const bMs = (b as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs ?? Date.parse(b.sendTime)
+    const aMs = (a as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(a.sendTime)
+    const bMs = (b as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(b.sendTime)
     return bMs - aMs
   })
 

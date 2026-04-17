@@ -1,3 +1,4 @@
+// File: src/main.ts
 // main.ts - 修正版本
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

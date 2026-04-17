@@ -1,3 +1,4 @@
+// File: src/apis/chat/message-anchor/index.ts
 import service from "../../service";
 import type {
   MessagesAroundResponse,

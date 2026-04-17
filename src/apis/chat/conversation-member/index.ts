@@ -1,3 +1,4 @@
+// File: src/apis/chat/conversation-member/index.ts
 import service from "../../service";
 import type { GetConversationWithMembersResponse } from "@/types/dto/conversation-member";
 

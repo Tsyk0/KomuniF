@@ -1,11 +1,10 @@
+<!-- File: src/components/SystemNotificationContainer.vue -->
 <template>
   <div class="sys-notif-container">
     <header class="sys-notif-header">
       <div class="sys-notif-header__titles">
         <h2 class="sys-notif-header__title">系统通知</h2>
-        <p class="sys-notif-header__subtitle">
-          好友申请与系统消息会显示在这里
-        </p>
+        <p class="sys-notif-header__subtitle">好友申请与系统消息会显示在这里</p>
       </div>
       <button
         type="button"
@@ -63,7 +62,11 @@
           <p v-else class="sys-notif-pagination__end">没有更多通知了</p>
         </div>
 
-        <ul v-if="displayItems.length > 0" class="sys-notif-list" aria-label="系统通知列表">
+        <ul
+          v-if="displayItems.length > 0"
+          class="sys-notif-list"
+          aria-label="系统通知列表"
+        >
           <li
             v-for="n in displayItems"
             :key="n.notificationId"
@@ -72,8 +75,7 @@
             <div
               class="sys-notif-list-row__card"
               :class="{
-                'sys-notif-list-row__card--activatable':
-                  rowCanToggleActions(n),
+                'sys-notif-list-row__card--activatable': rowCanToggleActions(n),
               }"
               role="presentation"
               @click="onItemCardClick(n)"
@@ -81,7 +83,9 @@
               <SystemNotificationItem
                 :notification="n.notification"
                 :handle="n.handle"
-                :related-label="resolveRelatedLabel(n.notification.relatedUserId)"
+                :related-label="
+                  resolveRelatedLabel(n.notification.relatedUserId)
+                "
                 :accent-variant="rowAccentVariant(n)"
                 :show-unread-meta="rowShowUnreadMeta(n)"
               />
@@ -133,6 +137,9 @@
 import { computed, ref } from "vue";
 import { useSystemNotificationsStore } from "@/stores/chat/system-notifications";
 import { useFriendStore } from "@/stores/friend/show-friend";
+import { useAuthStore } from "@/stores/auth";
+import { useAppBootstrapStore } from "@/stores/app/bootstrap";
+import { displayNameResolver } from "@/capabilities/show-display-name";
 import SystemNotificationItem from "./SystemNotificationItem.vue";
 import {
   notificationRequiresAction,
@@ -142,6 +149,8 @@ import {
 
 const store = useSystemNotificationsStore();
 const friendStore = useFriendStore();
+const authStore = useAuthStore();
+const appBootstrapStore = useAppBootstrapStore();
 
 /** 点击某条 item 后才展开右侧按钮；再次点击同一条收起 */
 const openedActionId = ref<number | null>(null);
@@ -154,12 +163,19 @@ const displayItems = computed(() =>
 function resolveRelatedLabel(relatedUserId: number | null | undefined) {
   if (relatedUserId == null || relatedUserId <= 0) return null;
   const f = friendStore.friends.find((x) => x.friendId === relatedUserId);
-  return f?.displayName || f?.nickname || null;
+  return displayNameResolver.person({
+    remarkName: f?.remarkName,
+    userNickname: f?.nickname,
+    fallbackName: null,
+  });
 }
 
 function refresh() {
   openedActionId.value = null;
-  store.fetchRecent(1, PAGE_SIZE);
+  void appBootstrapStore.loadOne(
+    "notifications",
+    Number(authStore.user?.userId == null ? 0 : authStore.user.userId)
+  );
 }
 
 function loadMore() {

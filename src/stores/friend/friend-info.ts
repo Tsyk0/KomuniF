@@ -1,3 +1,4 @@
+// File: src/stores/friend/friend-info.ts
 import { defineStore } from "pinia";
 import { friendApi } from "@/apis/friend/index";
 import { normalizeAvatarUrl } from "@/utils/avatar-url";
@@ -33,7 +34,7 @@ export const useFriendInfoStore = defineStore("friendInfo", {
 
                 // 避免快速切换好友时旧请求回写覆盖当前详情
                 if (this.currentFriendId === friendId) {
-                    this.friendInfo = response.data ?? null;
+                    this.friendInfo = response.data || null;
                 }
             } catch (err: any) {
                 if (this.currentFriendId === friendId) {
@@ -58,6 +59,6 @@ export const useFriendInfoStore = defineStore("friendInfo", {
 
     getters: {
         avatarUrl: (state) =>
-            normalizeAvatarUrl(state.friendInfo?.friendAvatar ?? "")
+            normalizeAvatarUrl(state.friendInfo?.friendAvatar || "")
     }
 });

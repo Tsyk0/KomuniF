@@ -1,43 +1,9 @@
+// File: src/stores/friend/show-friend.ts
 import { defineStore } from "pinia";
-import { friendApi } from "@/apis/friend/index";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { loadFriendListItems } from "@/capabilities/friend";
 import type {
-  FriendListItem,
-  FriendOnlineStatus,
-  FriendRelationDetailDTO
+  FriendListItem
 } from "@/types/dto/friend";
-
-const normalizeOnlineStatus = (
-  status?: number | null
-): FriendOnlineStatus => {
-  if (status === 1) return "online";
-  if (status === 2) return "away";
-  return "offline";
-};
-
-const mapToFriendListItem = (
-  dto: FriendRelationDetailDTO
-): FriendListItem => {
-  const nickname = dto.friendNickname || "";
-  const remarkName = dto.remarkName || "";
-  const displayName = (remarkName || nickname || "未知用户").trim();
-
-  return {
-    relationId: dto.id,
-    id: dto.friendId,
-    userId: dto.userId,
-    friendId: dto.friendId,
-    displayName,
-    nickname,
-    remarkName,
-    avatar: normalizeAvatarUrl(dto.friendAvatar),
-    signature: dto.friendSignature || "",
-    onlineStatus: normalizeOnlineStatus(dto.friendOnlineStatus),
-    group: dto.friendGroup || "",
-    addTime: dto.addTime || "",
-    updateTime: dto.updateTime || ""
-  };
-};
 
 export const useFriendStore = defineStore("friend", {
   state: () => ({
@@ -47,6 +13,10 @@ export const useFriendStore = defineStore("friend", {
   }),
 
   actions: {
+    setFriends(friends: FriendListItem[]) {
+      this.friends = Array.isArray(friends) ? friends : [];
+    },
+
     async loadFriends() {
       try {
         this.loadingFriends = true;
@@ -57,25 +27,14 @@ export const useFriendStore = defineStore("friend", {
           throw new Error("用户未登录");
         }
 
-        const response = await friendApi.getFriendListByUserId();
-
-        if (response.code !== 200) {
-          throw new Error(response.message || "获取好友列表失败");
-        }
-
-        const mapped = (response.data || []).map(mapToFriendListItem);
-        this.friends = mapped.sort((a, b) =>
-          a.displayName.localeCompare(b.displayName, "zh-Hans-CN", {
-            sensitivity: "base"
-          })
-        );
+        this.setFriends(await loadFriendListItems());
       } catch (error) {
         console.error("加载好友列表失败:", error);
         this.friends = [];
         
-        // Redis服务异常时的降级处理
+        // Redis 异常时可按需降级为空列表
         // if (error.message && error.message.includes('Redis is configured to save RDB snapshots')) {
-        //   console.warn('⚠️ Redis服务异常，返回空列表继续运行');
+        //   console.warn("Redis 服务异常，返回空列表继续运行");
         //   return [];
         // }
         

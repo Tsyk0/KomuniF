@@ -1,3 +1,4 @@
+<!-- File: src/components/ChatSearchResultItem.vue -->
 <template>
   <div
     class="search-result-item"
@@ -17,7 +18,9 @@
         <div class="name" :title="displayName">{{ displayName }}</div>
         <div class="time">{{ timeText }}</div>
       </div>
-      <div class="message" :title="message.messageContent">{{ message.messageContent }}</div>
+      <div class="message" :title="message.messageContent">
+        {{ message.messageContent }}
+      </div>
     </div>
   </div>
 </template>
@@ -25,6 +28,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useMessageItemAvatar } from "@/composables/useMessageItemAvatar";
+import { displayNameResolver } from "@/capabilities/show-display-name";
 import type { DisplayMessage } from "@/entity/message";
 
 const props = defineProps<{
@@ -40,7 +44,12 @@ const emitSelect = () => {
   emit("select", props.message);
 };
 
-const displayName = computed(() => props.message.senderName || String(props.message.senderId ?? ""));
+const displayName = computed(() =>
+  displayNameResolver.person({
+    userNickname: props.message.senderName,
+    fallbackName: String(props.message.senderId == null ? "" : props.message.senderId),
+  })
+);
 
 const fallbackChar = computed(() => {
   const n = displayName.value || "";
@@ -50,7 +59,7 @@ const fallbackChar = computed(() => {
 const { avatarDisplayUrl: avatarUrl, onAvatarError: onImgError } =
   useMessageItemAvatar(
     () => props.message,
-    () => props.convType ?? null
+    () => (props.convType == null ? null : props.convType)
   );
 
 const timeText = computed(() => {

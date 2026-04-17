@@ -1,3 +1,4 @@
+<!-- File: src/components/ChatSearchPanel.vue -->
 <template>
   <div class="chat-search-overlay" role="dialog" aria-label="搜索消息" @keydown.esc.prevent="emitClose">
     <div class="chat-search-panel" @click.stop>
@@ -37,7 +38,7 @@
             v-for="m in results"
             :key="m.messageId"
             :message="m"
-            :conv-type="convType ?? null"
+            :conv-type="convTypeOrNull"
             @select="onSelectResult"
           />
 
@@ -96,7 +97,11 @@ const error = ref<string | null>(null);
 /** 当前关键词下，结果是否完全来自 IndexedDB（加载更多也只翻本地） */
 const searchSource = ref<"local" | "remote">("remote");
 
-const effectivePageSize = computed(() => props.pageSize ?? 20);
+const convTypeOrNull = computed(() => (props.convType == null ? null : props.convType));
+
+const effectivePageSize = computed(() =>
+  props.pageSize == null ? 20 : props.pageSize
+);
 
 // 防抖：用户停止输入一小段时间后才发请求
 let debounceTimer: number | null = null;
@@ -121,11 +126,11 @@ const toDisplayMessage = (dto: MessageSummaryDTO): DisplayMessage => {
     messageContent: dto.messageContent,
     messageStatus: dto.messageStatus,
     isRecalled: dto.isRecalled,
-    replyToMessageId: dto.replyToMessageId ?? null,
-    atUserIds: dto.atUserIds ?? null,
+    replyToMessageId: dto.replyToMessageId == null ? null : dto.replyToMessageId,
+    atUserIds: dto.atUserIds == null ? null : dto.atUserIds,
     sendTime: dto.sendTime,
-    recallTime: dto.recallTime ?? null,
-    senderAvatar: dto.senderAvatar ?? null,
+    recallTime: dto.recallTime == null ? null : dto.recallTime,
+    senderAvatar: dto.senderAvatar == null ? null : dto.senderAvatar,
     senderName: dto.displayName,
     isSentByMe: dto.isSentByMe,
   };
@@ -218,9 +223,12 @@ const runSearch = async (nextPage: number) => {
 
     if (requestId !== latestRequestId) return;
 
-    const incoming = (resp.data?.messages ?? []).map(toDisplayMessage);
-    total.value = resp.data?.total ?? 0;
-    page.value = resp.data?.page ?? nextPage;
+    const rawMessages = resp.data?.messages;
+    const incoming = (rawMessages ? rawMessages : []).map(toDisplayMessage);
+    const totalFromResp = resp.data?.total;
+    total.value = totalFromResp == null ? 0 : totalFromResp;
+    const pageFromResp = resp.data?.page;
+    page.value = pageFromResp == null ? nextPage : pageFromResp;
 
     results.value = isLoadMore ? results.value.concat(incoming) : incoming;
     searchSource.value = "remote";

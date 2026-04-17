@@ -1,3 +1,4 @@
+// File: src/composables/useMessageItemAvatar.ts
 import { computed, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import type { DisplayMessage } from "@/entity/message";
@@ -24,17 +25,17 @@ export function useMessageItemAvatar(
 
     if (isSingle) {
       if (msg.isSentByMe) {
-        return authStore.user?.userAvatar ?? null;
+        return authStore.user?.userAvatar || null;
       }
       const cid = Math.floor(Number(msg.convId));
       if (!Number.isFinite(cid) || cid <= 0) return "";
-      return avatarByConvId.value[cid] ?? "";
+      return avatarByConvId.value[cid] || "";
     }
 
     if (msg.isSentByMe) {
-      return authStore.user?.userAvatar ?? null;
+      return authStore.user?.userAvatar || null;
     }
-    return msg.senderAvatar ?? null;
+    return msg.senderAvatar || null;
   });
 
   watch(rawAvatarSource, () => {

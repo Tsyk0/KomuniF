@@ -1,3 +1,4 @@
+// File: src/types/dto/base.ts
 /**
  * 基础响应类型
  */

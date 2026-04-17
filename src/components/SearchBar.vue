@@ -1,3 +1,4 @@
+<!-- File: src/components/SearchBar.vue -->
 <template>
   <div class="search-bar-container">
     <div class="search-bar-wrapper">
@@ -5,7 +6,6 @@
       <input
         type="text"
         :value="modelValue"
-        :placeholder="placeholder"
         class="search-input"
         @input="handleInput"
       />

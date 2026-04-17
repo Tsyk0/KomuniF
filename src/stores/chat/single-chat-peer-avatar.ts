@@ -1,3 +1,4 @@
+// File: src/stores/chat/single-chat-peer-avatar.ts
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import { conversationPeerApi } from "@/apis/chat/conversation-peer";
@@ -37,7 +38,7 @@ function setCache(
   convId: number,
   raw: string | null | undefined
 ): Record<number, string> {
-  const u = normalizeAvatarUrl((raw ?? "").trim());
+  const u = normalizeAvatarUrl((raw || "").trim());
   if (!u) return map;
   if (map[convId] === u) return map;
   return { ...map, [convId]: u };
@@ -84,7 +85,7 @@ export const useSingleChatPeerAvatarStore = defineStore(
     function getAvatar(convId: number): string {
       const id = Math.floor(Number(convId));
       if (!Number.isFinite(id) || id <= 0) return "";
-      return avatarByConvId.value[id] ?? "";
+      return avatarByConvId.value[id] || "";
     }
 
     /**

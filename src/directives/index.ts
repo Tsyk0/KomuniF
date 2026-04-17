@@ -1,3 +1,4 @@
+// File: src/directives/index.ts
 // src/directives/index.ts
 
 import type { App } from 'vue'

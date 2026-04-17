@@ -1,3 +1,4 @@
+// File: src/composables/useConversationDisplay.ts
 import {
   computed,
   watch,
@@ -25,7 +26,7 @@ export function useConversationDisplay(
     () => toValue(conversation),
     (c) => {
       if (c && Number(c.convType) === 1) {
-        void peerAvatarStore.ensurePeerAvatar(c, authStore.user?.userId ?? null);
+        void peerAvatarStore.ensurePeerAvatar(c, authStore.user?.userId || null);
       }
     },
     { immediate: true }
@@ -36,7 +37,7 @@ export function useConversationDisplay(
     if (!c) return "";
     return resolveConversationDisplayName(
       c,
-      authStore.user?.userId ?? null
+      authStore.user?.userId || null
     );
   });
 
@@ -48,7 +49,7 @@ export function useConversationDisplay(
       const id = Math.floor(Number(c.convId));
       return peerAvatarStore.avatarByConvId[id] || "";
     }
-    return normalizeAvatarUrl(c.convAvatar ?? "");
+    return normalizeAvatarUrl(c.convAvatar || "");
   });
 
   return { displayName, avatar };

@@ -1,3 +1,4 @@
+// File: src/types/dto/message.ts
 import type { BaseResponse } from "./base";
 
 /**

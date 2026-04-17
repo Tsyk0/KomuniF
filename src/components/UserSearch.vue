@@ -1,3 +1,4 @@
+<!-- File: src/components/UserSearch.vue -->
 <template>
   <div class="conv-create-panel conv-create-panel--main-area user-search-root">
     <header class="conv-create-toolbar">
@@ -62,7 +63,7 @@
           </div>
 
           <ul v-else class="user-search-list">
-            <li v-for="u in users" :key="String(u.userId ?? '')">
+            <li v-for="u in users" :key="userKey(u)">
               <UserSearchResultItem
                 :user="u"
                 :selected="
@@ -220,6 +221,11 @@ const detailAvatarBroken = ref(false);
 
 let debounceTimer: number | null = null;
 
+const userKey = (u: User): string => {
+  const id = (u as any)?.userId;
+  return String(id == null ? "" : id);
+};
+
 const selfUserId = computed(() => {
   const id = authStore.user?.userId;
   if (id == null) return null;
@@ -246,7 +252,7 @@ const detailNickname = computed(() => {
   if (!selectedUser.value) return "";
   return (
     selectedUser.value.userNickname?.trim() ||
-    `用户 ${selectedUser.value.userId ?? ""}`
+    `用户 ${selectedUser.value.userId == null ? "" : selectedUser.value.userId}`
   );
 });
 

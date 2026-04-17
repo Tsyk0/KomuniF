@@ -1,13 +1,18 @@
-// src/stores/chat/show-message.ts
+// File: src/stores/chat/show-message.ts
 import { defineStore } from 'pinia';
 import { ref, nextTick } from 'vue';
-import type { DisplayMessage } from '@/entity/message'; // 注意路径是否正确
+import type { DisplayMessage } from '@/entity/message';
 import type { MessageDetailDTO } from '@/types/dto/message';
-import { messageDetailApi } from '@/apis/chat/message-detail';
-import { messageAnchorApi } from '@/apis/chat/message-anchor';
+import {
+  loadConversationHistory,
+  loadMessagesAfterBoundary,
+  loadMessagesAround,
+  loadMessagesBeforeBoundary,
+} from '@/capabilities/message';
 import { useAuthStore } from '@/stores/auth';
 import { useFriendStore } from '@/stores/friend/show-friend';
 import { useConversationStore } from '@/stores/chat/show-conversation';
+import { displayNameResolver } from '@/capabilities/show-display-name';
 import { getRecentMessagesFromDB, saveMessagesToDB, tryGetMessagesAroundFromDB } from '@/utils/local-db';
 
 export const useShowMessageStore = defineStore('message', () => {
@@ -15,28 +20,28 @@ export const useShowMessageStore = defineStore('message', () => {
   const friendStore = useFriendStore();
   const conversationStore = useConversationStore();
 
-  // 当前消息列表
+  // Current message list
   const messages = ref<DisplayMessage[]>([]);
 
-  // 加载状态
+  // Global loading state
   const loading = ref(false);
 
-  // 是否还有更多历史消息可以加载
+  // Whether older history still exists
   const hasMoreHistory = ref(true);
 
-  // 历史消息加载中标记（与普通 loading 区分）
+  // History pagination loading flag
   const historyLoading = ref(false);
 
-  /** 锚点视图：向下分页 append 期间，避免 messages watch 误触发滚到底 */
+  /** Anchor view: loading newer page to avoid watch side effects */
   const anchorNewerPaginateLoading = ref(false);
 
-  /** 由搜索结果「跳到锚点」进入：向上用 /messages/{id}/before，向下用 /after */
+  /** Whether current list is in anchor-view mode (before/after paging) */
   const anchorViewActive = ref(false);
   const canLoadOlderAnchor = ref(true);
   const canLoadNewerAnchor = ref(true);
   const ANCHOR_BOUNDARY_PAGE_SIZE = 50;
 
-  /** 并发多次「跳到锚点」时只应用最后一次请求的结果 */
+  /** Sequence id to discard stale anchor-around responses */
   let anchorAroundRequestSeq = 0;
 
   const resetAnchorView = () => {
@@ -64,7 +69,7 @@ export const useShowMessageStore = defineStore('message', () => {
       recallTime: msg.recallTime,
       senderName: resolveSenderName(
         msg.senderId,
-        msg.displayName || msg.memberNickname || msg.privateDisplayName || '未知用户',
+        msg.displayName || msg.privateDisplayName || 'User',
         msg.convType,
         msg.memberNickname,
         msg.convId
@@ -75,83 +80,41 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   /**
-   * 解析发送者名称
-   * 统一优先级：群昵称 > 好友备注 > 用户昵称
-   * 不论单聊还是群聊，都采用此优先级
+   * Resolve sender display name.
+   * Priority: friend remark > member nickname > user nickname.
    */
   const resolveSenderName = (
     senderId: number,
     defaultName: string,
-    convType?: number,
+    _convType?: number,
     memberNickname?: string | null,
     convId?: number
   ): string => {
-    console.log(`[resolveSenderName] 开始解析 - senderId: ${senderId}, convId: ${convId}, convType: ${convType}`);
-
-    // 1. 群昵称优先（不论单聊还是群聊）
-    let effectiveMemberNickname = memberNickname;
-
-    // 如果没有传入 memberNickname 但有 convId，尝试从 store 查找
+    const friend = friendStore.friends.find((f) => Number(f.friendId) === Number(senderId));
+    let peerNickname = '';
+    let peerMemberNickname = (memberNickname || '').trim();
     if (convId) {
       const members = conversationStore.compressedCMMap.get(convId);
-      console.log(`[resolveSenderName] 从map获取的members:`, members);
-      if (members) {
-        const member = members.find(m => m.userId === senderId);
-        console.log(`[resolveSenderName] 找到的member:`, member);
-        if (member?.memberNickname) {
-          effectiveMemberNickname = member.memberNickname;
-          console.log(`[resolveSenderName] 使用群昵称: ${effectiveMemberNickname}`);
-        }
+      const member = members?.find((m) => Number(m.userId) === Number(senderId));
+      if (!peerMemberNickname) {
+        peerMemberNickname = (member?.memberNickname || '').trim();
       }
+      peerNickname = (member?.userNickname || '').trim();
     }
-
-    // 2. 如果是发送者自己，优先使用群昵称，群昵称为null时使用用户昵称
-    if (senderId === authStore.user?.userId) {
-      // 群昵称优先
-      if (effectiveMemberNickname) {
-        console.log(`[resolveSenderName] 发送者自己，返回群昵称: ${effectiveMemberNickname}`);
-        return effectiveMemberNickname;
-      }
-
-      // 群昵称为null时使用用户昵称
-      const userNickname = authStore.user?.userNickname || '我';
-      console.log(`[resolveSenderName] 发送者自己，群昵称为null，返回用户昵称: ${userNickname}`);
-      return userNickname;
-    }
-
-    // 3. 对于其他人，群昵称优先
-    if (effectiveMemberNickname) {
-      console.log(`[resolveSenderName] 返回群昵称: ${effectiveMemberNickname}`);
-      return effectiveMemberNickname;
-    }
-
-    // 3. 尝试从好友列表中查找 (显示备注名或好友昵称)
-    const friend = friendStore.friends.find(f => f.friendId === senderId);
-    if (friend) {
-      console.log(`[resolveSenderName] 返回好友备注: ${friend.displayName}`);
-      return friend.displayName;
-    }
-
-    // 4. 如果不是好友，尝试从群成员缓存中获取用户昵称
-    if (convId) {
-      const members = conversationStore.compressedCMMap.get(convId);
-      if (members) {
-        const member = members.find(m => m.userId === senderId);
-        if (member?.userNickname) {
-          console.log(`[resolveSenderName] 返回群成员用户昵称: ${member.userNickname}`);
-          return member.userNickname;
-        }
-      }
-    }
-
-    // 5. 默认
-    console.log(`[resolveSenderName] 返回默认名称: ${defaultName}`);
-    return defaultName;
+    return displayNameResolver.messageSender({
+      senderId,
+      currentUserId: authStore.user?.userId || null,
+      currentUserNickname: authStore.user?.userNickname || 'User',
+      remarkName: friend?.remarkName || '',
+      memberNickname: peerMemberNickname,
+      userNickname: friend?.nickname || peerNickname,
+      fallbackName: defaultName || 'User',
+    });
   };
 
   /**
-   * 根据当前好友列表/群成员实时解析发送者显示名（优先级：群昵称 > 好友备注 > 用户昵称）
-   * 用于 MessageItem 等展示，使修改备注后无需重载消息即可更新名称
+   * Resolve sender display name for current friend/member cache.
+   * Used by MessageItem so name updates can be reflected instantly.
    */
   const getSenderDisplayName = (message: DisplayMessage): string => {
     const convId = message.convId;
@@ -162,11 +125,14 @@ export const useShowMessageStore = defineStore('message', () => {
     if (convId) {
       const members = conversationStore.compressedCMMap.get(convId);
       const member = members?.find(m => m.userId === message.senderId);
-      memberNickname = member?.memberNickname ?? null;
+      memberNickname = member?.memberNickname || null;
     }
     return resolveSenderName(
       message.senderId,
-      message.senderName || '未知用户',
+      displayNameResolver.person({
+        userNickname: message.senderName,
+        fallbackName: 'User',
+      }),
       convType,
       memberNickname,
       convId
@@ -174,7 +140,7 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   /**
-   * 加载消息 - 核心功能：获取后端数据显示在前端
+   * Load messages in initial/latest/history mode.
    */
   const loadMessages = async (
     convId: number,
@@ -185,13 +151,11 @@ export const useShowMessageStore = defineStore('message', () => {
 
     if (loadType === 'initial') {
       resetAnchorView();
-      // 使进行中的「锚点 around」请求结果丢弃，避免慢响应覆盖新会话列表
       anchorAroundRequestSeq++;
     }
 
-    // 如果是加载历史且已经没有更多数据，则直接返回
     if (loadType === 'history' && !hasMoreHistory.value) {
-      console.log('没有更多历史消息可加载');
+      console.log('No more history messages to load');
       return;
     }
 
@@ -200,12 +164,11 @@ export const useShowMessageStore = defineStore('message', () => {
       if (loadType === 'history') {
         historyLoading.value = true;
       }
-      console.log(`开始加载消息，会话ID: ${convId}, 类型: ${loadType}`);
+      console.log(`Start loading messages, convId=${convId}, mode=${loadType}`);
 
-      // 获取当前用户ID（仅用于显示是否是自己发送）
       const currentUserId = authStore.user?.userId;
 
-      // 1. 先尝试从本地 IndexedDB 加载缓存（仅在初始加载时）
+      // Try local IndexedDB cache first on initial load.
       if (loadType === 'initial') {
         try {
           const cached = await getRecentMessagesFromDB(convId, 200);
@@ -215,63 +178,50 @@ export const useShowMessageStore = defineStore('message', () => {
             );
             messages.value = cachedDisplay;
             sortMessagesByTime();
-            console.log(`✅ 从本地缓存加载了 ${cached.length} 条消息`);
+            console.log(`Loaded ${cached.length} messages from local cache`);
           }
         } catch (e) {
-          console.warn('读取本地消息缓存失败:', e);
+          console.warn('Failed to read local message cache:', e);
         }
       }
 
-      // 如果浏览器当前检测为离线，则只展示本地缓存，直接返回
+      // Offline mode: show cache only, skip remote request.
       if (loadType === 'initial' && typeof navigator !== 'undefined' && !navigator.onLine) {
-        console.warn('当前为离线模式，只展示本地缓存消息');
+        console.warn('Offline mode: only local cache messages are shown');
         return;
       }
 
-      // 一次拉取条数（后端默认也是 50）
       const pageSize = 50;
 
-      // 初始加载重置“还有历史”的标记
       if (loadType === 'initial') {
         hasMoreHistory.value = true;
       }
 
-      // 调用API获取消息：
-      // - initial / latest：调用新接口，不带 beforeMessageId，后端返回“最新的一批消息”
-      // - history：调用同一个接口，带 beforeMessageId，后端向前拉取更旧的一批
-      let response;
+      // history uses beforeMessageId; initial/latest loads latest page.
+      let messagesData: MessageDetailDTO[] = [];
       if (loadType === 'history' && lastMessageId) {
-        response = await messageDetailApi.getHistoryMessagesByConvId({
+        messagesData = await loadConversationHistory({
           convId,
           beforeMessageId: lastMessageId,
           pageSize
-        } as any);
+        });
       } else {
-        response = await messageDetailApi.getHistoryMessagesByConvId({
+        messagesData = await loadConversationHistory({
           convId,
           pageSize
-        } as any);
+        });
       }
+      console.log(`Fetched ${messagesData.length} messages from server`);
 
-      console.log('API响应:', response);
-
-      if (response.code === 200) {
-        // 提取消息数据（这里API返回的是 any 类型，需要转换）
-        const messagesData: MessageDetailDTO[] = (response.data?.messages || []) as MessageDetailDTO[];
-        console.log(`获取到的消息数量: ${messagesData.length}`);
-
-        // 如果本次 history 拉取为空，说明没有更多历史了
         if (loadType === 'history' && messagesData.length === 0) {
           hasMoreHistory.value = false;
-          console.log('没有更多历史消息可加载，将 hasMoreHistory 标记为 false');
+          console.log('Reached history boundary, hasMoreHistory=false');
         }
 
-        // 处理消息：将原来的 MessageDetailDTO 转换为 DisplayMessage
         const processedMessages = messagesData.map(msg =>
           mapDtoToDisplayMessage(msg, currentUserId)
         );
 
-        // 根据加载类型更新消息列表
         if (loadType === 'initial') {
           messages.value = processedMessages;
         } else if (loadType === 'latest') {
@@ -280,26 +230,22 @@ export const useShowMessageStore = defineStore('message', () => {
           mergeMessages(processedMessages, 'prepend');
         }
 
-        // 按时间排序
         sortMessagesByTime();
 
-        console.log(`处理后消息列表数量: ${messages.value.length}`);
+        console.log(`Current message list size: ${messages.value.length}`);
 
-        // 将本次从服务端获取的消息写入本地 IndexedDB 作为缓存
+        // Persist current fetched page into IndexedDB.
         try {
           await saveMessagesToDB(messagesData);
-          console.log(`✅ 已将 ${messagesData.length} 条消息写入本地缓存`);
+          console.log(`Saved ${messagesData.length} messages to local cache`);
         } catch (e) {
-          console.warn('写入本地消息缓存失败:', e);
+          console.warn('Failed to save messages to local cache:', e);
         }
-      } else {
-        console.error('加载消息失败:', response.message);
-      }
     } catch (error) {
-      console.error('加载消息异常:', error);
+      console.error('Failed to load messages:', error);
     } finally {
       loading.value = false;
-      // 必须在 nextTick 再清 historyLoading：否则 messages 已更新但 watch 读到已是 false，会误执行 scrollToBottom
+      // Delay historyLoading reset to avoid watch-triggered auto-scroll.
       if (loadType === 'history') {
         void nextTick(() => {
           historyLoading.value = false;
@@ -311,33 +257,31 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   /**
-   * 添加单个消息到列表
+   * Add a single message with deduplication.
    */
   const addMessage = (message: DisplayMessage) => {
-    // 确保 isSentByMe 字段正确
     const currentUserId = authStore.user?.userId;
     if (currentUserId) {
       message.isSentByMe = message.senderId === currentUserId;
     }
 
-    // 检查是否已存在
     const exists = messages.value.some(
       msg => msg.messageId === message.messageId
     );
 
     if (!exists) {
       messages.value.push(message);
-      console.log('✅ [show-message] 消息已添加到Store:', message);
+      console.log('[show-message] Added new message to store:', message);
       sortMessagesByTime();
       return true;
     }
 
-    console.log('⚠️ [show-message] 消息已存在，跳过添加:', message.messageId);
+    console.log('[show-message] Message already exists, skip:', message.messageId);
     return false;
   };
 
   /**
-   * 批量添加消息
+   * Batch add messages.
    */
   const addMessages = (newMessages: DisplayMessage[]) => {
     const currentUserId = authStore.user?.userId;
@@ -357,58 +301,55 @@ export const useShowMessageStore = defineStore('message', () => {
     });
 
     sortMessagesByTime();
-    console.log(`✅ [show-message] 批量添加了 ${newMessages.length} 条消息`);
+    console.log(`[show-message] Batch added ${newMessages.length} messages`);
   };
 
   /**
-   * 用服务器消息替换临时消息
+   * Replace temporary message with server message.
    */
   const replaceTempMessage = (tempMessageId: number, serverMessage: DisplayMessage) => {
     const index = messages.value.findIndex(msg => msg.messageId === tempMessageId);
 
     if (index !== -1) {
-      // 更新 isSentByMe 字段
       const currentUserId = authStore.user?.userId;
       if (currentUserId) {
         serverMessage.isSentByMe = serverMessage.senderId === currentUserId;
       }
 
       messages.value[index] = serverMessage;
-      console.log(`✅ [show-message] 临时消息 ${tempMessageId} 已替换为:`, serverMessage.messageId);
+      console.log(`[show-message] Replaced temp message ${tempMessageId} with:`, serverMessage.messageId);
       sortMessagesByTime();
       return true;
     } else {
-      console.log(`⚠️ [show-message] 找不到临时消息 ${tempMessageId}，直接添加服务器消息`);
+      console.log(`[show-message] Temp message ${tempMessageId} not found, append server message directly`);
       return addMessage(serverMessage);
     }
   };
 
   /**
-   * 更新消息状态
+   * Update message status.
    */
   const updateMessageStatus = (messageId: number, status: number) => {
     const index = messages.value.findIndex(msg => msg.messageId === messageId);
     if (index !== -1) {
       messages.value[index].messageStatus = status;
-      console.log(`✅ [show-message] 消息 ${messageId} 状态更新为: ${status}`);
+      console.log(`[show-message] Updated message ${messageId} status to: ${status}`);
       return true;
     }
     return false;
   };
 
   /**
-   * 合并消息到列表
+   * Merge messages by append/prepend mode.
    */
   const mergeMessages = (newMessages: DisplayMessage[], position: 'append' | 'prepend' = 'append') => {
     const currentUserId = authStore.user?.userId;
 
-    // 处理消息字段
     const processedMessages = newMessages.map(msg => ({
       ...msg,
       isSentByMe: currentUserId ? msg.senderId === currentUserId : false
     }));
 
-    // 去重
     const uniqueMessages = processedMessages.filter(newMsg =>
       !messages.value.some(existingMsg =>
         existingMsg.messageId === newMsg.messageId
@@ -416,7 +357,7 @@ export const useShowMessageStore = defineStore('message', () => {
     );
 
     if (uniqueMessages.length === 0) {
-      console.log('⚠️ [show-message] 没有新消息需要合并');
+      console.log('[show-message] No new messages to merge');
       return;
     }
 
@@ -426,16 +367,15 @@ export const useShowMessageStore = defineStore('message', () => {
       messages.value = [...uniqueMessages, ...messages.value];
     }
 
-    console.log(`✅ [show-message] 合并了 ${uniqueMessages.length} 条新消息`);
+    console.log(`[show-message] Merged ${uniqueMessages.length} new messages`);
   };
 
   /**
-   * 按发送时间排序（升序：从旧到新）
+   * Sort messages by send time ascending.
    */
   const sortMessagesByTime = () => {
     const arr = messages.value;
     if (arr.length <= 1) return;
-    // 新数组赋值，避免原地 sort 触发 deep watch 多跑一次（易与 historyLoading 时序竞态）
     messages.value = [...arr].sort((a, b) => {
       const timeA = new Date(a.sendTime).getTime();
       const timeB = new Date(b.sendTime).getTime();
@@ -444,7 +384,7 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   /**
-   * 获取最新的一条消息
+   * Get latest message.
    */
   const getLatestMessage = () => {
     if (messages.value.length === 0) return null;
@@ -452,7 +392,7 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   /**
-   * 获取最旧的一条消息
+   * Get oldest message.
    */
   const getOldestMessage = () => {
     if (messages.value.length === 0) return null;
@@ -460,26 +400,27 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   /**
-   * 清空消息
+   * Clear message list.
    */
   const clearMessages = () => {
     messages.value = [];
     resetAnchorView();
     anchorAroundRequestSeq++;
-    console.log('✅ [show-message] 消息列表已清空');
+    console.log('[show-message] Cleared message list');
   };
 
   /**
-   * 重置消息
+   * Reset message state.
    */
   const resetMessages = () => {
-    console.log('重置消息列表');
+    console.log('Reset message state');
     clearMessages();
     hasMoreHistory.value = true;
   };
 
   /**
-   * GET /messages/{anchorMessageId}/around — 搜索命中后进入会话并展示锚点前后文
+   * GET /messages/{anchorMessageId}/around:
+   * jump to anchor and show surrounding context.
    */
   const loadMessagesAroundAnchor = async (
     anchorMessageId: number,
@@ -491,7 +432,7 @@ export const useShowMessageStore = defineStore('message', () => {
 
     try {
       const expectedConvId =
-        convId ?? conversationStore.currentConversation?.convId ?? null;
+        convId || conversationStore.currentConversation?.convId || null;
 
       let raw: MessageDetailDTO[] = [];
 
@@ -508,12 +449,9 @@ export const useShowMessageStore = defineStore('message', () => {
       }
 
       if (raw.length === 0) {
-        const response = await messageAnchorApi.getAround(anchorMessageId, { windowSize });
+        const around = await loadMessagesAround(anchorMessageId, windowSize);
         if (seq !== anchorAroundRequestSeq) return;
-        if (response.code !== 200) {
-          throw new Error(response.message || '加载锚点上下文失败');
-        }
-        raw = (response.data?.messages || []) as MessageDetailDTO[];
+        raw = (around?.messages || []) as MessageDetailDTO[];
       }
 
       if (seq !== anchorAroundRequestSeq) return;
@@ -529,7 +467,7 @@ export const useShowMessageStore = defineStore('message', () => {
       try {
         await saveMessagesToDB(raw);
       } catch (e) {
-        console.warn('锚点窗口写入本地缓存失败:', e);
+        console.warn('Failed to save anchor window messages to local cache:', e);
       }
     } catch (e) {
       if (seq === anchorAroundRequestSeq) {
@@ -544,7 +482,7 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   /**
-   * 锚点视图：向上衔接更旧消息（边界为当前列表最早一条 messageId）
+   * Anchor view: load older messages before current oldest messageId.
    */
   const loadOlderMessagesBeforeBoundary = async (boundaryMessageId: number) => {
     if (!anchorViewActive.value || !canLoadOlderAnchor.value) return;
@@ -552,15 +490,13 @@ export const useShowMessageStore = defineStore('message', () => {
 
     historyLoading.value = true;
     try {
-      const response = await messageAnchorApi.getBefore(boundaryMessageId, {
-        pageSize: ANCHOR_BOUNDARY_PAGE_SIZE
-      });
-      if (response.code !== 200) {
-        throw new Error(response.message || '加载更早消息失败');
-      }
-      const raw = (response.data?.messages || []) as MessageDetailDTO[];
-      const pageSize = response.data?.pageSize ?? ANCHOR_BOUNDARY_PAGE_SIZE;
-      const total = response.data?.total ?? raw.length;
+      const responseData = await loadMessagesBeforeBoundary(
+        boundaryMessageId,
+        ANCHOR_BOUNDARY_PAGE_SIZE
+      );
+      const raw = (responseData?.messages || []) as MessageDetailDTO[];
+      const pageSize = responseData?.pageSize || ANCHOR_BOUNDARY_PAGE_SIZE;
+      const total = responseData?.total || raw.length;
       if (total < pageSize) {
         canLoadOlderAnchor.value = false;
       }
@@ -571,7 +507,7 @@ export const useShowMessageStore = defineStore('message', () => {
       try {
         await saveMessagesToDB(raw);
       } catch (err) {
-        console.warn('before 分页写入本地缓存失败:', err);
+        console.warn('Failed to save before-page messages to local cache:', err);
       }
       if (raw.length === 0) {
         canLoadOlderAnchor.value = false;
@@ -584,22 +520,20 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   /**
-   * 锚点视图：向下衔接更新消息（边界为当前列表最晚一条 messageId）
+   * Anchor view: load newer messages after current newest messageId.
    */
   const loadNewerMessagesAfterBoundary = async (boundaryMessageId: number) => {
     if (!anchorViewActive.value || !canLoadNewerAnchor.value) return;
 
     anchorNewerPaginateLoading.value = true;
     try {
-      const response = await messageAnchorApi.getAfter(boundaryMessageId, {
-        pageSize: ANCHOR_BOUNDARY_PAGE_SIZE
-      });
-      if (response.code !== 200) {
-        throw new Error(response.message || '加载更新消息失败');
-      }
-      const raw = (response.data?.messages || []) as MessageDetailDTO[];
-      const pageSize = response.data?.pageSize ?? ANCHOR_BOUNDARY_PAGE_SIZE;
-      const total = response.data?.total ?? raw.length;
+      const responseData = await loadMessagesAfterBoundary(
+        boundaryMessageId,
+        ANCHOR_BOUNDARY_PAGE_SIZE
+      );
+      const raw = (responseData?.messages || []) as MessageDetailDTO[];
+      const pageSize = responseData?.pageSize || ANCHOR_BOUNDARY_PAGE_SIZE;
+      const total = responseData?.total || raw.length;
       if (total < pageSize) {
         canLoadNewerAnchor.value = false;
       }
@@ -610,13 +544,13 @@ export const useShowMessageStore = defineStore('message', () => {
       try {
         await saveMessagesToDB(raw);
       } catch (err) {
-        console.warn('after 分页写入本地缓存失败:', err);
+        console.warn('Failed to save after-page messages to local cache:', err);
       }
       if (raw.length === 0) {
         canLoadNewerAnchor.value = false;
       }
     } catch (e) {
-      console.error('加载 after 分页失败:', e);
+      console.error('Failed to load after-page messages:', e);
     } finally {
       void nextTick(() => {
         anchorNewerPaginateLoading.value = false;
@@ -625,7 +559,7 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   return {
-    // 状态
+    // state
     messages,
     loading,
     hasMoreHistory,
@@ -635,7 +569,7 @@ export const useShowMessageStore = defineStore('message', () => {
     canLoadOlderAnchor,
     canLoadNewerAnchor,
 
-    // 方法
+    // actions
     loadMessages,
     loadMessagesAroundAnchor,
     loadOlderMessagesBeforeBoundary,

@@ -1,3 +1,4 @@
+// File: src/commons/utils/image.ts
 export const compressImage = (
   file: File,
   maxWidth = 400,

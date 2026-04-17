@@ -1,9 +1,12 @@
+<!-- File: src/components/ChatContainer.vue -->
 <template>
   <div class="chat-container">
     <div
       v-if="convId"
       class="chat-layout"
-      :class="{ 'info-open': isGroupInfoOpen && (isGroupChat || singlePeerUserId) }"
+      :class="{
+        'info-open': isGroupInfoOpen && (isGroupChat || singlePeerUserId),
+      }"
     >
       <!-- 左侧聊天主区域 -->
       <div class="chat-main">
@@ -86,7 +89,11 @@
           class="messages-container"
           :class="{ 'search-open': isSearchOpen }"
           ref="messagesContainer"
-          @scroll="!isSearchOpen && !isRestoringScroll && scheduleMessagesScrollPagination()"
+          @scroll="
+            !isSearchOpen &&
+              !isRestoringScroll &&
+              scheduleMessagesScrollPagination()
+          "
         >
           <!-- 搜索打开时：只显示搜索面板（通过 v-if 彻底隐藏原消息列表） -->
           <Transition name="chat-search-slide">
@@ -94,8 +101,11 @@
               v-if="isSearchOpen"
               :open="isSearchOpen"
               :conv-id="convId"
-              :conv-type="currentConversation?.convType ?? null"
-              @close="isSearchOpen = false; void restoreMessageScrollPosition()"
+              :conv-type="currentConvTypeOrNull"
+              @close="
+                isSearchOpen = false;
+                void restoreMessageScrollPosition();
+              "
               @jump-to-message="handleJumpToSearchMessage"
             />
           </Transition>
@@ -112,12 +122,15 @@
                 v-for="message in messages"
                 :key="message.messageId"
                 :message="message"
-                :conv-type="currentConversation?.convType ?? null"
+                :conv-type="currentConvTypeOrNull"
                 :flash-anchor="anchorFlashMessageId === message.messageId"
               />
 
               <!-- 没有消息的提示 -->
-              <div v-if="!isLoading && messages.length === 0" class="no-messages">
+              <div
+                v-if="!isLoading && messages.length === 0"
+                class="no-messages"
+              >
                 暂无消息
               </div>
             </div>
@@ -218,7 +231,7 @@ import { useConversationStore } from "@/stores/chat/show-conversation";
 import {
   useWebSocketStore,
   type WebSocketMessage,
-} from "@/stores/chat/websocket-store";
+} from "@/stores/websocket-store";
 import MessageItem from "./MessageItem.vue";
 import ChatSearchPanel from "./ChatSearchPanel.vue";
 import ConversationInfo from "./ConversationInfo.vue";
@@ -262,11 +275,17 @@ const currentConversation = computed(() => {
   if (props.convId == null) return null;
   const cur = conversationStore.currentConversation;
   if (cur?.convId === props.convId) return cur;
-  return conversationStore.conversationMap.get(props.convId) ?? null;
+  const fromMap = conversationStore.conversationMap.get(props.convId);
+  return fromMap == null ? null : fromMap;
 });
 
 const { displayName: conversationDisplayName, avatar: conversationAvatar } =
   useConversationDisplay(currentConversation);
+
+const currentConvTypeOrNull = computed(() => {
+  const t = currentConversation.value?.convType;
+  return t == null ? null : t;
+});
 
 /**
  * 单聊对端 userId：与 HomeView 的 currentFriendId 一致——
@@ -375,9 +394,7 @@ const webSocketListenersInitialized = ref(false);
 const isWebSocketConnecting = ref(false);
 let globalWebSocketCleanup: (() => void) | null = null;
 
-const avatarUrl = computed(() =>
-  normalizeAvatarUrl(conversationAvatar.value)
-);
+const avatarUrl = computed(() => normalizeAvatarUrl(conversationAvatar.value));
 
 const firstChar = computed(() => {
   const name = conversationDisplayName.value || "";
@@ -943,7 +960,10 @@ const scrollAnchorToContainerCenter = (
   const anchorCenterY = aRect.top + aRect.height / 2;
   const containerCenterY = cRect.top + cRect.height / 2;
   const delta = anchorCenterY - containerCenterY;
-  const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+  const maxScroll = Math.max(
+    0,
+    container.scrollHeight - container.clientHeight
+  );
   const next = container.scrollTop + delta;
   container.scrollTop = Math.max(0, Math.min(next, maxScroll));
 };
@@ -952,7 +972,10 @@ const scrollAnchorToContainerCenter = (
  * DOM 渲染略晚于 messages 赋值时，querySelector 会暂时找不到节点；多帧重试。
  * 居中后会在下一帧再校正一次，减轻图片/字体布局导致的偏移。
  */
-const scrollAnchorIntoViewWhenReady = async (messageId: number, maxTries = 24) => {
+const scrollAnchorIntoViewWhenReady = async (
+  messageId: number,
+  maxTries = 24
+) => {
   const waitLayout = async () => {
     await nextTick();
     await new Promise<void>((r) => requestAnimationFrame(() => r()));
@@ -995,7 +1018,7 @@ const handleJumpToSearchMessage = async (messageId: number) => {
     await showMessageStore.loadMessagesAroundAnchor(
       messageId,
       25,
-      props.convId ?? null
+      props.convId == null ? null : props.convId
     );
     if (mySeq !== searchJumpSeq) return;
     const ok = await scrollAnchorIntoViewWhenReady(messageId);
@@ -1211,10 +1234,7 @@ const runMessagesScrollPagination = async () => {
       return;
     }
 
-    if (
-      showMessageStore.historyLoading ||
-      !showMessageStore.hasMoreHistory
-    ) {
+    if (showMessageStore.historyLoading || !showMessageStore.hasMoreHistory) {
       return;
     }
     const oldest = showMessageStore.getOldestMessage();
@@ -1222,11 +1242,7 @@ const runMessagesScrollPagination = async () => {
     paginationInFlight.value = true;
     try {
       await preserveScrollAfterPrepend(() =>
-        showMessageStore.loadMessages(
-          props.convId,
-          "history",
-          oldest.messageId
-        )
+        showMessageStore.loadMessages(props.convId, "history", oldest.messageId)
       );
     } finally {
       paginationInFlight.value = false;

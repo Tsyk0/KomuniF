@@ -1,3 +1,4 @@
+// File: src/types/dto/user.ts
 import type { User } from '@/entity/user'
 
 /**

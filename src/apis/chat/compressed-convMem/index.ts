@@ -1,3 +1,4 @@
+// File: src/apis/chat/compressed-convMem/index.ts
 import service from '../../service';
 import type { GetCompressedCMResponse } from '@/types/dto/conversation';
 

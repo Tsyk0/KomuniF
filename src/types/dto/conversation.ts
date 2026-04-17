@@ -1,3 +1,4 @@
+// File: src/types/dto/conversation.ts
 /**
  * 最后一条消息信息
  */

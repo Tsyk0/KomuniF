@@ -1,3 +1,4 @@
+// File: src/types/websocket/message-types.ts
 // src/types/websocket/message-types.ts
 /**
  * WebSocket消息动作类型定义

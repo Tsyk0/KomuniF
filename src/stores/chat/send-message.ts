@@ -1,3 +1,4 @@
+// File: src/stores/chat/send-message.ts
 // src/stores/chat/send-message.ts
 // 专门处理消息发送功能的Store
 
@@ -6,7 +7,7 @@ import type { BaseResponse } from '@/types/dto/base';
 import type { SendMessageRequest, SendMessageResponseData } from '@/types/dto/message';
 import sendMessageApi from '@/apis/chat/message-send';
 import { ref } from 'vue';
-import { useWebSocketStore } from './websocket-store';
+import { useWebSocketStore } from '@/stores/websocket-store';
 import type { DisplayMessage } from '@/entity/message'; // 新增导入
 
 export const useSendMessageStore = defineStore('sendMessage', () => {
@@ -22,30 +23,30 @@ export const useSendMessageStore = defineStore('sendMessage', () => {
     isSending.value = true;
     
     try {
-      console.log('🔄 [send-message] 发送消息请求:', request);
+      console.log('[send-message] 发送消息请求:', request);
       
       // 1. 首先尝试WebSocket发送
       const wsSuccess = webSocketStore.sendTextMessage(request.convId, request.messageContent);
       
       if (wsSuccess) {
-        console.log('✅ [send-message] WebSocket消息已发送');
+        console.log('[send-message] WebSocket消息已发送');
       } else {
-        console.warn('⚠️ [send-message] WebSocket发送失败，继续HTTP发送');
+        console.warn('[send-message] WebSocket发送失败，继续HTTP发送');
       }
       
       // 2. 发送HTTP消息（确保数据持久化）
       const response: BaseResponse<SendMessageResponseData> = await sendMessageApi(request);
       
-      console.log('📥 [send-message] HTTP响应:', response);
+      console.log('[send-message] HTTP响应:', response);
       
       if (response.code === 200) {
-        console.log('✅ [send-message] 消息发送成功:', response.data);
+        console.log('[send-message] 消息发送成功:', response.data);
         return response.data;
       } else {
         throw new Error(response.message || '发送消息失败');
       }
     } catch (error) {
-      console.error('❌ [send-message] 发送消息失败:', error);
+      console.error('[send-message] 发送消息失败:', error);
       throw error;
     } finally {
       isSending.value = false;

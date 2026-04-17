@@ -1,3 +1,4 @@
+// File: src/apis/friend/index.ts
 import service from "../service";
 import type { BaseResponse } from "@/types/dto/base";
 import type { GetFriendListResponse, GetFriendInfoResponse } from "@/types/dto/friend";

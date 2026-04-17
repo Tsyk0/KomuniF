@@ -1,3 +1,4 @@
+// File: src/apis/friends/friend-request.ts
 import service from "@/apis/service";
 import type { BaseResponse } from "@/types/dto/base";
 

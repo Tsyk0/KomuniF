@@ -1,27 +1,28 @@
+<!-- File: src/components/ConversationList.vue -->
 <!-- src/components/conversation-list.vue -->
 <template>
   <div class="conversation-list">
-    <!-- 加载状态 -->
+    <!-- loading state -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
-      <span>加载中...</span>
+      <span>Loading...</span>
     </div>
 
-    <!-- 错误状态 -->
+    <!-- error state -->
     <div v-else-if="errorMessage" class="error-state">
-      <div class="error-icon">❌</div>
+      <div class="error-icon">!</div>
       <span>{{ errorMessage }}</span>
-      <button @click="retryLoad" class="retry-btn">重试</button>
+      <button @click="retryLoad" class="retry-btn">Retry</button>
     </div>
 
-    <!-- 空状态 -->
+    <!-- empty state -->
     <div v-else-if="conversations.length === 0" class="empty-conversation">
-      <div class="empty-icon">💬</div>
-      <p class="empty-text">暂无会话</p>
-      <p class="empty-hint">开始新的对话或等待好友消息</p>
+      <div class="empty-icon">-</div>
+      <p class="empty-text">No conversations</p>
+      <p class="empty-hint">Start a chat from your friend list.</p>
     </div>
 
-    <!-- 会话列表 -->
+    <!-- conversation list -->
     <div v-else class="conversations-container">
       <ConversationItem
         v-for="conversation in filteredConversations"
@@ -41,6 +42,7 @@ import { useShowMessageStore } from "@/stores/chat/show-message";
 import { useAuthStore } from "@/stores/auth";
 import { findConversationIdsByKeywordFromDB } from "@/utils/local-db";
 import { resolveConversationDisplayName } from "@/stores/chat/conversation-display-name";
+import { displayNameResolver } from "@/capabilities/show-display-name";
 import ConversationItem from "./ConversationItem.vue";
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
 
@@ -54,12 +56,12 @@ const props = defineProps<{
   searchQuery?: string;
 }>();
 
-// 响应式数据
+// error state
 const errorMessage = ref<string | null>(null);
 const messageMatchedConversationIds = ref<Set<number>>(new Set());
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-// 计算属性
+// computed states
 const conversations = computed(() => {
   return conversationStore.conversations || [];
 });
@@ -78,7 +80,7 @@ const filteredConversations = computed(() => {
   return conversations.value.filter((conversation) => {
     const resolvedTitle = resolveConversationDisplayName(
       conversation,
-      authStore.user?.userId ?? null
+      authStore.user?.userId == null ? null : authStore.user.userId
     );
     if (resolvedTitle.toLowerCase().includes(keyword)) {
       return true;
@@ -87,23 +89,29 @@ const filteredConversations = computed(() => {
       return true;
     }
 
-    // 搜索最后消息内容
+    // match by last message content
     const lastMsg = conversation.lastMessage;
     if (lastMsg?.messageContent?.toLowerCase().includes(keyword)) {
       return true;
     }
 
-    // 搜索发送者名称
-    if (lastMsg?.senderDisplayName?.toLowerCase().includes(keyword)) {
+    // match by sender display name
+    const senderName = lastMsg
+      ? displayNameResolver.person({
+          userNickname: lastMsg.senderDisplayName,
+          fallbackName: `User${lastMsg.senderId}`,
+        })
+      : "";
+    if (senderName.toLowerCase().includes(keyword)) {
       return true;
     }
 
-    // 搜索会话ID
+    // match by conversation id
     if (conversation.convId.toString().includes(keyword)) {
       return true;
     }
 
-    // 搜索会话内历史消息（异步检索结果）
+    // match by message hits from IndexedDB
     return matchedConvIdSet.has(conversation.convId);
   });
 });
@@ -112,12 +120,12 @@ const currentConversationId = computed(() => {
   return conversationStore.currentConversation?.convId || null;
 });
 
-// 检查是否为当前活跃会话
+// whether this conversation is active
 const isActiveConversation = (convId: number) => {
   return currentConversationId.value === convId;
 };
 
-// 方法
+// retry
 const retryLoad = async () => {
   errorMessage.value = null;
   await loadConversations();
@@ -132,70 +140,71 @@ const searchConversationByMessages = async (keyword: string) => {
   const normalizedKeyword = keyword.toLowerCase();
   const matchedIds = new Set<number>();
 
-  // 仅在本地 IndexedDB 中检索，避免搜索动作频繁访问后端
+  // search message hits in IndexedDB first
   try {
-    const localMatchedConvIds = await findConversationIdsByKeywordFromDB(normalizedKeyword, {
-      convIds: conversations.value.map((c) => c.convId)
-    });
+    const localMatchedConvIds = await findConversationIdsByKeywordFromDB(
+      normalizedKeyword,
+      {
+        convIds: conversations.value.map((c) => c.convId),
+      }
+    );
     localMatchedConvIds.forEach((id) => matchedIds.add(id));
   } catch (error) {
-    console.warn("本地 IndexedDB 消息搜索失败:", error);
+    console.warn("IndexedDB search failed:", error);
   }
 
   messageMatchedConversationIds.value = matchedIds;
 };
 
-// 加载会话列表
+// load conversations
 const loadConversations = async () => {
   if (conversations.value.length === 0) {
     try {
       await conversationStore.loadConversations();
     } catch (error) {
-      console.error("加载会话列表失败:", error);
-      errorMessage.value = "无法加载会话列表，请检查网络连接";
+      console.error("Failed to load conversations:", error);
+      errorMessage.value = "Failed to load conversations. Please retry.";
     }
   }
 };
 
-// 处理会话点击 - 关键修改点
+// click conversation
 const handleConversationClick = async (convId: number) => {
   try {
-    console.log("conversation-list: 处理会话点击，convId:", convId);
-    console.log("当前会话ID:", currentConversationId.value);
+    console.log("conversation-list: clicked convId:", convId);
+    console.log("current conversation id:", currentConversationId.value);
 
-    // 1. 检查是否是切换不同会话
+    // 1. detect whether user switched conversation
     const isSwitchingConversation = currentConversationId.value !== convId;
 
-    // 2. 设置当前会话
+    // 2. set current conversation
     conversationStore.setCurrentConversation(convId);
 
-    // 3. 只有在切换不同会话时才清空消息
+    // 3. clear stale messages when switching
     if (isSwitchingConversation) {
-      console.log("切换不同会话，清空消息");
+      console.log("conversation switched, clearing stale messages");
       showMessageStore.clearMessages();
     } else {
-      console.log("点击相同会话，不清空消息");
+      console.log("same conversation, keep current messages");
     }
 
-    // 4. 加载消息
-    console.log("开始加载消息...");
+    // 4. load messages
+    console.log("loading messages...");
     await showMessageStore.loadMessages(convId);
-    console.log("消息加载完成");
+    console.log("messages loaded");
 
-    // 5. 标记为已读
+    // 5. mark as read
     conversationStore.markAsRead(convId);
 
-    // 6. 触发自定义事件
+    // 6. emit event to parent
     emit("conversation-click", convId);
   } catch (error) {
-    console.error("切换会话失败:", error);
-    errorMessage.value = "无法加载会话消息";
+    console.error("Failed to open conversation:", error);
+    errorMessage.value = "Failed to open conversation. Please retry.";
   }
 };
 
-
-
-// 生命周期
+// lifecycle
 onMounted(async () => {
   await loadConversations();
 });
@@ -228,14 +237,13 @@ watch(
   { immediate: true }
 );
 
-
-// 定义事件
+// emits
 const emit = defineEmits<{
   (event: "conversation-click", convId: number): void;
 }>();
 </script>
 
 <style scoped>
-/* 完全移除内联样式 */
+/* conversation list styles */
 @import "@/assets/styles/conversation-list.css";
 </style>

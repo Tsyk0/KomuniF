@@ -1,3 +1,4 @@
+// File: src/apis/chat/message-send/index.ts
 import service from '../../service';
 import type { BaseResponse } from '@/types/dto/base';
 import type { SendMessageRequest, SendMessageResponseData } from '@/types/dto/message';

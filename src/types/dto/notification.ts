@@ -1,3 +1,4 @@
+// File: src/types/dto/notification.ts
 import type { BaseResponse } from "@/types/dto/base";
 
 /** 与后端约定一致：成功 code 一般为 200 */

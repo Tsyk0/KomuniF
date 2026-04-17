@@ -125,7 +125,7 @@
 import { computed, watch, onMounted, onUnmounted } from "vue";
 import { useFriendInfoStore } from "@/stores/friend/friend-info";
 import type { FriendListItem } from "@/types/dto/friend";
-import BaseIcon from "./BaseIcon.vue";
+import { displayNameResolver } from "@/capabilities/show-display-name";
 
 const props = defineProps<{
   friend: FriendListItem;
@@ -143,7 +143,11 @@ const info = computed(() => friendInfoStore.friendInfo);
 
 const displayName = computed(() => {
   if (!info.value) return "未知用户";
-  return info.value.remarkName || info.value.friendNickname || "未知用户";
+  return displayNameResolver.person({
+    remarkName: info.value.remarkName,
+    userNickname: info.value.friendNickname,
+    fallbackName: "未知用户",
+  });
 });
 
 const displayInitial = computed(() =>

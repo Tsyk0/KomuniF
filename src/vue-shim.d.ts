@@ -1,3 +1,4 @@
+// File: src/vue-shim.d.ts
 // vue-shim.d.ts
 declare module '*.vue' {
   import { DefineComponent } from 'vue'

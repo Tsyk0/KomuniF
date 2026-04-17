@@ -1,3 +1,4 @@
+// File: src/apis/user/index.ts
 // src/apis/user/index.ts
 import service from '../service'
 import type { UpdateUserRequest, UpdateUserResponse } from '@/types/dto/user'

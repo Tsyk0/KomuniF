@@ -1,3 +1,4 @@
+<!-- File: src/components/SystemNotificationItem.vue -->
 <template>
   <article
     class="sys-notif-item"

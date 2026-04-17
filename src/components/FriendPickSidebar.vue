@@ -1,3 +1,4 @@
+<!-- File: src/components/FriendPickSidebar.vue -->
 <template>
   <div class="friend-pick-sidebar">
     <div class="friend-pick-scroll">
@@ -23,7 +24,7 @@
                 class="friend-pick-avatar-img"
               />
               <span v-else class="friend-pick-avatar-ph">{{
-                (f.displayName || f.nickname || "?").charAt(0).toUpperCase()
+                getFriendDisplayName(f).charAt(0).toUpperCase()
               }}</span>
             </div>
             <div class="friend-pick-text">
@@ -53,6 +54,7 @@ import { computed, watch } from "vue";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import { useAuthStore } from "@/stores/auth";
 import { useConvCreateStore } from "@/stores/chat/conv-create";
+import { displayNameResolver } from "@/capabilities/show-display-name";
 
 const props = defineProps<{
   searchQuery?: string;
@@ -71,6 +73,15 @@ watch(
 );
 
 const myUserId = computed(() => Number(authStore.user?.userId) || 0);
+
+const getFriendDisplayName = (friend: {
+  displayName?: string;
+  nickname?: string;
+}) =>
+  displayNameResolver.person({
+    userNickname: friend.displayName || friend.nickname,
+    fallbackName: "Unknown user",
+  });
 
 const selectableFriends = computed(() =>
   friendStore.filteredFriends.filter((f) => f.friendId !== myUserId.value)

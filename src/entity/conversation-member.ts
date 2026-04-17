@@ -1,3 +1,4 @@
+// File: src/entity/conversation-member.ts
 // src/entity/conversation-member.ts
 export interface ConversationMember {
     id: number;                     // 主键ID

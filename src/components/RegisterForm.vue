@@ -1,3 +1,4 @@
+<!-- File: src/components/RegisterForm.vue -->
 <template>
   <div class="register-form">
     <h2>创建新账户</h2>

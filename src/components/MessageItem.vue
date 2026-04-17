@@ -1,3 +1,4 @@
+<!-- File: src/components/MessageItem.vue -->
 <template>
   <div class="message-item" :data-message-id="String(message.messageId)">
     <!-- 他人发送的消息 -->
@@ -83,7 +84,7 @@ const friendStore = useFriendStore();
 
 const { avatarDisplayUrl, onAvatarError } = useMessageItemAvatar(
   () => props.message,
-  () => props.convType ?? null
+  () => (props.convType == null ? null : props.convType)
 );
 
 const isSentByMe = computed(() => props.message.isSentByMe);

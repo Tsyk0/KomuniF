@@ -1,3 +1,4 @@
+<!-- File: src/components/UserSearchResultItem.vue -->
 <template>
   <button
     type="button"
@@ -39,7 +40,9 @@ const emit = defineEmits<{
 const imgBroken = ref(false);
 
 const nickname = computed(
-  () => props.user.userNickname?.trim() || `用户 ${props.user.userId ?? ""}`
+  () =>
+    props.user.userNickname?.trim() ||
+    `用户 ${props.user.userId == null ? "" : props.user.userId}`
 );
 
 const initial = computed(() =>

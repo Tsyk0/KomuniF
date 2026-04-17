@@ -1,3 +1,4 @@
+// File: src/directives/ripple/index.ts
 // src/directives/ripple/index.ts
 
 import type { DirectiveBinding, ObjectDirective } from 'vue'

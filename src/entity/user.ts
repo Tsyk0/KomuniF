@@ -1,3 +1,4 @@
+// File: src/entity/user.ts
 export interface User {
   userId?: number           // 用户ID
   userNickname?: string     // 用户昵称

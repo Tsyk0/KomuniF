@@ -1,3 +1,4 @@
+<!-- File: src/components/MoreOptions.vue -->
 <template>
   <!-- 在根元素上添加 more-options 类名 -->
   <div class="more-options more-options-container">

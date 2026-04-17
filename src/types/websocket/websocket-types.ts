@@ -1,3 +1,4 @@
+// File: src/types/websocket/websocket-types.ts
 // src/types/websocket/websocket-types.ts
 import type { WebSocketConnectionState, WebSocketMessage, MessageHandler } from './message-types';
 

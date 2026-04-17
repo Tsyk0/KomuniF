@@ -1,3 +1,4 @@
+<!-- File: src/views/LoginView.vue -->
 <template>
   <!-- 确保选择器匹配：.loginview.login-container -->
   <div class="loginview login-container">

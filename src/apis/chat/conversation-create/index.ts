@@ -1,3 +1,4 @@
+// File: src/apis/chat/conversation-create/index.ts
 import service from "../../service";
 import type { BaseResponse } from "@/types/dto/base";
 
@@ -32,7 +33,7 @@ export function createConversationApi(
     memberUserIds: payload.memberUserIds,
   };
   if (!payload.single) {
-    body.convName = (payload.convName ?? "").trim();
+    body.convName = (payload.convName || "").trim();
   }
   return service({
     url: "/conversations/create",

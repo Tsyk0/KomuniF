@@ -1,3 +1,4 @@
+<!-- File: src/components/FriendGroup.vue -->
 <!-- src/components/FriendGroup.vue -->
 <template>
   <div class="friend-group">

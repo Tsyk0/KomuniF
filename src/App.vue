@@ -1,3 +1,4 @@
+<!-- File: src/App.vue -->
 <!-- App.vue -->
 <template>
   <div id="app">

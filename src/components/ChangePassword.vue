@@ -1,3 +1,4 @@
+<!-- File: src/components/ChangePassword.vue -->
 <template>
   <div class="change-password-container">
     <div class="change-password-header">

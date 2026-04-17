@@ -1,5 +1,7 @@
+// File: src/stores/chat/conversation-display-name.ts
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
 import { useFriendStore } from "@/stores/friend/show-friend";
+import { displayNameResolver } from "@/capabilities/show-display-name";
 
 /** 群聊未设置会话名时的默认文案 */
 export const DEFAULT_GROUP_CHAT_DISPLAY_NAME = "群聊会话";
@@ -9,15 +11,14 @@ export const DEFAULT_GROUP_CHAT_DISPLAY_NAME = "群聊会话";
  * 单聊会话标题只走备注/用户昵称时，不传 `groupMemberNickname` 即可（该级自动跳过）。
  */
 export function resolvePersonDisplayName(parts: {
-  groupMemberNickname?: string | null;
   remarkName?: string | null;
   userNickname?: string | null;
 }): string {
-  const groupNick = (parts.groupMemberNickname ?? "").trim();
-  if (groupNick) return groupNick;
-  const remark = (parts.remarkName ?? "").trim();
-  if (remark) return remark;
-  return (parts.userNickname ?? "").trim();
+  return displayNameResolver.person({
+    remarkName: parts.remarkName,
+    userNickname: parts.userNickname,
+    fallbackName: "用户",
+  });
 }
 
 /** 策略上下文：同一会话 DTO + 当前用户，可选「刚创建单聊」时的对方 ID 覆盖 */
@@ -60,64 +61,62 @@ function inferPeerUserId(ctx: ConversationTitleResolveContext): number | null {
   return null;
 }
 
-/** 用 GET /friends 落在 friendStore 的数据，按 {@link resolvePersonDisplayName} 解析对方（无群昵称级） */
-function peerTitleFromFriendList(peerUserId: number): string {
-  const pid = Number(peerUserId);
-  if (!Number.isFinite(pid) || pid <= 0) return "";
-  const friendStore = useFriendStore();
-  const f = friendStore.friends.find(
-    (x) => Number(x.friendId) === pid || Number(x.userId) === pid
-  );
-  if (!f) return "";
-  return resolvePersonDisplayName({
-    remarkName: f.remarkName,
-    userNickname: f.nickname,
-  });
-}
-
 const singleChatTitleStrategy: ConversationTitleStrategy = {
   resolve(ctx) {
     const { conv, currentUserId } = ctx;
-    /** 单聊优先展示「对方」昵称/备注，再退回服务端会话名，避免 convName 沿用群聊默认文案导致首字占位错乱 */
     const peerId = inferPeerUserId(ctx);
+    let peerRemarkName = "";
+    let peerNickname = "";
+    let isPeerFriend = false;
     if (peerId != null) {
-      const fromFriends = peerTitleFromFriendList(peerId);
-      if (fromFriends) return fromFriends;
+      const pid = Number(peerId);
+      const friendStore = useFriendStore();
+      const f = friendStore.friends.find(
+        (x) => Number(x.friendId) === pid || Number(x.userId) === pid
+      );
+      if (f) {
+        isPeerFriend = true;
+        peerRemarkName = (f.remarkName || "").trim();
+        peerNickname = (f.nickname || "").trim();
+      }
     }
-
-    const lm = conv.lastMessage;
-    if (
-      lm &&
-      currentUserId != null &&
-      lm.senderId !== currentUserId &&
-      (lm.senderDisplayName || "").trim()
-    ) {
-      return lm.senderDisplayName.trim();
-    }
-
-    const serverName = (conv.convName || "").trim();
-    if (serverName) return serverName;
-
-    const priv = (conv.privateDisplayName || "").trim();
-    if (priv) return priv;
-
-    return "";
+    return displayNameResolver.conversationTitle({
+      convType: 1,
+      convName: conv.convName,
+      privateDisplayName: conv.privateDisplayName,
+      isPeerFriend,
+      peerRemarkName,
+      peerNickname:
+        peerNickname ||
+        (conv.lastMessage &&
+        currentUserId != null &&
+        Number(conv.lastMessage.senderId) !== Number(currentUserId)
+          ? conv.lastMessage.senderDisplayName
+          : ""),
+      defaultGroupTitle: DEFAULT_GROUP_CHAT_DISPLAY_NAME,
+    });
   },
 };
 
 const groupChatTitleStrategy: ConversationTitleStrategy = {
   resolve({ conv }) {
-    const serverName = (conv.convName || "").trim();
-    if (serverName) return serverName;
-    const priv = (conv.privateDisplayName || "").trim();
-    if (priv) return priv;
-    return DEFAULT_GROUP_CHAT_DISPLAY_NAME;
+    return displayNameResolver.conversationTitle({
+      convType: 2,
+      convName: conv.convName,
+      privateDisplayName: conv.privateDisplayName,
+      defaultGroupTitle: DEFAULT_GROUP_CHAT_DISPLAY_NAME,
+    });
   },
 };
 
 const unknownConvTypeTitleStrategy: ConversationTitleStrategy = {
   resolve({ conv }) {
-    return (conv.convName || "").trim();
+    return displayNameResolver.conversationTitle({
+      convType: Number(conv.convType),
+      convName: conv.convName,
+      privateDisplayName: conv.privateDisplayName,
+      defaultGroupTitle: DEFAULT_GROUP_CHAT_DISPLAY_NAME,
+    });
   },
 };
 
@@ -138,7 +137,7 @@ export function resolveConversationDisplayName(
   peerUserIdOverride?: number | null
 ): string {
   const strategy =
-    titleStrategyByConvType[conv.convType] ?? unknownConvTypeTitleStrategy;
+    titleStrategyByConvType[conv.convType] || unknownConvTypeTitleStrategy;
   return strategy.resolve({
     conv,
     currentUserId,

@@ -1,3 +1,4 @@
+// File: src/stores/chat/conv-create.ts
 import { defineStore } from "pinia";
 
 export type ConvCreatePanel = "group" | "add-friend";
@@ -12,7 +13,7 @@ export const useConvCreateStore = defineStore("convCreate", {
     panel: "group" as ConvCreatePanel,
     /** 选中的好友 userId（不含自己） */
     selectedFriendIds: [] as number[],
-    /** 点击 ➕ 进入前的 currentListView，用于退出时恢复 */
+    /** 点击进入前的 currentListView，用于退出时恢复 */
     savedListView: "chat" as "chat" | "friends",
   }),
 

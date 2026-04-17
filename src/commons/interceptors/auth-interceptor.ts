@@ -1,3 +1,4 @@
+// File: src/commons/interceptors/auth-interceptor.ts
 // src/commons/interceptors/auth-interceptor.ts
 import type {
   InternalAxiosRequestConfig,
