@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import type { User } from "@/entity/user";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 
 const props = defineProps<{
   user: User;

@@ -1,4 +1,4 @@
-// File: src/utils/avatar-url.ts
+// File: src/commons/utils/avatar-url.ts
 /**
  * 统一头像地址：会话列表、好友列表、聊天顶栏等处共用，与 Pinia 好友映射一致（基于 VITE_API_BASE_URL）。
  */

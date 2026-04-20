@@ -3,9 +3,9 @@ import { defineStore } from "pinia";
 import { AppInitLoader } from "@/capabilities/init";
 import type { InitResult, InitTarget } from "@/capabilities/init";
 import { useFriendStore } from "@/stores/friend/show-friend";
-import { useConversationStore } from "@/stores/chat/show-conversation";
-import { useSystemNotificationsStore } from "@/stores/chat/system-notifications";
-import { useSingleChatPeerAvatarStore } from "@/stores/chat/single-chat-peer-avatar";
+import { useConversationStore } from "@/stores/conv/show-conversation";
+import { useSystemNotificationsStore } from "@/stores/notification/system-notifications";
+import { useSingleChatPeerAvatarStore } from "@/stores/conv/single-chat-peer-avatar";
 
 const loader = new AppInitLoader();
 

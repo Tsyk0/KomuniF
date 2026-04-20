@@ -49,8 +49,8 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useConversationDisplay } from "@/composables/useConversationDisplay";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { useConversationDisplay } from "@/capabilities/show-display-avatar";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
 import { useAuthStore } from "@/stores/auth";
 import { useFriendStore } from "@/stores/friend/show-friend";

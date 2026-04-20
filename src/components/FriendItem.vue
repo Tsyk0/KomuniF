@@ -63,7 +63,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { FriendListItem } from "@/types/dto/friend";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import { displayNameResolver } from "@/capabilities/show-display-name";
 
 type FriendItemData = FriendListItem & {

@@ -1,5 +1,4 @@
-// File: src/directives/index.ts
-// src/directives/index.ts
+// File: src/assets/directives/index.ts
 
 import type { App } from 'vue'
 import rippleDirective from './ripple/index'

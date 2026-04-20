@@ -135,7 +135,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useSystemNotificationsStore } from "@/stores/chat/system-notifications";
+import { useSystemNotificationsStore } from "@/stores/notification/system-notifications";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import { useAuthStore } from "@/stores/auth";
 import { useAppBootstrapStore } from "@/stores/app/bootstrap";

@@ -1,4 +1,4 @@
-// File: src/stores/chat/system-notifications.ts
+// File: src/stores/notification/system-notifications.ts
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import {

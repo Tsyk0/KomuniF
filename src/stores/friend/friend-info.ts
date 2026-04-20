@@ -1,7 +1,7 @@
 // File: src/stores/friend/friend-info.ts
 import { defineStore } from "pinia";
 import { friendApi } from "@/apis/friend/index";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import type { FriendInfoDTO } from "@/types/dto/friend";
 
 export const useFriendInfoStore = defineStore("friendInfo", {

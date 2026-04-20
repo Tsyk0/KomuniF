@@ -65,7 +65,7 @@ import ChatSearchResultItem from "@/components/ChatSearchResultItem.vue";
 import type { DisplayMessage } from "@/entity/message";
 import type { MessageSummaryDTO } from "@/types/dto/message";
 import { searchMessagesApi } from "@/apis/chat/message-search";
-import { searchMessagesInConvFromDB } from "@/utils/local-db";
+import { searchMessagesInConvFromDB } from "@/commons/utils/local-db";
 
 const props = defineProps<{
   open: boolean;

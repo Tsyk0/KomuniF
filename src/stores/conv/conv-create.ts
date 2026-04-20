@@ -1,4 +1,4 @@
-// File: src/stores/chat/conv-create.ts
+// File: src/stores/conv/conv-create.ts
 import { defineStore } from "pinia";
 
 export type ConvCreatePanel = "group" | "add-friend";

@@ -5,10 +5,19 @@ import type {
   PersonDisplayNameInput,
 } from "./types";
 
-const DEFAULT_GROUP_TITLE = "\u7fa4\u804a";
-const DEFAULT_UNKNOWN_USER = "\u7528\u6237";
+// const DEFAULT_GROUP_TITLE = "\u7fa4\u804a";
+const DEFAULT_GROUP_TITLE = "会话";
+// const DEFAULT_UNKNOWN_USER = "\u7528\u6237";
+const DEFAULT_UNKNOWN_USER = "用户";
 
 const normalize = (value?: string | null): string => (value || "").trim();
+
+/**
+ * 标记不可读展示文本（常见于编码损坏后出现 replacement char）。
+ */
+export function isUnreadableDisplayText(value?: string | null): boolean {
+  return normalize(value).includes("\uFFFD");
+}
 
 export function resolvePersonDisplayName(input: PersonDisplayNameInput): string {
   const remark = normalize(input.remarkName);
@@ -20,6 +29,7 @@ export function resolvePersonDisplayName(input: PersonDisplayNameInput): string 
 
 export function resolveConversationTitle(input: ConversationTitleInput): string {
   if (Number(input.convType) === 1) {
+    // 如果是单聊，则返回策略名（优先级）
     const peerNickname = normalize(input.peerNickname);
     if (input.isPeerFriend) {
       return resolvePersonDisplayName({

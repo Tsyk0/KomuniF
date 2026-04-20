@@ -2,7 +2,7 @@
 import { messageAnchorApi } from "@/apis/chat/message-anchor";
 import { messageDetailApi } from "@/apis/chat/message-detail";
 import type {
-  MessageDetailDTO,
+  MessageSummaryDTO,
   MessagesAroundResponseData,
   MessagesBoundaryPageResponseData,
 } from "@/types/dto/message";
@@ -11,12 +11,12 @@ export async function loadConversationHistory(params: {
   convId: number;
   beforeMessageId?: number;
   pageSize?: number;
-}): Promise<MessageDetailDTO[]> {
+}): Promise<MessageSummaryDTO[]> {
   const response = await messageDetailApi.getHistoryMessagesByConvId(params);
   if (response.code !== 200) {
     throw new Error(response.message || "加载历史消息失败");
   }
-  return (response.data?.messages || []) as MessageDetailDTO[];
+  return (response.data?.messages || []) as MessageSummaryDTO[];
 }
 
 export async function loadMessagesAround(

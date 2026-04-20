@@ -362,11 +362,11 @@ import { computed, onMounted, ref, watch } from "vue";
 import toast from "@/commons/utils/toast";
 import { useAuthStore } from "@/stores/auth";
 import { useFriendStore } from "@/stores/friend/show-friend";
-import { useConversationStore } from "@/stores/chat/show-conversation";
+import { useConversationStore } from "@/stores/conv/show-conversation";
 import { conversationMemberApi } from "@/apis/chat/conversation-member";
 import { manageConversationApi } from "@/apis/chat/manage-conversation";
 import { friendApi } from "@/apis/friend";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import { displayNameResolver } from "@/capabilities/show-display-name";
 import { BootstrapLoader } from "@/capabilities/load";
 import type {

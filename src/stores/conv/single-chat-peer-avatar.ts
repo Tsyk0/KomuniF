@@ -1,10 +1,10 @@
-// File: src/stores/chat/single-chat-peer-avatar.ts
+// File: src/stores/conv/single-chat-peer-avatar.ts
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import { conversationPeerApi } from "@/apis/chat/conversation-peer";
 import { friendApi } from "@/apis/friend/index";
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 
 const inflight = new Set<number>();
 

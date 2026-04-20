@@ -224,19 +224,16 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
-import { useShowMessageStore } from "@/stores/chat/show-message";
-import { useSendMessageStore } from "@/stores/chat/send-message";
+import { useShowMessageStore } from "@/stores/message/show-message";
+import { useSendMessageStore } from "@/stores/message/send-message";
 import { useAuthStore } from "@/stores/auth";
-import { useConversationStore } from "@/stores/chat/show-conversation";
-import {
-  useWebSocketStore,
-  type WebSocketMessage,
-} from "@/stores/websocket-store";
+import { useConversationStore } from "@/stores/conv/show-conversation";
+import { useWebSocketStore } from "@/stores/websocket-store";
 import MessageItem from "./MessageItem.vue";
 import ChatSearchPanel from "./ChatSearchPanel.vue";
 import ConversationInfo from "./ConversationInfo.vue";
-import { useConversationDisplay } from "@/composables/useConversationDisplay";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { useConversationDisplay } from "@/capabilities/show-display-avatar";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
 import type { SendMessageResponseData } from "@/types/dto/message";
@@ -577,10 +574,17 @@ const setupWebSocketEventListeners = () => {
     }
   };
 
-  // 监听错误
+  // 监听错误（detail 可为 string 历史格式或 { code, message }）
   const handleError = (event: CustomEvent) => {
-    console.error("WebSocket错误:", event.detail);
-    connectionError.value = event.detail || "WebSocket连接错误";
+    const d = event.detail;
+    const msg =
+      typeof d === "string"
+        ? d
+        : d && typeof d.message === "string"
+          ? d.message
+          : "WebSocket连接错误";
+    console.error("WebSocket错误:", d);
+    connectionError.value = msg;
   };
 
   // 添加事件监听

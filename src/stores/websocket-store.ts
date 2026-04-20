@@ -7,7 +7,7 @@ import type {
   SendMessageRequest,
   WebSocketAction,
   WebSocketBaseMessage
-} from '@/types/websocket/message-types';
+} from '@/types/websocket/action-enums';
 
 // WebSocket消息接口 - 使用联合类型
 export type WebSocketMessage = SendMessageRequest | WebSocketBaseMessage | any;
@@ -423,7 +423,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
       action: 'readReceipt', // 修正为 readReceipt
       messageId,
       convId
-    } as any; // 暂时转换，因为 message-types 里 readReceipt 可能没定义具体结构
+    } as any; // 暂时转换，因为 action-enums 里 readReceipt 可能没定义具体结构
 
     return sendMessage(message);
   };

@@ -1,6 +1,6 @@
 // File: src/capabilities/friend/service.ts
 import { friendApi } from "@/apis/friend/index";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import { displayNameResolver } from "@/capabilities/show-display-name";
 import type {
   FriendListItem,

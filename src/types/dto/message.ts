@@ -31,9 +31,10 @@ export interface SendMessageResponseData {
 export type SendMessageResponse = BaseResponse<SendMessageResponseData>;
 
 /**
- * 消息详情 DTO
+ * 消息「摘要 / 列表行」传输对象：含 message 表部分字段 + 展示用扩展（与后端 MessageSummary 语义一致）。
+ * 用于会话内分页、搜索、锚点等接口返回的单条记录，非 ORM 全量实体。
  */
-export interface MessageDetailDTO {
+export interface MessageSummaryDTO {
   // 消息基本信息
   messageId: number;
   convId: number;
@@ -43,29 +44,26 @@ export interface MessageDetailDTO {
   messageStatus: number;
   isRecalled: boolean;
   sendTime: string;
-  
+
   // 发送者头像
   senderAvatar: string | null;
-  
+
   // 显示名称
   displayName: string;
   memberNickname: string | null;
   privateDisplayName: string | null;
-  
+
   // 会话类型
-  convType: number;  // 1-单聊，2-群聊
-  
+  convType: number; // 1-单聊，2-群聊
+
   // 是否是自己发送的消息
   isSentByMe: boolean;
-  
+
   // 引用和撤回相关
   replyToMessageId?: number | null;
   atUserIds?: number[] | null;
   recallTime?: string | null;
 }
-
-// RESTful 命名兼容别名
-export type MessageSummaryDTO = MessageDetailDTO;
 
 /**
  * 获取消息详情请求参数
@@ -83,7 +81,7 @@ export interface GetMessageDetailsResponse {
   code: number;
   message: string;
   data: {
-    messages: MessageDetailDTO[];
+    messages: MessageSummaryDTO[];
     total: number;
     page: number;
     pageSize: number;
@@ -107,7 +105,6 @@ export interface SearchMessagesRequest {
 
 /**
  * 搜索消息响应
- * 后端返回 MessageSummaryDTO 列表（等同于 MessageDetailDTO）
  */
 export interface SearchMessagesResponse {
   code: number;

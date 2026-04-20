@@ -3,10 +3,10 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
-import rippleDirective from '@/directives/ripple/index'
+import rippleDirective from '@/assets/directives/ripple/index'
 import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
-import '@/directives/ripple/style.css'
+import '@/assets/directives/ripple/style.css'
 import './assets/styles/toast.css'
 import App from './App.vue'
 import router from './router'
@@ -87,7 +87,7 @@ const loadNightStyles = () => {
 
     const dayRippleLink = document.createElement('link')
     dayRippleLink.rel = 'stylesheet'
-    dayRippleLink.href = '/src/assets/styles/directives/ripple/style.css'
+    dayRippleLink.href = '/src/assets/directives/ripple/style.css'
     document.head.appendChild(dayRippleLink)
   }
 }

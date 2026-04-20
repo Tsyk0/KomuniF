@@ -37,11 +37,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from "vue";
-import { useConversationStore } from "@/stores/chat/show-conversation";
-import { useShowMessageStore } from "@/stores/chat/show-message";
+import { useConversationStore } from "@/stores/conv/show-conversation";
+import { useShowMessageStore } from "@/stores/message/show-message";
 import { useAuthStore } from "@/stores/auth";
-import { findConversationIdsByKeywordFromDB } from "@/utils/local-db";
-import { resolveConversationDisplayName } from "@/stores/chat/conversation-display-name";
+import { findConversationIdsByKeywordFromDB } from "@/commons/utils/local-db";
+import { resolveConversationDisplayName } from "@/stores/conv/conversation-display-name";
 import { displayNameResolver } from "@/capabilities/show-display-name";
 import ConversationItem from "./ConversationItem.vue";
 import type { ConversationDetailDTO } from "@/types/dto/conversation";

@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useConvCreateStore } from "@/stores/chat/conv-create";
+import { useConvCreateStore } from "@/stores/conv/conv-create";
 import { conversationCreateApi } from "@/apis/chat/conversation-create";
 import toast from "@/commons/utils/toast";
 

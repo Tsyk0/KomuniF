@@ -1,8 +1,8 @@
-// File: src/stores/chat/show-message.ts
+// File: src/stores/message/show-message.ts
 import { defineStore } from 'pinia';
 import { ref, nextTick } from 'vue';
 import type { DisplayMessage } from '@/entity/message';
-import type { MessageDetailDTO } from '@/types/dto/message';
+import type { MessageSummaryDTO } from '@/types/dto/message';
 import {
   loadConversationHistory,
   loadMessagesAfterBoundary,
@@ -11,9 +11,9 @@ import {
 } from '@/capabilities/message';
 import { useAuthStore } from '@/stores/auth';
 import { useFriendStore } from '@/stores/friend/show-friend';
-import { useConversationStore } from '@/stores/chat/show-conversation';
+import { useConversationStore } from '@/stores/conv/show-conversation';
 import { displayNameResolver } from '@/capabilities/show-display-name';
-import { getRecentMessagesFromDB, saveMessagesToDB, tryGetMessagesAroundFromDB } from '@/utils/local-db';
+import { getRecentMessagesFromDB, saveMessagesToDB, tryGetMessagesAroundFromDB } from '@/commons/utils/local-db';
 
 export const useShowMessageStore = defineStore('message', () => {
   const authStore = useAuthStore();
@@ -52,7 +52,7 @@ export const useShowMessageStore = defineStore('message', () => {
   };
 
   const mapDtoToDisplayMessage = (
-    msg: MessageDetailDTO,
+    msg: MessageSummaryDTO,
     currentUserId?: number
   ): DisplayMessage => {
     return {
@@ -198,7 +198,7 @@ export const useShowMessageStore = defineStore('message', () => {
       }
 
       // history uses beforeMessageId; initial/latest loads latest page.
-      let messagesData: MessageDetailDTO[] = [];
+      let messagesData: MessageSummaryDTO[] = [];
       if (loadType === 'history' && lastMessageId) {
         messagesData = await loadConversationHistory({
           convId,
@@ -434,7 +434,7 @@ export const useShowMessageStore = defineStore('message', () => {
       const expectedConvId =
         convId || conversationStore.currentConversation?.convId || null;
 
-      let raw: MessageDetailDTO[] = [];
+      let raw: MessageSummaryDTO[] = [];
 
       if (expectedConvId != null) {
         const localSlice = await tryGetMessagesAroundFromDB(
@@ -451,7 +451,7 @@ export const useShowMessageStore = defineStore('message', () => {
       if (raw.length === 0) {
         const around = await loadMessagesAround(anchorMessageId, windowSize);
         if (seq !== anchorAroundRequestSeq) return;
-        raw = (around?.messages || []) as MessageDetailDTO[];
+        raw = (around?.messages || []) as MessageSummaryDTO[];
       }
 
       if (seq !== anchorAroundRequestSeq) return;
@@ -494,7 +494,7 @@ export const useShowMessageStore = defineStore('message', () => {
         boundaryMessageId,
         ANCHOR_BOUNDARY_PAGE_SIZE
       );
-      const raw = (responseData?.messages || []) as MessageDetailDTO[];
+      const raw = (responseData?.messages || []) as MessageSummaryDTO[];
       const pageSize = responseData?.pageSize || ANCHOR_BOUNDARY_PAGE_SIZE;
       const total = responseData?.total || raw.length;
       if (total < pageSize) {
@@ -531,7 +531,7 @@ export const useShowMessageStore = defineStore('message', () => {
         boundaryMessageId,
         ANCHOR_BOUNDARY_PAGE_SIZE
       );
-      const raw = (responseData?.messages || []) as MessageDetailDTO[];
+      const raw = (responseData?.messages || []) as MessageSummaryDTO[];
       const pageSize = responseData?.pageSize || ANCHOR_BOUNDARY_PAGE_SIZE;
       const total = responseData?.total || raw.length;
       if (total < pageSize) {

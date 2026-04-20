@@ -1,10 +1,11 @@
-// File: src/stores/chat/show-conversation.ts
+// File: src/stores/conv/show-conversation.ts
 import { defineStore } from 'pinia';
 import type { ConversationDetailDTO, CompressedCM } from '@/types/dto/conversation';
 import { loadConversationMembers, loadConversationSummaries } from '@/capabilities/conversation';
 import { useAuthStore } from '@/stores/auth';
-import { resolveConversationDisplayName } from '@/stores/chat/conversation-display-name';
-import { useSingleChatPeerAvatarStore } from '@/stores/chat/single-chat-peer-avatar';
+import { resolveConversationDisplayName } from '@/stores/conv/conversation-display-name';
+import { isUnreadableDisplayText } from '@/capabilities/show-display-name';
+import { useSingleChatPeerAvatarStore } from '@/stores/conv/single-chat-peer-avatar';
 
 export const useConversationStore = defineStore('conversation', {
   state: () => ({
@@ -70,7 +71,11 @@ export const useConversationStore = defineStore('conversation', {
       currentUserId: number | null = null
     ): ConversationDetailDTO[] {
       return conversations.map((conv) => {
-        if (!conv.convName || conv.convName.trim() === '') {
+        if (
+          !conv.convName ||
+          conv.convName.trim() === '' ||
+          isUnreadableDisplayText(conv.convName)
+        ) {
           conv.convName = resolveConversationDisplayName(conv, currentUserId);
         }
 

@@ -1,5 +1,5 @@
-// File: src/stores/chat/send-message.ts
-// src/stores/chat/send-message.ts
+// File: src/stores/message/send-message.ts
+// src/stores/message/send-message.ts
 // 专门处理消息发送功能的Store
 
 import { defineStore } from 'pinia';

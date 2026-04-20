@@ -53,7 +53,7 @@
 import { computed, watch } from "vue";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import { useAuthStore } from "@/stores/auth";
-import { useConvCreateStore } from "@/stores/chat/conv-create";
+import { useConvCreateStore } from "@/stores/conv/conv-create";
 import { displayNameResolver } from "@/capabilities/show-display-name";
 
 const props = defineProps<{

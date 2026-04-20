@@ -65,8 +65,8 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useMessageItemAvatar } from "@/composables/useMessageItemAvatar";
-import { useShowMessageStore } from "@/stores/chat/show-message";
+import { useMessageItemAvatar } from "@/capabilities/show-display-avatar";
+import { useShowMessageStore } from "@/stores/message/show-message";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import type { DisplayMessage } from "@/entity/message";
 

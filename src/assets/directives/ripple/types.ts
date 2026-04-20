@@ -1,5 +1,4 @@
-// File: src/directives/ripple/types.ts
-// src/directives/ripple/types.ts
+// File: src/assets/directives/ripple/types.ts
 
 export interface RippleDirectiveBinding {
   // 涟漪颜色，默认 'rgba(0, 0, 0, 0.1)'

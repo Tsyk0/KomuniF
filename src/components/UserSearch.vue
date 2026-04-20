@@ -186,12 +186,12 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from "vue";
-import { useConvCreateStore } from "@/stores/chat/conv-create";
+import { useConvCreateStore } from "@/stores/conv/conv-create";
 import { useAuthStore } from "@/stores/auth";
 import type { User } from "@/entity/user";
 import { userSearchApi } from "@/apis/user-search";
 import { friendRequestApi } from "@/apis/friends/friend-request";
-import { normalizeAvatarUrl } from "@/utils/avatar-url";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import toast from "@/commons/utils/toast";
 import UserSearchResultItem from "./UserSearchResultItem.vue";
 

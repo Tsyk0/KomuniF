@@ -1,4 +1,4 @@
-// File: src/stores/chat/conversation-display-name.ts
+// File: src/stores/conv/conversation-display-name.ts
 import type { ConversationDetailDTO } from "@/types/dto/conversation";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import { displayNameResolver } from "@/capabilities/show-display-name";

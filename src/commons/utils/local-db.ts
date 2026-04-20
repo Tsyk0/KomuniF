@@ -1,11 +1,11 @@
-// File: src/utils/local-db.ts
+// File: src/commons/utils/local-db.ts
 import { openDB, type DBSchema } from 'idb'
-import type { MessageDetailDTO } from '@/types/dto/message'
+import type { MessageSummaryDTO } from '@/types/dto/message'
 
 interface KomunifDB extends DBSchema {
   messages: {
     key: number
-    value: MessageDetailDTO & {
+    value: MessageSummaryDTO & {
       sendTimeMs: number
     }
     indexes: {
@@ -26,7 +26,7 @@ export const dbPromise = openDB<KomunifDB>(DB_NAME, DB_VERSION, {
   }
 })
 
-export async function saveMessagesToDB(messages: MessageDetailDTO[]): Promise<void> {
+export async function saveMessagesToDB(messages: MessageSummaryDTO[]): Promise<void> {
   if (!messages || messages.length === 0) return
 
   const db = await dbPromise
@@ -45,7 +45,7 @@ export async function saveMessagesToDB(messages: MessageDetailDTO[]): Promise<vo
 export async function getRecentMessagesFromDB(
   convId: number,
   limit = 200
-): Promise<MessageDetailDTO[]> {
+): Promise<MessageSummaryDTO[]> {
   const db = await dbPromise
   const tx = db.transaction('messages', 'readonly')
   const index = tx.store.index('by-convId-sendTimeMs')
@@ -109,7 +109,7 @@ export async function findConversationIdsByKeywordFromDB(
 
 export async function getMessageByIdFromDB(
   messageId: number
-): Promise<(MessageDetailDTO & { sendTimeMs?: number }) | undefined> {
+): Promise<(MessageSummaryDTO & { sendTimeMs?: number }) | undefined> {
   const db = await dbPromise
   return db.get('messages', messageId)
 }
@@ -119,7 +119,7 @@ export async function getMessageByIdFromDB(
  */
 export async function getAllMessagesForConvFromDB(
   convId: number
-): Promise<MessageDetailDTO[]> {
+): Promise<MessageSummaryDTO[]> {
   const db = await dbPromise
   const tx = db.transaction('messages', 'readonly')
   const index = tx.store.index('by-convId-sendTimeMs')
@@ -129,8 +129,8 @@ export async function getAllMessagesForConvFromDB(
 
   const filtered = all.filter((m) => !m.isRecalled)
   return filtered.sort((a, b) => {
-    const aMs = (a as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(a.sendTime)
-    const bMs = (b as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(b.sendTime)
+    const aMs = (a as MessageSummaryDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(a.sendTime)
+    const bMs = (b as MessageSummaryDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(b.sendTime)
     return aMs - bMs
   })
 }
@@ -143,7 +143,7 @@ export async function tryGetMessagesAroundFromDB(
   convId: number,
   anchorMessageId: number,
   windowSize: number
-): Promise<MessageDetailDTO[] | null> {
+): Promise<MessageSummaryDTO[] | null> {
   const anchor = await getMessageByIdFromDB(anchorMessageId)
   if (!anchor || anchor.isRecalled || anchor.convId !== convId) {
     return null
@@ -166,7 +166,7 @@ export async function searchMessagesInConvFromDB(
   keyword: string,
   page: number,
   pageSize: number
-): Promise<{ messages: MessageDetailDTO[]; total: number }> {
+): Promise<{ messages: MessageSummaryDTO[]; total: number }> {
   const normalized = (keyword || '').trim().toLowerCase()
   if (!normalized) {
     return { messages: [], total: 0 }
@@ -187,8 +187,8 @@ export async function searchMessagesInConvFromDB(
   })
 
   hits.sort((a, b) => {
-    const aMs = (a as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(a.sendTime)
-    const bMs = (b as MessageDetailDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(b.sendTime)
+    const aMs = (a as MessageSummaryDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(a.sendTime)
+    const bMs = (b as MessageSummaryDTO & { sendTimeMs?: number }).sendTimeMs || Date.parse(b.sendTime)
     return bMs - aMs
   })
 

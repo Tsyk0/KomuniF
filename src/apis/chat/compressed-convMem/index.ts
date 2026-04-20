@@ -4,7 +4,7 @@ import type { GetCompressedCMResponse } from '@/types/dto/conversation';
 
 /**
  * 根据会话ID获取群成员列表
- * 对应后端接口：GET /compressedCM/getCompressedCM
+ * 对应后端接口：GET /compressedCM/getCompressedCM（旧）
  */
 export function getCompressedCMApi(convId: number): Promise<GetCompressedCMResponse> {
     return service({

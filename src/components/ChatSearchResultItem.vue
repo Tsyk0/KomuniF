@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useMessageItemAvatar } from "@/composables/useMessageItemAvatar";
+import { useMessageItemAvatar } from "@/capabilities/show-display-avatar";
 import { displayNameResolver } from "@/capabilities/show-display-name";
 import type { DisplayMessage } from "@/entity/message";
 
