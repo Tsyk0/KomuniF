@@ -1,4 +1,3 @@
-// File: src/stores/conv/conv-create.ts
 import { defineStore } from "pinia";
 
 export type ConvCreatePanel = "group" | "add-friend";
@@ -11,9 +10,8 @@ export const useConvCreateStore = defineStore("convCreate", {
   state: () => ({
     active: false,
     panel: "group" as ConvCreatePanel,
-    /** 选中的好友 userId（不含自己） */
     selectedFriendIds: [] as number[],
-    /** 点击进入前的 currentListView，用于退出时恢复 */
+    draftConvName: "",
     savedListView: "chat" as "chat" | "friends",
   }),
 
@@ -22,17 +20,19 @@ export const useConvCreateStore = defineStore("convCreate", {
   },
 
   actions: {
-    enter(fromListView: "chat" | "friends") {
+    enter(fromListView: "chat" | "friends", resetDraft = false) {
       this.savedListView = fromListView;
       this.active = true;
-      this.panel = "group";
-      this.selectedFriendIds = [];
+      if (resetDraft) {
+        this.resetDraft();
+      }
     },
 
-    exit() {
+    exit(resetDraft = false) {
       this.active = false;
-      this.panel = "group";
-      this.selectedFriendIds = [];
+      if (resetDraft) {
+        this.resetDraft();
+      }
     },
 
     toggleFriendId(friendId: number) {
@@ -47,6 +47,16 @@ export const useConvCreateStore = defineStore("convCreate", {
 
     setPanel(p: ConvCreatePanel) {
       this.panel = p;
+    },
+
+    setDraftConvName(name: string) {
+      this.draftConvName = name;
+    },
+
+    resetDraft() {
+      this.panel = "group";
+      this.selectedFriendIds = [];
+      this.draftConvName = "";
     },
   },
 });

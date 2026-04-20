@@ -2,11 +2,11 @@
 import { defineStore } from "pinia";
 import { friendApi } from "@/apis/friend/index";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
-import type { FriendInfoDTO } from "@/types/dto/friend";
+import type { FriendProfileDTO } from "@/types/dto/friend";
 
 export const useFriendInfoStore = defineStore("friendInfo", {
     state: () => ({
-        friendInfo: null as FriendInfoDTO | null,
+        friendInfo: null as FriendProfileDTO | null,
         loading: false,
         error: null as string | null,
         currentFriendId: null as number | null

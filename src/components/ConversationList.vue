@@ -37,19 +37,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from "vue";
-import { useConversationStore } from "@/stores/conv/show-conversation";
+import { useConvStore } from "@/store/conv";
 import { useShowMessageStore } from "@/stores/message/show-message";
-import { useAuthStore } from "@/stores/auth";
 import { findConversationIdsByKeywordFromDB } from "@/commons/utils/local-db";
-import { resolveConversationDisplayName } from "@/stores/conv/conversation-display-name";
 import { displayNameResolver } from "@/capabilities/show-display-name";
 import ConversationItem from "./ConversationItem.vue";
-import type { ConversationDetailDTO } from "@/types/dto/conversation";
 
 // Store
-const conversationStore = useConversationStore();
+const convStore = useConvStore();
 const showMessageStore = useShowMessageStore();
-const authStore = useAuthStore();
 
 // Props
 const props = defineProps<{
@@ -58,16 +54,17 @@ const props = defineProps<{
 
 // error state
 const errorMessage = ref<string | null>(null);
+const loading = ref(false);
 const messageMatchedConversationIds = ref<Set<number>>(new Set());
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 // computed states
 const conversations = computed(() => {
-  return conversationStore.conversations || [];
+  return convStore.conversations || [];
 });
 
 const isLoading = computed(() => {
-  return conversationStore.isLoading || false;
+  return loading.value;
 });
 
 const filteredConversations = computed(() => {
@@ -78,13 +75,6 @@ const filteredConversations = computed(() => {
 
   const matchedConvIdSet = messageMatchedConversationIds.value;
   return conversations.value.filter((conversation) => {
-    const resolvedTitle = resolveConversationDisplayName(
-      conversation,
-      authStore.user?.userId == null ? null : authStore.user.userId
-    );
-    if (resolvedTitle.toLowerCase().includes(keyword)) {
-      return true;
-    }
     if (conversation.convName?.toLowerCase().includes(keyword)) {
       return true;
     }
@@ -117,7 +107,7 @@ const filteredConversations = computed(() => {
 });
 
 const currentConversationId = computed(() => {
-  return conversationStore.currentConversation?.convId || null;
+  return convStore.currentConversation?.convId || null;
 });
 
 // whether this conversation is active
@@ -159,11 +149,14 @@ const searchConversationByMessages = async (keyword: string) => {
 // load conversations
 const loadConversations = async () => {
   if (conversations.value.length === 0) {
+    loading.value = true;
     try {
-      await conversationStore.loadConversations();
+      await convStore.loadConversations();
     } catch (error) {
       console.error("Failed to load conversations:", error);
       errorMessage.value = "Failed to load conversations. Please retry.";
+    } finally {
+      loading.value = false;
     }
   }
 };
@@ -178,7 +171,7 @@ const handleConversationClick = async (convId: number) => {
     const isSwitchingConversation = currentConversationId.value !== convId;
 
     // 2. set current conversation
-    conversationStore.setCurrentConversation(convId);
+    convStore.selectConversation(convId);
 
     // 3. clear stale messages when switching
     if (isSwitchingConversation) {
@@ -194,7 +187,7 @@ const handleConversationClick = async (convId: number) => {
     console.log("messages loaded");
 
     // 5. mark as read
-    conversationStore.markAsRead(convId);
+    convStore.markConversationRead(convId);
 
     // 6. emit event to parent
     emit("conversation-click", convId);

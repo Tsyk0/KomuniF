@@ -186,7 +186,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from "vue";
-import { useConvCreateStore } from "@/stores/conv/conv-create";
+import { useConvCreateStore } from "@/store/conv-create";
 import { useAuthStore } from "@/stores/auth";
 import type { User } from "@/entity/user";
 import { userSearchApi } from "@/apis/user-search";

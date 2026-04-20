@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import type { DisplayMessage } from "@/entity/message";
 import { useAuthStore } from "@/stores/auth";
-import { useSingleChatPeerAvatarStore } from "@/stores/conv/single-chat-peer-avatar";
+import { useSingleChatPeerAvatarStore } from "@/store/conv-peer-avatar";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import { resolveMessageRowAvatarRawSource } from "./resolvers";
 

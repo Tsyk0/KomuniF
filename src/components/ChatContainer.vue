@@ -227,7 +227,7 @@ import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
 import { useShowMessageStore } from "@/stores/message/show-message";
 import { useSendMessageStore } from "@/stores/message/send-message";
 import { useAuthStore } from "@/stores/auth";
-import { useConversationStore } from "@/stores/conv/show-conversation";
+import { useConvStore } from "@/store/conv";
 import { useWebSocketStore } from "@/stores/websocket-store";
 import MessageItem from "./MessageItem.vue";
 import ChatSearchPanel from "./ChatSearchPanel.vue";
@@ -244,7 +244,7 @@ const showMessageStore = useShowMessageStore();
 const sendMessageStore = useSendMessageStore();
 const authStore = useAuthStore();
 const websocketStore = useWebSocketStore();
-const conversationStore = useConversationStore();
+const conversationStore = useConvStore();
 
 // Props
 const props = defineProps({

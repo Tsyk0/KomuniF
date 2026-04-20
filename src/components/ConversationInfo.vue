@@ -362,7 +362,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import toast from "@/commons/utils/toast";
 import { useAuthStore } from "@/stores/auth";
 import { useFriendStore } from "@/stores/friend/show-friend";
-import { useConversationStore } from "@/stores/conv/show-conversation";
+import { useConvStore } from "@/store/conv";
 import { conversationMemberApi } from "@/apis/chat/conversation-member";
 import { manageConversationApi } from "@/apis/chat/manage-conversation";
 import { friendApi } from "@/apis/friend";
@@ -373,7 +373,7 @@ import type {
   ConversationEntity,
   ConversationMemberDTO,
 } from "@/types/dto/conversation-member";
-import type { FriendInfoDTO } from "@/types/dto/friend";
+import type { FriendProfileDTO } from "@/types/dto/friend";
 
 const props = defineProps<{
   convId: number | null;
@@ -387,14 +387,14 @@ const emit = defineEmits<{
 
 const authStore = useAuthStore();
 const friendStore = useFriendStore();
-const conversationStore = useConversationStore();
+const conversationStore = useConvStore();
 const bootstrapLoader = new BootstrapLoader();
 
 const loading = ref(false);
 const error = ref<string | null>(null);
 const conversation = ref<ConversationEntity | null>(null);
 const members = ref<ConversationMemberDTO[]>([]);
-const friendInfo = ref<FriendInfoDTO | null>(null);
+const friendInfo = ref<FriendProfileDTO | null>(null);
 
 const isFriendMode = computed(
   () => props.friendId != null && props.friendId > 0

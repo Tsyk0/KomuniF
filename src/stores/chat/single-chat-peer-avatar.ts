@@ -1,16 +1,16 @@
-// File: src/stores/conv/single-chat-peer-avatar.ts
+// File: src/stores/chat/single-chat-peer-avatar.ts
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import { conversationPeerApi } from "@/apis/chat/conversation-peer";
 import { friendApi } from "@/apis/friend/index";
-import type { ConversationDetailDTO } from "@/types/dto/conversation";
+import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 
 const inflight = new Set<number>();
 
 /** 从会话 DTO 推断对方 userId（仅用于拉取「用户资料」类接口，不用消息里的头像字段） */
 function inferPeerUserId(
-  conv: ConversationDetailDTO,
+  conv: ConversationSummaryDTO,
   currentUserId: number | null
 ): number | null {
   if (conv.targetUserId != null && String(conv.targetUserId).trim() !== "") {
@@ -92,7 +92,7 @@ export const useSingleChatPeerAvatarStore = defineStore(
      * 为单聊会话拉取对方头像并写入缓存（幂等）。
      */
     async function ensurePeerAvatar(
-      conv: ConversationDetailDTO | null | undefined,
+      conv: ConversationSummaryDTO | null | undefined,
       currentUserId: number | null
     ): Promise<void> {
       if (!conv || Number(conv.convType) !== 1) return;

@@ -13,9 +13,9 @@ export interface LastMessageInfo {
 }
 
 /**
- * 会话详情 DTO
+ * 会话摘要 DTO（会话列表项）
  */
-export interface ConversationDetailDTO {
+export interface ConversationSummaryDTO {
   // 会话基本信息
   convId: number;
   convType: number;           // 1-单聊，2-群聊
@@ -30,7 +30,7 @@ export interface ConversationDetailDTO {
   // 会话成员相关
   privateDisplayName: string | null; // 用户设置的私有显示名称
   unreadCount: number;               // 未读消息数
-  /** 单聊时对方用户 ID（好友 userId），由后端 getConversationDetailsViaToken 返回 */
+  /** 单聊时对方用户 ID（好友 userId），由会话摘要接口返回 */
   targetUserId?: number;
 
   // 最后一条消息信息
@@ -40,13 +40,13 @@ export interface ConversationDetailDTO {
   updateTime: string;
 }
 
-// RESTful 命名兼容别名
-export type ConversationSummaryDTO = ConversationDetailDTO;
+// 兼容旧命名
+export type ConversationDetailDTO = ConversationSummaryDTO;
 
 /**
- * 群成员信息 DTO
+ * 会话成员展示 DTO（群成员简化信息）
  */
-export interface CompressedCM {
+export interface MessageDisplayMemberDTO {
   userId: number;
   memberNickname: string | null; // 群昵称
   userNickname: string;          // 用户原本昵称
@@ -55,25 +55,25 @@ export interface CompressedCM {
   joinTime?: string;
 }
 
-// RESTful 命名兼容别名
-export type MessageDisplayMemberDTO = CompressedCM;
+// 兼容旧命名
+export type CompressedCM = MessageDisplayMemberDTO;
 
 /**
- * 获取会话详情响应
+ * 获取会话摘要列表响应
  */
-export interface GetConversationDetailsResponse {
+export interface GetConversationSummariesResponse {
   code: number;
   message: string;
-  data: ConversationDetailDTO[];
+  data: ConversationSummaryDTO[];
   timestamp?: number;
 }
 
 /**
- * 获取群成员列表响应
+ * 获取会话成员列表响应
  */
-export interface GetCompressedCMResponse {
+export interface GetConversationMembersResponse {
   code: number;
   message: string;
-  data: CompressedCM[];
+  data: MessageDisplayMemberDTO[];
   timestamp?: number;
 }

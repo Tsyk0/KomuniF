@@ -4,9 +4,9 @@ import type { BaseResponse } from "./base";
 export type FriendOnlineStatus = "online" | "offline" | "away";
 
 /**
- * 好友关系详情 DTO
+ * 好友关系摘要 DTO
  */
-export interface FriendRelationDetailDTO {
+export interface FriendSummaryDTO {
   id: number;
   userId: number;
   friendId: number;
@@ -23,13 +23,13 @@ export interface FriendRelationDetailDTO {
   friendOnlineStatus?: number | null;
 }
 
-// RESTful 命名兼容别名
-export type FriendSummaryDTO = FriendRelationDetailDTO;
+// 兼容旧命名
+export type FriendRelationDetailDTO = FriendSummaryDTO;
 
 /**
  * 获取好友列表响应
  */
-export type GetFriendListResponse = BaseResponse<FriendRelationDetailDTO[]>;
+export type GetFriendListResponse = BaseResponse<FriendSummaryDTO[]>;
 
 /**
  * 好友列表展示项（前端使用）
@@ -51,9 +51,9 @@ export interface FriendListItem {
 }
 
 /**
- * 好友详情 DTO (包含完整用户信息)
+ * 好友资料 DTO (包含完整用户信息)
  */
-export interface FriendInfoDTO {
+export interface FriendProfileDTO {
   id: number;
   userId: number;
   friendId: number;
@@ -76,7 +76,7 @@ export interface FriendInfoDTO {
   friendLastLoginTime?: string | null;
 }
 
-// RESTful 命名兼容别名
-export type FriendProfileDTO = FriendInfoDTO;
+// 兼容旧命名
+export type FriendInfoDTO = FriendProfileDTO;
 
-export type GetFriendInfoResponse = BaseResponse<FriendInfoDTO>;
+export type GetFriendInfoResponse = BaseResponse<FriendProfileDTO>;

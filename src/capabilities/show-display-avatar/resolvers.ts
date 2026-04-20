@@ -1,5 +1,5 @@
 // File: src/capabilities/show-display-avatar/resolvers.ts
-import type { ConversationDetailDTO } from "@/types/dto/conversation";
+import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import type { DisplayMessage } from "@/entity/message";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 
@@ -18,7 +18,7 @@ function toValidPositiveInt(value: unknown): number | null {
  * 单聊：仅使用 peer 头像缓存（已由 store 规范化为绝对 URL）；群聊等：规范化 conv.convAvatar。
  */
 export function resolveConversationAvatarDisplayUrl(
-  conversation: ConversationDetailDTO | null | undefined,
+  conversation: ConversationSummaryDTO | null | undefined,
   avatarByConvId: Record<number, string>
 ): string {
   if (!conversation) return "";

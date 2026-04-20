@@ -51,13 +51,13 @@
 import { computed } from "vue";
 import { useConversationDisplay } from "@/capabilities/show-display-avatar";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
-import type { ConversationDetailDTO } from "@/types/dto/conversation";
+import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import { useAuthStore } from "@/stores/auth";
 import { useFriendStore } from "@/stores/friend/show-friend";
 import { displayNameResolver } from "@/capabilities/show-display-name";
 
 interface Props {
-  conversation: ConversationDetailDTO;
+  conversation: ConversationSummaryDTO;
   isActive?: boolean;
 }
 

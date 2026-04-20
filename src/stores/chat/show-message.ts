@@ -1,4 +1,4 @@
-// File: src/stores/message/show-message.ts
+// File: src/stores/chat/show-message.ts
 import { defineStore } from 'pinia';
 import { ref, nextTick } from 'vue';
 import type { DisplayMessage } from '@/entity/message';
@@ -11,14 +11,14 @@ import {
 } from '@/capabilities/message';
 import { useAuthStore } from '@/stores/auth';
 import { useFriendStore } from '@/stores/friend/show-friend';
-import { useConvStore } from '@/store/conv';
+import { useConversationStore } from '@/stores/chat/show-conversation';
 import { displayNameResolver } from '@/capabilities/show-display-name';
 import { getRecentMessagesFromDB, saveMessagesToDB, tryGetMessagesAroundFromDB } from '@/commons/utils/local-db';
 
 export const useShowMessageStore = defineStore('message', () => {
   const authStore = useAuthStore();
   const friendStore = useFriendStore();
-  const conversationStore = useConvStore();
+  const conversationStore = useConversationStore();
 
   // Current message list
   const messages = ref<DisplayMessage[]>([]);

@@ -34,22 +34,32 @@
         已选择 <strong>{{ convCreateStore.selectedCount }}</strong> 位好友
       </p>
 
-      <button
-        type="button"
-        class="conv-create-submit-btn"
-        :disabled="!canSubmit || submitting"
-        @click="submit"
-      >
-        {{ submitting ? "创建中…" : "将选中好友加入群聊" }}
-      </button>
+      <div class="conv-create-actions">
+        <button
+          type="button"
+          class="conv-create-submit-btn conv-create-reset-btn"
+          :disabled="submitting"
+          @click="resetDraft"
+        >
+          重置
+        </button>
+        <button
+          type="button"
+          class="conv-create-submit-btn"
+          :disabled="!canSubmit || submitting"
+          @click="submit"
+        >
+          {{ submitting ? "创建中…" : "将选中好友加入群聊" }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useConvCreateStore } from "@/stores/conv/conv-create";
-import { conversationCreateApi } from "@/apis/chat/conversation-create";
+import { useConvCreateStore } from "@/store/conv-create";
+import { createGroupConversationNormalized } from "@/normalize/conversation";
 import toast from "@/commons/utils/toast";
 
 const emit = defineEmits<{
@@ -59,13 +69,20 @@ const emit = defineEmits<{
 
 const convCreateStore = useConvCreateStore();
 
-const convName = ref("");
 const submitting = ref(false);
+const convName = computed({
+  get: () => convCreateStore.draftConvName,
+  set: (value: string) => convCreateStore.setDraftConvName(value),
+});
 
 const canSubmit = computed(() => {
   const name = convName.value.trim();
   return name.length > 0 && convCreateStore.selectedCount >= 1;
 });
+
+function resetDraft() {
+  convCreateStore.resetDraft();
+}
 
 async function submit() {
   const name = convName.value.trim();
@@ -88,19 +105,18 @@ async function submit() {
 
   submitting.value = true;
   try {
-    const resp = await conversationCreateApi.createConversation({
-      single: false,
+    const result = await createGroupConversationNormalized(
+      name,
       memberUserIds,
-      convName: name,
-    });
-
-    if (resp.code !== 200 || !resp.data?.success || resp.data.convId == null) {
-      toast.error(resp.message || resp.data?.message || "创建群聊失败");
+    );
+    if (!result.success || result.convId == null) {
+      toast.error(result.message || "创建群聊失败");
       return;
     }
 
-    toast.success(resp.data.message || "创建成功");
-    emit("created", Number(resp.data.convId));
+    toast.success(result.message || "创建成功");
+    convCreateStore.resetDraft();
+    emit("created", Number(result.convId));
   } catch (e: unknown) {
     const err = e as {
       response?: { data?: { message?: string } };

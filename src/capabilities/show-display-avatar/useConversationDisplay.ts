@@ -6,9 +6,9 @@ import {
   toValue,
 } from "vue";
 import { useAuthStore } from "@/stores/auth";
-import type { ConversationDetailDTO } from "@/types/dto/conversation";
-import { resolveConversationDisplayName } from "@/stores/conv/conversation-display-name";
-import { useSingleChatPeerAvatarStore } from "@/stores/conv/single-chat-peer-avatar";
+import type { ConversationSummaryDTO } from "@/types/dto/conversation";
+import { displayNameResolver } from "@/capabilities/show-display-name";
+import { useSingleChatPeerAvatarStore } from "@/store/conv-peer-avatar";
 import { resolveConversationAvatarDisplayUrl } from "./resolvers";
 
 const SINGLE_CHAT_TYPE = 1;
@@ -19,7 +19,7 @@ const SINGLE_CHAT_TYPE = 1;
  * 不使用 convAvatar、消息 senderAvatar、好友列表扫描等兜底。
  */
 export function useConversationDisplay(
-  conversation: MaybeRefOrGetter<ConversationDetailDTO | null | undefined>
+  conversation: MaybeRefOrGetter<ConversationSummaryDTO | null | undefined>
 ) {
   const authStore = useAuthStore();
   const peerAvatarStore = useSingleChatPeerAvatarStore();
@@ -45,7 +45,15 @@ export function useConversationDisplay(
 
   const displayName = computed(() => {
     if (!conversationRef.value) return "";
-    return resolveConversationDisplayName(conversationRef.value, currentUserId.value);
+    const conv = conversationRef.value;
+    const convName = (conv.convName || "").trim();
+    if (convName) return convName;
+    return displayNameResolver.conversationTitle({
+      convType: conv.convType,
+      convName: conv.convName,
+      privateDisplayName: conv.privateDisplayName,
+      defaultGroupTitle: "会话",
+    });
   });
 
   const avatar = computed(() => {

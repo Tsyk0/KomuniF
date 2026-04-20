@@ -1,5 +1,5 @@
 // File: src/capabilities/init/types.ts
-import type { ConversationDetailDTO } from "@/types/dto/conversation";
+import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import type { FriendListItem } from "@/types/dto/friend";
 import type { NotificationHandleSummaryDTO } from "@/types/dto/notification";
 
@@ -13,7 +13,7 @@ export type LoadContext = InitContext;
 
 export interface InitPayloadMap {
   friends: FriendListItem[];
-  conversations: ConversationDetailDTO[];
+  conversations: ConversationSummaryDTO[];
   notifications: NotificationHandleSummaryDTO[];
 }
 export type LoadPayloadMap = InitPayloadMap;

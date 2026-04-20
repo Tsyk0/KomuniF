@@ -235,12 +235,12 @@ import { ref, computed, onMounted, reactive, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useThemeStore } from "@/stores/theme";
 import { useAuthStore } from "@/stores/auth";
-import { useConversationStore } from "@/stores/conv/show-conversation";
+import { useConvStore } from "@/store/conv";
 import { useShowMessageStore } from "@/stores/message/show-message";
 import { useSendMessageStore } from "@/stores/message/send-message";
-import { useConvCreateStore } from "@/stores/conv/conv-create";
+import { useConvCreateStore } from "@/store/conv-create";
 import { useSystemNotificationsStore } from "@/stores/notification/system-notifications";
-import { useSingleChatPeerAvatarStore } from "@/stores/conv/single-chat-peer-avatar";
+import { useSingleChatPeerAvatarStore } from "@/store/conv-peer-avatar";
 import { useAppBootstrapStore } from "@/stores/app/bootstrap";
 import UserProfileEdit from "@/components/UserProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
@@ -255,7 +255,7 @@ import FriendPickSidebar from "@/components/FriendPickSidebar.vue";
 import SystemNotificationContainer from "@/components/SystemNotificationContainer.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import toast from "@/commons/utils/toast";
-import { conversationCreateApi } from "@/apis/chat/conversation-create";
+import { createSingleConversationNormalized } from "@/normalize/conversation";
 
 import "@/assets/styles/homeview.css";
 import "@/assets/styles/searchbar.css";
@@ -264,7 +264,7 @@ import "@/assets/styles/night/searchbar-night.css";
 
 const themeStore = useThemeStore();
 const authStore = useAuthStore();
-const conversationStore = useConversationStore();
+const conversationStore = useConvStore();
 const showMessageStore = useShowMessageStore();
 const sendMessageStore = useSendMessageStore();
 const convCreateStore = useConvCreateStore();
@@ -438,7 +438,7 @@ const toggleTheme = () => {
 
 const goToChat = () => {
   if (convCreateStore.active) {
-    convCreateStore.exit();
+    convCreateStore.exit(false);
   }
   console.log("点击聊天按钮，切换到聊天列表");
   currentListView.value = "chat";
@@ -449,7 +449,7 @@ const goToChat = () => {
 
 const goToFriends = () => {
   if (convCreateStore.active) {
-    convCreateStore.exit();
+    convCreateStore.exit(false);
   }
   console.log("切换到好友列表");
   currentListView.value = "friends";
@@ -459,7 +459,7 @@ const goToFriends = () => {
 
 const goToNotifications = () => {
   if (convCreateStore.active) {
-    convCreateStore.exit();
+    convCreateStore.exit(false);
   }
   currentListView.value = "chat";
   selectedFriend.value = null;
@@ -473,7 +473,7 @@ const goToNotifications = () => {
 
 const exitConvCreate = () => {
   const restore = convCreateStore.savedListView;
-  convCreateStore.exit();
+  convCreateStore.exit(false);
   currentListView.value = restore;
   currentMainView.value = null;
   conversationStore.clearCurrentConversation();
@@ -488,17 +488,13 @@ const openSingleChatWithPeerUserId = async (peerUserId) => {
   }
 
   try {
-    const resp = await conversationCreateApi.createConversation({
-      single: true,
-      memberUserIds: [pid],
-    });
-
-    if (resp.code !== 200 || !resp.data?.success || resp.data.convId == null) {
-      toast.error(resp.message || resp.data?.message || "创建会话失败");
+    const result = await createSingleConversationNormalized(pid);
+    if (!result.success || result.convId == null) {
+      toast.error(result.message || "创建会话失败");
       return false;
     }
 
-    const convId = Number(resp.data.convId);
+    const convId = Number(result.convId);
     await conversationStore.refreshConversationById(convId);
     if (!conversationStore.getConversationById(convId)) {
       const loadResult = await appBootstrapStore.loadOne(
@@ -549,7 +545,7 @@ const onUserSearchSendMessage = async (user) => {
   if (!ok) return;
 
   const restore = convCreateStore.savedListView;
-  convCreateStore.exit();
+  convCreateStore.exit(true);
   currentListView.value = restore;
   currentMainView.value = null;
   selectedFriend.value = null;
@@ -561,7 +557,7 @@ const handleGroupCreated = async (convId) => {
     toast.error("无效的会话 ID");
     return;
   }
-  convCreateStore.exit();
+  convCreateStore.exit(true);
   try {
     await conversationStore.refreshConversationById(id);
     if (!conversationStore.getConversationById(id)) {
@@ -830,7 +826,7 @@ const handleEditSuccess = (message) => {
 
 const startNewChat = () => {
   const from = currentListView.value === "friends" ? "friends" : "chat";
-  convCreateStore.enter(from);
+  convCreateStore.enter(from, false);
   currentMainView.value = null;
   selectedFriend.value = null;
   conversationStore.clearCurrentConversation();
@@ -842,7 +838,7 @@ const handleLogout = async () => {
       console.log("? 开始登出流程...");
 
       console.log("? 清理会话数据...");
-      convCreateStore.exit();
+      convCreateStore.exit(true);
       notificationStore.reset();
       singleChatPeerAvatarStore.reset();
       conversationStore.resetConversations();

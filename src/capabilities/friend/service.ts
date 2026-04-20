@@ -5,7 +5,7 @@ import { displayNameResolver } from "@/capabilities/show-display-name";
 import type {
   FriendListItem,
   FriendOnlineStatus,
-  FriendRelationDetailDTO,
+  FriendSummaryDTO,
 } from "@/types/dto/friend";
 
 const normalizeOnlineStatus = (status?: number | null): FriendOnlineStatus => {
@@ -14,7 +14,7 @@ const normalizeOnlineStatus = (status?: number | null): FriendOnlineStatus => {
   return "offline";
 };
 
-export const mapToFriendListItem = (dto: FriendRelationDetailDTO): FriendListItem => {
+export const mapToFriendListItem = (dto: FriendSummaryDTO): FriendListItem => {
   const nickname = dto.friendNickname || "";
   const remarkName = dto.remarkName || "";
   const displayName = displayNameResolver.person({

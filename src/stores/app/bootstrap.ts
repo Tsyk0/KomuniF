@@ -3,9 +3,9 @@ import { defineStore } from "pinia";
 import { AppInitLoader } from "@/capabilities/init";
 import type { InitResult, InitTarget } from "@/capabilities/init";
 import { useFriendStore } from "@/stores/friend/show-friend";
-import { useConversationStore } from "@/stores/conv/show-conversation";
+import { useConvStore } from "@/store/conv";
 import { useSystemNotificationsStore } from "@/stores/notification/system-notifications";
-import { useSingleChatPeerAvatarStore } from "@/stores/conv/single-chat-peer-avatar";
+import { useSingleChatPeerAvatarStore } from "@/store/conv-peer-avatar";
 
 const loader = new AppInitLoader();
 
@@ -20,8 +20,8 @@ export const useAppBootstrapStore = defineStore("appBootstrap", {
         return;
       }
       if (result.target === "conversations") {
-        const conversationStore = useConversationStore();
-        conversationStore.setConversations(result.data || [], userId);
+        const conversationStore = useConvStore();
+        conversationStore.setConversations(result.data || []);
         await useSingleChatPeerAvatarStore().loadAllSingleChatPeerProfiles();
         return;
       }
