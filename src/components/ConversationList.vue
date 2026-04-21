@@ -85,7 +85,8 @@ const filteredConversations = computed(() => {
     }
 
     // match by sender display name
-    const senderName = lastMsg?.senderDisplayName || `User${lastMsg?.senderId || ""}`;
+    const senderName =
+      lastMsg?.senderDisplayName || `User${lastMsg?.senderId || ""}`;
     if (senderName.toLowerCase().includes(keyword)) {
       return true;
     }

@@ -182,18 +182,12 @@
             </div>
           </div>
 
-          <!-- 发送方式提示 - 新增部分 -->
-          <div class="send-mode-hint" v-if="!isUsingWebSocket">
-            <span class="hint-icon">⚠</span>
-            <span class="hint-text">使用HTTP发送（WebSocket不可用）</span>
-          </div>
         </div>
       </div>
 
       <!-- 右侧会话/好友信息面板（群聊或单聊均可打开） -->
       <div
         v-if="isGroupChat || singlePeerUserId"
-        ref="infoPanelWrapper"
         class="chat-conversation-info-wrapper"
         :class="{ open: isGroupInfoOpen, resizing: isResizingInfoPanel }"
         :style="infoPanelStyle"
@@ -225,7 +219,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
 import { useShowMessageStore } from "@/store/message/showMessage";
-import { useSendMessageStore } from "@/store/message/sendMessage";
 import { useUserStore } from "@/store/user/user";
 import { useConvStore } from "@/store/conv/conv";
 import { useWebSocketStore } from "@/store/realtime/websocket";
@@ -233,14 +226,24 @@ import MessageItem from "./MessageItem.vue";
 import ChatSearchPanel from "./ChatSearchPanel.vue";
 import ConversationInfo from "./ConversationInfo.vue";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import {
+  handleRealtimeIncomingMessage,
+  buildTempTextMessage,
+  resetMessageComposerView,
+  resizeMessageComposer,
+  loadConversationMessagesAndSyncRealtime,
+  runScrollPaginationStateMachine,
+  scrollContainerToBottom,
+  isContainerNearBottom,
+  runSearchAnchorJumpFlow,
+  bindWindowWebSocketListeners,
+} from "@/normalize/message";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
-import type { SendMessageResponseData } from "@/types/dto/message";
 import BaseIcon from "./BaseIcon.vue";
 
 // Store
 const showMessageStore = useShowMessageStore();
-const sendMessageStore = useSendMessageStore();
 const authStore = useUserStore();
 const websocketStore = useWebSocketStore();
 const conversationStore = useConvStore();
@@ -259,10 +262,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-  back: [];
   search: [];
   menu: [];
-  "message-sent": [response: SendMessageResponseData];
   call: [{ convId: number; peerUserId: number }];
 }>();
 
@@ -322,7 +323,7 @@ const canVoiceVideoCall = computed(
 const messagesContainer = ref<HTMLElement | null>(null);
 const messageInputRef = ref<HTMLTextAreaElement | null>(null);
 const messageText = ref("");
-const isSending = computed(() => sendMessageStore.isSending);
+const isSending = ref(false);
 const isSearchOpen = ref(false);
 const savedScrollTop = ref(0);
 const savedWasAtBottom = ref(true);
@@ -377,8 +378,6 @@ const infoPanelStartX = ref(0);
 const infoPanelStartWidth = ref(0);
 let infoPanelAnimationFrameId: number | null = null;
 const INFO_PANEL_WIDTH_KEY = "komunif_chat_info_width";
-const infoPanelWrapper = ref<HTMLElement | null>(null);
-const infoPanelRight = ref(0);
 
 // WebSocket相关状态
 const websocketStatus = computed(() => {
@@ -386,7 +385,6 @@ const websocketStatus = computed(() => {
   return websocketStore.isConnected ? "connected" : "disconnected";
 });
 const connectionError = ref<string | null>(null);
-const isUsingWebSocket = ref(true);
 const webSocketListenersInitialized = ref(false);
 
 // 防止重复连接的标志
@@ -410,15 +408,6 @@ const firstChar = computed(() => {
 const canSend = computed(() => {
   return (
     messageText.value.trim().length > 0 && props.convId && !isSending.value
-  );
-});
-
-const canUseWebSocket = computed(() => {
-  const user = authStore.user;
-  return (
-    websocketStore.isConnected &&
-    user?.userId !== undefined &&
-    props.convId !== null
   );
 });
 
@@ -467,159 +456,65 @@ const infoPanelStyle = computed(() => {
 });
 
 /**
- * 初始化WebSocket连接和监听器 - 修复重复连接问题
+ * 初始化 WebSocket：只做最小连接与监听器就绪（不在组件内做复杂 WS 编排）。
  */
 const initWebSocket = async () => {
-  if (!authStore.isAuthenticated || !props.convId) {
-    console.log("未登录或无会话ID，跳过WebSocket连接");
-    return;
-  }
-
-  // 防止重复连接
+  if (!authStore.isAuthenticated || !props.convId) return;
   if (isWebSocketConnecting.value || websocketStore.isConnected) {
-    console.log("WebSocket已经在连接或已连接，只设置监听器");
     if (!webSocketListenersInitialized.value) {
       const cleanup = setupWebSocketEventListeners();
       if (cleanup) globalWebSocketCleanup = cleanup;
     }
     return;
   }
-
-  const currentUser = authStore.user;
-  if (!currentUser?.userId) {
-    console.error("用户ID不存在，无法连接WebSocket");
-    return;
-  }
-
+  const currentUserId = authStore.user?.userId;
+  if (!currentUserId) return;
   isWebSocketConnecting.value = true;
-
   try {
-    console.log("正在建立WebSocket连接...", {
-      userId: currentUser.userId,
-      convId: props.convId,
-    });
-
-    await websocketStore.connect(currentUser.userId, props.convId);
-    console.log("WebSocket连接成功");
+    await websocketStore.connect(currentUserId, props.convId);
     connectionError.value = null;
-    isUsingWebSocket.value = true;
-
-    const cleanup = setupWebSocketEventListeners();
-    if (cleanup) globalWebSocketCleanup = cleanup;
-  } catch (error) {
-    console.error("WebSocket连接失败:", error);
+    if (!webSocketListenersInitialized.value) {
+      const cleanup = setupWebSocketEventListeners();
+      if (cleanup) globalWebSocketCleanup = cleanup;
+    }
+  } catch {
     connectionError.value = "无法连接到实时消息服务器";
-    isUsingWebSocket.value = false;
   } finally {
     isWebSocketConnecting.value = false;
   }
 };
 
 /**
- * 设置WebSocket事件监听器 - 修复消息确认处理
+ * 设置 WebSocket 事件监听器（MVP 阶段只处理新消息与错误）。
  */
 const setupWebSocketEventListeners = () => {
   if (webSocketListenersInitialized.value) {
     return;
   }
 
-  console.log("设置WebSocket事件监听器");
-
-  // 监听新消息事件
-  const handleNewMessage = (event: CustomEvent) => {
-    console.log("收到WebSocket新消息事件:", event.detail);
-    const message = event.detail;
-
-    if (message.convId === props.convId) {
-      console.log("处理当前会话的新消息:", message);
-      handleIncomingWebSocketMessage(message);
-    } else {
-      console.log("收到其他会话的消息，忽略:", message.convId);
-    }
-  };
-
-  // 正确处理消息发送成功确认
-  const handleMessageSent = (event: CustomEvent) => {
-    console.log("消息发送成功确认:", event.detail);
-
-    const message = event.detail;
-    if (
-      message.convId === props.convId &&
-      message.success &&
-      message.messageId
-    ) {
-      console.log("当前会话消息发送成功，消息ID:", message.messageId);
-
-      // 找到所有状态为0（发送中）的消息
-      const sendingMessages = showMessageStore.messages.filter(
-        (msg) => msg.messageStatus === 0 && msg.isSentByMe
-      );
-
-      if (sendingMessages.length > 0) {
-        // 取最后一条发送中的消息（假设是最新发送的）
-        const tempMessage = sendingMessages[sendingMessages.length - 1];
-        console.log(
-          "更新临时消息状态:",
-          tempMessage.messageId,
-          "->",
-          message.messageId
-        );
-
-        // 用服务器消息替换临时消息
-        const serverMessage: DisplayMessage = {
-          ...tempMessage,
-          messageId: message.messageId,
-          messageStatus: 1, // 已发送
-          sendTime: new Date(message.timestamp || Date.now()).toISOString(),
-        };
-
-        showMessageStore.replaceTempMessage(
-          tempMessage.messageId,
-          serverMessage
-        );
-        console.log("临时消息已更新为服务器消息");
-        void nextTick(() => scrollToBottom());
+  const cleanup = bindWindowWebSocketListeners({
+    onNewMessage: (message) => {
+      if (message.convId === props.convId) {
+        handleIncomingWebSocketMessage(message);
       }
-    }
-  };
-
-  // 监听错误（detail 可为 string 历史格式或 { code, message }）
-  const handleError = (event: CustomEvent) => {
-    const d = event.detail;
-    const msg =
-      typeof d === "string"
-        ? d
-        : d && typeof d.message === "string"
-          ? d.message
-          : "WebSocket连接错误";
-    console.error("WebSocket错误:", d);
-    connectionError.value = msg;
-  };
-
-  // 添加事件监听
-  window.addEventListener(
-    "websocket:newMessage",
-    handleNewMessage as EventListener
-  );
-  window.addEventListener(
-    "websocket:messageSent",
-    handleMessageSent as EventListener
-  );
-  window.addEventListener("websocket:error", handleError as EventListener);
+    },
+    // 按当前需求暂不处理 ACK，后续需要再补。
+    onMessageSent: () => {},
+    onError: (d) => {
+      const msg =
+        typeof d === "string"
+          ? d
+          : d && typeof d.message === "string"
+            ? d.message
+            : "WebSocket连接错误";
+      connectionError.value = msg;
+    },
+  });
 
   webSocketListenersInitialized.value = true;
 
-  // 返回清理函数
   return () => {
-    window.removeEventListener(
-      "websocket:newMessage",
-      handleNewMessage as EventListener
-    );
-    window.removeEventListener(
-      "websocket:messageSent",
-      handleMessageSent as EventListener
-    );
-    window.removeEventListener("websocket:error", handleError as EventListener);
+    cleanup();
     webSocketListenersInitialized.value = false;
   };
 };
@@ -631,100 +526,24 @@ const handleIncomingWebSocketMessage = (message: any) => {
   const currentUser = authStore.user;
   if (!currentUser?.userId) return;
 
-  // 检查是否已存在该消息（避免重复）
-  const existingMessage = showMessageStore.messages.find(
-    (msg) => msg.messageId === message.messageId
-  );
-
-  if (existingMessage) {
-    console.log("消息已存在，跳过:", message.messageId);
-    return;
-  }
-
-  // 构建完整的DisplayMessage对象
-  // 获取会话类型以支持正确的昵称显示逻辑
-  const conv = conversationStore.conversations.find(
-    (c) => c.convId === message.convId
-  );
-
-  const displayMessage: DisplayMessage = {
-    messageId: message.messageId || Date.now(),
-    convId: message.convId,
-    senderId: message.senderId,
-    messageType: message.messageType || "text",
-    messageContent: message.messageContent || message.content || "",
-    messageStatus: message.messageStatus || 1,
-    sendTime: message.sendTime
-      ? new Date(message.sendTime).toISOString()
-      : new Date().toISOString(),
-    replyToMessageId: message.replyToMessageId || undefined,
-    isRecalled: message.isRecalled || 0,
-
-    // 显示字段 - 使用Store中的解析逻辑
-    senderName: showMessageStore.resolveSenderName(
-      message.senderId,
-      `用户${message.senderId}`,
-      conv?.convType,
-      // 尝试从会话成员缓存中获取群昵称
-      conv?.convType === 2
-        ? getMemberNicknameFromCache(message.convId, message.senderId)
-        : undefined,
-      message.convId
-    ),
-    senderAvatar: getSenderAvatar(message.senderId),
-    isSentByMe: message.senderId === currentUser.userId,
-  };
-
-  console.log("将WebSocket消息添加到Store:", displayMessage);
-  showMessageStore.addMessage(displayMessage);
-
   const box = messagesContainer.value;
-  if (displayMessage.isSentByMe) {
+  const result = handleRealtimeIncomingMessage({
+    payload: message,
+    currentUserId: currentUser.userId,
+    currentUserAvatar: currentUser.userAvatar || null,
+    conversationMembers:
+      conversationStore.compressedCMMap.get(Number(message.convId)) || [],
+    hasMessage: (messageId: number) =>
+      showMessageStore.messages.some((msg) => msg.messageId === messageId),
+    appendMessage: (displayMessage: DisplayMessage) =>
+      showMessageStore.addMessage(displayMessage),
+    isNearBottom: box ? isContainerNearBottom(box) : false,
+  });
+  if (!result.added) return;
+  console.log("将WebSocket消息添加到Store:", result.displayMessage);
+  if (result.shouldScrollToBottom) {
     scrollToBottom();
-  } else if (box && isNearBottom(box)) {
-    scrollToBottom();
   }
-};
-
-/**
- * 获取发送者名称
- */
-const getSenderName = (senderId: number): string => {
-  const currentUser = authStore.user;
-  if (senderId === currentUser?.userId) {
-    return currentUser.userNickname || "我";
-  }
-
-  // TODO: 从联系人缓存中获取名称
-  return `用户${senderId}`;
-};
-
-/**
- * 获取发送者头像
- */
-const getSenderAvatar = (senderId: number): string | null => {
-  const currentUser = authStore.user;
-  if (senderId === currentUser?.userId) {
-    return currentUser.userAvatar || null;
-  }
-
-  // TODO: 从联系人缓存中获取头像
-  return null;
-};
-
-/**
- * 从会话成员缓存中获取群昵称
- */
-const getMemberNicknameFromCache = (
-  convId: number,
-  userId: number
-): string | null => {
-  const members = conversationStore.compressedCMMap.get(convId);
-  if (members) {
-    const member = members.find((m) => m.userId === userId);
-    return member?.memberNickname || null;
-  }
-  return null;
 };
 
 /**
@@ -742,96 +561,41 @@ const sendMessage = async () => {
   }
 
   let tempMessage: DisplayMessage | undefined;
-  let messageTimeoutId: number | null = null;
+  isSending.value = true;
 
   try {
     console.log("发送消息:", { convId: props.convId, content });
 
-    // 1. 创建临时消息 - 使用resolveSenderName确保昵称正确
-    tempMessage = {
-      messageId: Date.now(),
+    // 1. 创建临时消息（构建逻辑下沉到 normalize）
+    tempMessage = buildTempTextMessage({
       convId: props.convId,
-      senderId: currentUser.userId,
-      messageType: "text",
-      messageContent: content,
-      messageStatus: 0, // 发送中
-      sendTime: new Date().toISOString(),
-      senderName: showMessageStore.resolveSenderName(
-        currentUser.userId,
-        currentUser.userNickname || "我",
-        conversationStore.currentConversation?.convType,
-        getMemberNicknameFromCache(props.convId, currentUser.userId),
-        props.convId
-      ),
-      senderAvatar: currentUser.userAvatar || null,
-      isSentByMe: true,
-    };
+      currentUserId: currentUser.userId,
+      currentUserNickname: currentUser.userNickname || null,
+      currentUserAvatar: currentUser.userAvatar || null,
+      content,
+      conversationMembers: conversationStore.compressedCMMap.get(props.convId),
+    });
 
     // 2. 添加到Store
     showMessageStore.addMessage(tempMessage);
 
     // 3. 清空输入框
-    messageText.value = "";
-    if (messageInputRef.value) {
-      messageInputRef.value.style.height = "auto";
-    }
+    resetMessageComposerView((value) => (messageText.value = value), messageInputRef.value);
 
     // 4. 滚动到底部
     scrollToBottom();
 
-    // 5. 优先尝试WebSocket发送
-    if (isUsingWebSocket.value) {
-      console.log("尝试使用WebSocket发送消息");
-
-      // 确保WebSocket连接
-      if (!websocketStore.isConnected) {
-        console.log("WebSocket未连接，尝试连接...");
-        await initWebSocket();
-      }
-
-      // 再次检查连接状态
-      if (websocketStore.isConnected) {
-        const success = websocketStore.sendTextMessage(props.convId, content);
-
-        if (success) {
-          console.log("WebSocket消息发送成功，等待服务器确认");
-
-          // 更智能的超时处理
-          messageTimeoutId = window.setTimeout(() => {
-            if (!tempMessage) return;
-
-            const sentMessage = showMessageStore.messages.find(
-              (msg) => msg.messageId === tempMessage!.messageId
-            );
-            if (sentMessage && sentMessage.messageStatus === 0) {
-              console.log("WebSocket确认超时，降级到HTTP");
-              // 先清理定时器
-              if (messageTimeoutId) clearTimeout(messageTimeoutId);
-              fallbackToHttpSend(tempMessage!, content);
-            }
-          }, 5000);
-
-          return;
-        } else {
-          console.log("WebSocket发送失败，降级到HTTP");
-          isUsingWebSocket.value = false;
-          if (tempMessage) {
-            fallbackToHttpSend(tempMessage, content);
-          }
-        }
-      } else {
-        console.log("WebSocket连接失败，降级到HTTP");
-        isUsingWebSocket.value = false;
-        if (tempMessage) {
-          fallbackToHttpSend(tempMessage, content);
-        }
-      }
-    } else {
-      // 6. 直接使用HTTP发送
-      console.log("WebSocket不可用，使用HTTP发送消息");
-      if (tempMessage) {
-        fallbackToHttpSend(tempMessage, content);
-      }
+    // 5. MVP 阶段仅保留 WebSocket 发送，不做 HTTP 降级。
+    if (!websocketStore.isConnected) {
+      console.log("WebSocket未连接，尝试连接...");
+      await initWebSocket();
+    }
+    if (!websocketStore.isConnected) {
+      throw new Error("WebSocket unavailable");
+    }
+    const success = websocketStore.sendTextMessage(props.convId, content);
+    if (!success) {
+      throw new Error("WebSocket send failed");
     }
   } catch (error) {
     console.error("发送消息失败:", error);
@@ -842,52 +606,7 @@ const sendMessage = async () => {
 
     connectionError.value = "消息发送失败，请检查网络连接";
   } finally {
-    // 清理定时器
-    if (messageTimeoutId) clearTimeout(messageTimeoutId);
-  }
-};
-
-/**
- * HTTP后备发送
- */
-const fallbackToHttpSend = async (
-  tempMessage: DisplayMessage,
-  content: string
-) => {
-  try {
-    const userId = authStore.user?.userId;
-    if (userId === undefined) {
-      throw new Error("用户未登录");
-    }
-
-    const response = await sendMessageStore.sendTextMessage(
-      props.convId!,
-      userId,
-      content
-    );
-
-    console.log("HTTP服务器响应:", response);
-
-    // 用服务器消息替换临时消息
-    const serverMessage: DisplayMessage = {
-      ...tempMessage,
-      messageId: response.messageId,
-      messageStatus: response.messageStatus,
-      sendTime: response.sendTime,
-    };
-
-    showMessageStore.replaceTempMessage(tempMessage.messageId, serverMessage);
-    void nextTick(() => scrollToBottom());
-
-    // 触发消息发送事件
-    emit("message-sent", response);
-  } catch (error) {
-    console.error("HTTP发送失败:", error);
-
-    // 标记临时消息为失败状态
-    showMessageStore.updateMessageStatus(tempMessage.messageId, 4);
-
-    throw error;
+    isSending.value = false;
   }
 };
 
@@ -898,28 +617,27 @@ const loadMessages = async () => {
   if (!props.convId) return;
 
   console.log("ChatContainer: 触发加载消息，会话ID:", props.convId);
-
-  // 1. 使用HTTP获取历史消息
-  await showMessageStore.loadMessages(props.convId);
-  await nextTick();
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  scrollToBottom();
-
-  // 2. WebSocket：未连接则建立连接；已连接则同步当前会话并发送 subscribe（便于后端更新 currentConvId 并回传在线人数）
-  if (!websocketStore.isConnected && !isWebSocketConnecting.value) {
-    await initWebSocket();
-  } else {
-    if (!webSocketListenersInitialized.value) {
-      const cleanup = setupWebSocketEventListeners();
-      if (cleanup) globalWebSocketCleanup = cleanup;
-    }
-    const currentUser = authStore.user;
-    if (currentUser?.userId && props.convId) {
-      await websocketStore.connect(currentUser.userId, props.convId);
-      // 已连接时发送 subscribe，确保切换会话后后端回传新会话的在线人数
-      websocketStore.sendSubscribe(props.convId);
-    }
-  }
+  await loadConversationMessagesAndSyncRealtime({
+    convId: props.convId,
+    loadMessages: (convId) => showMessageStore.loadMessages(convId),
+    waitForLayout: async () => {
+      await nextTick();
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    },
+    scrollToBottom,
+    isWsConnected: websocketStore.isConnected,
+    isWsConnecting: isWebSocketConnecting.value,
+    initWebSocket,
+    ensureWebSocketListeners: () => {
+      if (!webSocketListenersInitialized.value) {
+        const cleanup = setupWebSocketEventListeners();
+        if (cleanup) globalWebSocketCleanup = cleanup;
+      }
+    },
+    currentUserId: authStore.user?.userId,
+    connectWebSocket: (userId, convId) => websocketStore.connect(userId, convId),
+    subscribeConversation: (convId) => websocketStore.sendSubscribe(convId),
+  });
 };
 
 /**
@@ -937,11 +655,7 @@ const handleEnterKey = (event: KeyboardEvent) => {
  */
 const handleInputResize = () => {
   nextTick(() => {
-    if (messageInputRef.value) {
-      messageInputRef.value.style.height = "auto";
-      const newHeight = Math.min(messageInputRef.value.scrollHeight, 120);
-      messageInputRef.value.style.height = `${newHeight}px`;
-    }
+    resizeMessageComposer(messageInputRef.value);
   });
 };
 
@@ -950,65 +664,8 @@ const handleInputResize = () => {
  */
 const scrollToBottom = () => {
   nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-    }
+    scrollContainerToBottom(messagesContainer.value);
   });
-};
-
-const isNearBottom = (el: HTMLElement, px = 72) => {
-  const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
-  return gap <= px;
-};
-
-/**
- * 将锚点元素垂直中心对齐到消息容器的垂直中心（比 scrollIntoView 在嵌套滚动里更稳）
- */
-const scrollAnchorToContainerCenter = (
-  container: HTMLElement,
-  anchorEl: HTMLElement
-) => {
-  const cRect = container.getBoundingClientRect();
-  const aRect = anchorEl.getBoundingClientRect();
-  const anchorCenterY = aRect.top + aRect.height / 2;
-  const containerCenterY = cRect.top + cRect.height / 2;
-  const delta = anchorCenterY - containerCenterY;
-  const maxScroll = Math.max(
-    0,
-    container.scrollHeight - container.clientHeight
-  );
-  const next = container.scrollTop + delta;
-  container.scrollTop = Math.max(0, Math.min(next, maxScroll));
-};
-
-/**
- * DOM 渲染略晚于 messages 赋值时，querySelector 会暂时找不到节点；多帧重试。
- * 居中后会在下一帧再校正一次，减轻图片/字体布局导致的偏移。
- */
-const scrollAnchorIntoViewWhenReady = async (
-  messageId: number,
-  maxTries = 24
-) => {
-  const waitLayout = async () => {
-    await nextTick();
-    await new Promise<void>((r) => requestAnimationFrame(() => r()));
-    await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  };
-
-  for (let i = 0; i < maxTries; i++) {
-    await waitLayout();
-    const container = messagesContainer.value;
-    const el = container?.querySelector(
-      `[data-message-id="${messageId}"]`
-    ) as HTMLElement | null;
-    if (el && container) {
-      scrollAnchorToContainerCenter(container, el);
-      await new Promise<void>((r) => requestAnimationFrame(() => r()));
-      scrollAnchorToContainerCenter(container, el);
-      return true;
-    }
-  }
-  return false;
 };
 
 const startAnchorFlash = (messageId: number) => {
@@ -1025,38 +682,32 @@ const startAnchorFlash = (messageId: number) => {
 
 const handleJumpToSearchMessage = async (messageId: number) => {
   const mySeq = ++searchJumpSeq;
-  isSearchOpen.value = false;
-  suppressAutoScrollForAnchorJump.value = true;
-  try {
-    await showMessageStore.loadMessagesAroundAnchor(
-      messageId,
-      25,
-      props.convId == null ? null : props.convId
-    );
-    if (mySeq !== searchJumpSeq) return;
-    const ok = await scrollAnchorIntoViewWhenReady(messageId);
-    if (mySeq !== searchJumpSeq) return;
-    if (ok) {
-      startAnchorFlash(messageId);
-    } else {
-      console.warn("锚点消息节点未找到，messageId:", messageId);
-    }
-  } catch (e: unknown) {
-    if (mySeq === searchJumpSeq) {
-      const msg = e instanceof Error ? e.message : "无法定位到该消息";
-      alert(msg);
-    }
-  } finally {
-    if (mySeq === searchJumpSeq) {
-      suppressAutoScrollForAnchorJump.value = false;
-    }
-  }
+  await runSearchAnchorJumpFlow({
+    messageId,
+    convId: props.convId == null ? null : props.convId,
+    requestSeq: mySeq,
+    getLatestSeq: () => searchJumpSeq,
+    setSearchOpen: (open) => (isSearchOpen.value = open),
+    setSuppressAutoScroll: (suppress) =>
+      (suppressAutoScrollForAnchorJump.value = suppress),
+    loadAroundAnchor: (anchorMessageId, limit, convId) =>
+      showMessageStore.loadMessagesAroundAnchor(anchorMessageId, limit, convId),
+    container: messagesContainer.value,
+    waitForLayout: async () => {
+      await nextTick();
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    },
+    onAnchorFlash: (anchorMessageId) => startAnchorFlash(anchorMessageId),
+    onAnchorNotFound: (anchorMessageId) =>
+      console.warn("锚点消息节点未找到，messageId:", anchorMessageId),
+    onError: (message) => alert(message),
+  });
 };
 
 /**
  * 事件处理
  */
-const handleBack = () => emit("back");
 const handleSearch = () => {
   if (!isSearchOpen.value) {
     snapshotMessageScrollPosition();
@@ -1158,138 +809,44 @@ const stopInfoPanelResize = () => {
   }
 };
 
-/** 顶部 prepend 加载后保持视口锚点 */
-const preserveScrollAfterPrepend = async (runLoad: () => Promise<void>) => {
-  const el = messagesContainer.value;
-  if (!el) {
-    await runLoad();
-    return;
-  }
-  const h0 = el.scrollHeight;
-  const top0 = el.scrollTop;
-  await runLoad();
-  await nextTick();
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  const c = messagesContainer.value;
-  if (!c) return;
-  const dh = c.scrollHeight - h0;
-  if (dh > 0) {
-    c.scrollTop = top0 + dh;
-  }
-};
-
-/** 底部 append 后保持距底距离 */
-const preserveScrollAfterAppend = async (runLoad: () => Promise<void>) => {
-  const el = messagesContainer.value;
-  if (!el) {
-    await runLoad();
-    return;
-  }
-  const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
-  await runLoad();
-  await nextTick();
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  const c = messagesContainer.value;
-  if (!c) return;
-  const maxTop = Math.max(0, c.scrollHeight - c.clientHeight);
-  c.scrollTop = Math.max(
-    0,
-    Math.min(maxTop, c.scrollHeight - c.clientHeight - gap)
-  );
-};
-
-/** rAF 合并滚动事件，避免一帧内多次判定边界 */
+/** rAF 合并滚动事件，状态机入口在 normalize。 */
 const scheduleMessagesScrollPagination = () => {
   if (messagesScrollRafId != null) return;
   messagesScrollRafId = requestAnimationFrame(() => {
     messagesScrollRafId = null;
-    void runMessagesScrollPagination();
+    void runScrollPaginationStateMachine({
+      container: messagesContainer.value,
+      convId: props.convId,
+      now: Date.now(),
+      paginationInFlight: paginationInFlight.value,
+      edgeCooldownUntil: edgePaginationCooldownUntil.value,
+      setPaginationInFlight: (value) => (paginationInFlight.value = value),
+      setEdgeCooldownUntil: (value) => (edgePaginationCooldownUntil.value = value),
+      edgeCooldownMs: EDGE_PAGINATION_COOLDOWN_MS,
+      showMessageState: {
+        loading: showMessageStore.loading,
+        historyLoading: showMessageStore.historyLoading,
+        anchorViewActive: showMessageStore.anchorViewActive,
+        canLoadOlderAnchor: showMessageStore.canLoadOlderAnchor,
+        canLoadNewerAnchor: showMessageStore.canLoadNewerAnchor,
+        hasMoreHistory: showMessageStore.hasMoreHistory,
+        anchorNewerPaginateLoading: showMessageStore.anchorNewerPaginateLoading,
+      },
+      getOldestMessageId: () => showMessageStore.getOldestMessage()?.messageId ?? null,
+      getLatestMessageId: () => showMessageStore.getLatestMessage()?.messageId ?? null,
+      loadOlderAnchor: (boundaryMessageId) =>
+        showMessageStore.loadOlderMessagesBeforeBoundary(boundaryMessageId),
+      loadHistory: (convId, boundaryMessageId) =>
+        showMessageStore.loadMessages(convId, "history", boundaryMessageId),
+      loadNewerAnchor: (boundaryMessageId) =>
+        showMessageStore.loadNewerMessagesAfterBoundary(boundaryMessageId),
+      waitForLayout: async () => {
+        await nextTick();
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      },
+    });
   });
-};
-
-/**
- * 顶/底加载更多：单次飞行 + 冷却，与「禁止 watch 自动滚底」配合（标准聊天实现）
- */
-const runMessagesScrollPagination = async () => {
-  const container = messagesContainer.value;
-  if (!container || !props.convId) return;
-  if (paginationInFlight.value) return;
-  if (Date.now() < edgePaginationCooldownUntil.value) return;
-
-  const threshold = 40;
-  const bottomGap =
-    container.scrollHeight - container.scrollTop - container.clientHeight;
-
-  if (container.scrollTop <= threshold) {
-    if (showMessageStore.loading) return;
-
-    if (showMessageStore.anchorViewActive) {
-      if (
-        showMessageStore.historyLoading ||
-        !showMessageStore.canLoadOlderAnchor
-      ) {
-        return;
-      }
-      const oldest = showMessageStore.getOldestMessage();
-      if (!oldest) return;
-      paginationInFlight.value = true;
-      try {
-        await preserveScrollAfterPrepend(() =>
-          showMessageStore.loadOlderMessagesBeforeBoundary(oldest.messageId)
-        );
-      } finally {
-        paginationInFlight.value = false;
-        edgePaginationCooldownUntil.value =
-          Date.now() + EDGE_PAGINATION_COOLDOWN_MS;
-      }
-      return;
-    }
-
-    if (showMessageStore.historyLoading || !showMessageStore.hasMoreHistory) {
-      return;
-    }
-    const oldest = showMessageStore.getOldestMessage();
-    if (!oldest) return;
-    paginationInFlight.value = true;
-    try {
-      await preserveScrollAfterPrepend(() =>
-        showMessageStore.loadMessages(props.convId, "history", oldest.messageId)
-      );
-    } finally {
-      paginationInFlight.value = false;
-      edgePaginationCooldownUntil.value =
-        Date.now() + EDGE_PAGINATION_COOLDOWN_MS;
-    }
-    return;
-  }
-
-  if (
-    bottomGap <= threshold &&
-    showMessageStore.anchorViewActive &&
-    showMessageStore.canLoadNewerAnchor
-  ) {
-    if (
-      showMessageStore.loading ||
-      showMessageStore.historyLoading ||
-      showMessageStore.anchorNewerPaginateLoading
-    ) {
-      return;
-    }
-    const newest = showMessageStore.getLatestMessage();
-    if (!newest) return;
-    paginationInFlight.value = true;
-    try {
-      await preserveScrollAfterAppend(() =>
-        showMessageStore.loadNewerMessagesAfterBoundary(newest.messageId)
-      );
-    } finally {
-      paginationInFlight.value = false;
-      edgePaginationCooldownUntil.value =
-        Date.now() + EDGE_PAGINATION_COOLDOWN_MS;
-    }
-  }
 };
 
 /**
@@ -1304,7 +861,6 @@ const cleanupWebSocketListeners = () => {
     globalWebSocketCleanup = null;
   }
 
-  isUsingWebSocket.value = false;
   webSocketListenersInitialized.value = false;
   connectionError.value = null;
 };
@@ -1357,7 +913,6 @@ watch(
     if (error) {
       console.error("WebSocket连接错误:", error);
       connectionError.value = error;
-      isUsingWebSocket.value = false;
     }
   }
 );
