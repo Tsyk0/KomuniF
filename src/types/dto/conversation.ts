@@ -12,6 +12,14 @@ export interface LastMessageInfo {
   sendTime: string;
 }
 
+/** 单聊对端信息（仅 convType=1 时后端填充）。 */
+export interface ConversationPeerInfoDTO {
+  peerUserId: number;
+  peerNickname: string;
+  peerAvatar: string | null;
+  peerRemarkName: string | null;
+}
+
 /**
  * 会话摘要 DTO（会话列表项）
  */
@@ -32,6 +40,8 @@ export interface ConversationSummaryDTO {
   unreadCount: number;               // 未读消息数
   /** 单聊时对方用户 ID（好友 userId），由会话摘要接口返回 */
   targetUserId?: number;
+  /** 单聊对端信息（群聊通常为 null/undefined）。 */
+  peer?: ConversationPeerInfoDTO | null;
 
   // 最后一条消息信息
   lastMessage: LastMessageInfo | null;
@@ -39,9 +49,6 @@ export interface ConversationSummaryDTO {
   // 时间信息
   updateTime: string;
 }
-
-// 兼容旧命名
-export type ConversationDetailDTO = ConversationSummaryDTO;
 
 /**
  * 会话成员展示 DTO（群成员简化信息）

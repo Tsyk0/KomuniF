@@ -10,7 +10,7 @@ import '@/assets/directives/ripple/style.css'
 import './assets/styles/toast.css'
 import App from './App.vue'
 import router from './router'
-import { useThemeStore } from './stores/theme'
+import { useThemeStore } from './store/theme/theme'
 
 // 创建Vue应用实例
 const app = createApp(App)

@@ -49,12 +49,10 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useConversationDisplay } from "@/capabilities/show-display-avatar";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
-import { useAuthStore } from "@/stores/auth";
-import { useFriendStore } from "@/stores/friend/show-friend";
-import { displayNameResolver } from "@/capabilities/show-display-name";
+import { useUserStore } from "@/store/user/user";
+import { useFriendStore } from "@/store/friend/showFriend";
 
 interface Props {
   conversation: ConversationSummaryDTO;
@@ -62,10 +60,16 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const authStore = useAuthStore();
+const authStore = useUserStore();
 const friendStore = useFriendStore();
 
-const { displayName, avatar } = useConversationDisplay(() => props.conversation);
+const displayName = computed(() => {
+  return props.conversation.convName || "未命名会话";
+});
+
+const avatar = computed(() => {
+  return props.conversation.convAvatar || "";
+});
 
 const processedAvatar = computed(() => normalizeAvatarUrl(avatar.value));
 
@@ -97,17 +101,12 @@ const lastMessageSender = computed(() => {
     (f) => Number(f.friendId) === Number(lastMsg.senderId)
   );
 
-  return displayNameResolver.messageSender({
-    senderId: lastMsg.senderId,
-    currentUserId: authStore.user?.userId == null ? null : authStore.user.userId,
-    currentUserNickname: authStore.user?.userNickname == null ? "" : authStore.user.userNickname,
-    remarkName: friend?.remarkName == null ? "" : friend.remarkName,
-    userNickname: friend?.nickname == null ? "" : friend.nickname,
-    fallbackName: displayNameResolver.person({
-      userNickname: lastMsg.senderDisplayName,
-      fallbackName: `User ${lastMsg.senderId}`,
-    }),
-  });
+  return (
+    lastMsg.senderDisplayName ||
+    friend?.displayName ||
+    friend?.nickname ||
+    `User ${lastMsg.senderId}`
+  );
 });
 
 const lastMessageTime = computed(() => {

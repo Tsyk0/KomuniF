@@ -58,7 +58,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useConvCreateStore } from "@/store/conv-create";
+import { useConvCreateStore } from "@/store/conv/convCreate";
 import { createGroupConversationNormalized } from "@/normalize/conversation";
 import toast from "@/commons/utils/toast";
 

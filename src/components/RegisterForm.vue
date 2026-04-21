@@ -89,7 +89,7 @@
 </template>
 
 <script>
-import { useAuthStore } from "@/stores/auth";
+import { useUserStore } from "@/store/user/user";
 
 export default {
   data() {
@@ -112,7 +112,7 @@ export default {
 
   // 添加 setup 函数初始化 store
   setup() {
-    const authStore = useAuthStore();
+    const authStore = useUserStore();
     return { authStore };
   },
 

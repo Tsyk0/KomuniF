@@ -26,9 +26,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useMessageItemAvatar } from "@/capabilities/show-display-avatar";
-import { displayNameResolver } from "@/capabilities/show-display-name";
+import { computed, ref, watch } from "vue";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import { useConvStore } from "@/store/conv/conv";
+import { useUserStore } from "@/store/user/user";
 import type { DisplayMessage } from "@/entity/message";
 
 const props = defineProps<{
@@ -39,16 +40,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "select", message: DisplayMessage): void;
 }>();
+const convStore = useConvStore();
+const authStore = useUserStore();
 
 const emitSelect = () => {
   emit("select", props.message);
 };
 
-const displayName = computed(() =>
-  displayNameResolver.person({
-    userNickname: props.message.senderName,
-    fallbackName: String(props.message.senderId == null ? "" : props.message.senderId),
-  })
+const displayName = computed(
+  () =>
+    props.message.senderName ||
+    String(props.message.senderId == null ? "" : props.message.senderId)
 );
 
 const fallbackChar = computed(() => {
@@ -56,11 +58,37 @@ const fallbackChar = computed(() => {
   return n ? n.charAt(0) : "?";
 });
 
-const { avatarDisplayUrl: avatarUrl, onAvatarError: onImgError } =
-  useMessageItemAvatar(
-    () => props.message,
-    () => (props.convType == null ? null : props.convType)
-  );
+const isAvatarLoadSuccessful = ref(true);
+
+/** 会话类型优先使用父组件传入，未就绪时回退到 convStore 映射。 */
+const resolvedConvType = computed<number | null>(() => {
+  if (props.convType != null) return Number(props.convType);
+  const conv = convStore.conversationMap.get(Number(props.message.convId));
+  return conv?.convType == null ? null : Number(conv.convType);
+});
+
+const rawAvatarSource = computed(() => {
+  if (resolvedConvType.value === 1) {
+    if (props.message.isSentByMe) return authStore.user?.userAvatar || "";
+    const conv = convStore.conversationMap.get(Number(props.message.convId));
+    return conv?.convAvatar || "";
+  }
+  if (props.message.isSentByMe) return authStore.user?.userAvatar || "";
+  return props.message.senderAvatar || "";
+});
+
+watch(rawAvatarSource, () => {
+  isAvatarLoadSuccessful.value = true;
+});
+
+const avatarUrl = computed(() => {
+  if (!isAvatarLoadSuccessful.value) return "";
+  return normalizeAvatarUrl(rawAvatarSource.value);
+});
+
+const onImgError = () => {
+  isAvatarLoadSuccessful.value = false;
+};
 
 const timeText = computed(() => {
   const t = props.message.sendTime;

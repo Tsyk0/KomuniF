@@ -66,18 +66,18 @@ export interface MessageSummaryDTO {
 }
 
 /**
- * 获取消息详情请求参数
+ * 获取消息摘要请求参数
  */
-export interface GetMessageDetailsRequest {
+export interface GetMessageSummariesRequest {
   convId: number;
   page?: number;
   pageSize?: number;
 }
 
 /**
- * 获取消息详情响应
+ * 获取消息摘要响应
  */
-export interface GetMessageDetailsResponse {
+export interface GetMessageSummariesResponse {
   code: number;
   message: string;
   data: {

@@ -64,7 +64,6 @@
 import { computed } from "vue";
 import type { FriendListItem } from "@/types/dto/friend";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
-import { displayNameResolver } from "@/capabilities/show-display-name";
 
 type FriendItemData = FriendListItem & {
   unreadCount?: number;
@@ -85,11 +84,7 @@ const emit = defineEmits<{
 }>();
 
 const displayRemarkName = computed(() => {
-  return displayNameResolver.person({
-    remarkName: props.friend.remarkName,
-    userNickname: props.friend.nickname,
-    fallbackName: "未知用户",
-  });
+  return props.friend.displayName || props.friend.nickname || "未知用户";
 });
 
 const avatarSrc = computed(() => normalizeAvatarUrl(props.friend.avatar));

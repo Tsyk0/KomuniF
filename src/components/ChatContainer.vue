@@ -224,15 +224,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
-import { useShowMessageStore } from "@/stores/message/show-message";
-import { useSendMessageStore } from "@/stores/message/send-message";
-import { useAuthStore } from "@/stores/auth";
-import { useConvStore } from "@/store/conv";
-import { useWebSocketStore } from "@/stores/websocket-store";
+import { useShowMessageStore } from "@/store/message/showMessage";
+import { useSendMessageStore } from "@/store/message/sendMessage";
+import { useUserStore } from "@/store/user/user";
+import { useConvStore } from "@/store/conv/conv";
+import { useWebSocketStore } from "@/store/realtime/websocket";
 import MessageItem from "./MessageItem.vue";
 import ChatSearchPanel from "./ChatSearchPanel.vue";
 import ConversationInfo from "./ConversationInfo.vue";
-import { useConversationDisplay } from "@/capabilities/show-display-avatar";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
@@ -242,7 +241,7 @@ import BaseIcon from "./BaseIcon.vue";
 // Store
 const showMessageStore = useShowMessageStore();
 const sendMessageStore = useSendMessageStore();
-const authStore = useAuthStore();
+const authStore = useUserStore();
 const websocketStore = useWebSocketStore();
 const conversationStore = useConvStore();
 
@@ -276,8 +275,11 @@ const currentConversation = computed(() => {
   return fromMap == null ? null : fromMap;
 });
 
-const { displayName: conversationDisplayName, avatar: conversationAvatar } =
-  useConversationDisplay(currentConversation);
+const conversationDisplayName = computed(() => {
+  const conv = currentConversation.value;
+  if (!conv) return "";
+  return conv.convName || "未命名会话";
+});
 
 const currentConvTypeOrNull = computed(() => {
   const t = currentConversation.value?.convType;
@@ -391,7 +393,14 @@ const webSocketListenersInitialized = ref(false);
 const isWebSocketConnecting = ref(false);
 let globalWebSocketCleanup: (() => void) | null = null;
 
-const avatarUrl = computed(() => normalizeAvatarUrl(conversationAvatar.value));
+const avatarUrl = computed(() => {
+  const conv = currentConversation.value;
+  if (!conv) return "";
+
+  const raw = conv.convAvatar || "";
+
+  return normalizeAvatarUrl(raw);
+});
 
 const firstChar = computed(() => {
   const name = conversationDisplayName.value || "";

@@ -88,7 +88,7 @@
 
 <!-- script 部分保持不变 -->
 <script>
-import { useAuthStore } from "@/stores/auth";
+import { useUserStore } from "@/store/user/user";
 import { useRouter } from "vue-router";
 
 export default {
@@ -115,7 +115,7 @@ export default {
   },
 
   setup() {
-    const authStore = useAuthStore();
+    const authStore = useUserStore();
     const router = useRouter();
     return { authStore, router };
   },

@@ -86,7 +86,7 @@
 
 <script>
 import { ref, reactive, computed } from "vue";
-import { useUserStore } from "@/stores/user";
+import { useUserStore } from "@/store/user/user";
 import toast from "@/commons/utils/toast";
 
 export default {

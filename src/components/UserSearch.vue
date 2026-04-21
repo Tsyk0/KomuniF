@@ -186,11 +186,13 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from "vue";
-import { useConvCreateStore } from "@/store/conv-create";
-import { useAuthStore } from "@/stores/auth";
+import { useConvCreateStore } from "@/store/conv/convCreate";
+import { useUserStore } from "@/store/user/user";
 import type { User } from "@/entity/user";
-import { userSearchApi } from "@/apis/user-search";
-import { friendRequestApi } from "@/apis/friends/friend-request";
+import {
+  searchUsersNormalized
+} from "@/normalize/friend";
+import { sendFriendRequestNormalized } from "@/normalize/notification";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import toast from "@/commons/utils/toast";
 import UserSearchResultItem from "./UserSearchResultItem.vue";
@@ -204,7 +206,7 @@ const emit = defineEmits<{
 }>();
 
 const convCreateStore = useConvCreateStore();
-const authStore = useAuthStore();
+const authStore = useUserStore();
 
 const keywordInput = ref("");
 const users = ref<User[]>([]);
@@ -322,7 +324,7 @@ async function runSearch(reset: boolean) {
   searching.value = true;
   listError.value = "";
   try {
-    const resp = await userSearchApi.search({
+    const resp = await searchUsersNormalized({
       keyword: keywordForRequest,
       page: page.value,
       pageSize,
@@ -423,7 +425,7 @@ async function sendFriendRequest() {
   }
   friendRequestSending.value = true;
   try {
-    const resp = await friendRequestApi.send(Number(targetId));
+    const resp = await sendFriendRequestNormalized(Number(targetId));
     if (resp.code === 200) {
       toast.success(resp.message || "已发送申请");
       return;

@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
-import { useFriendStore } from "@/stores/friend/show-friend";
+import { useFriendStore } from "@/store/friend/showFriend";
 import type { FriendListItem } from "@/types/dto/friend";
 
 const FriendItem = defineAsyncComponent(() => import("./FriendItem.vue"));

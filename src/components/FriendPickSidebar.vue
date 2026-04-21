@@ -18,8 +18,8 @@
           <div class="friend-pick-row-main">
             <div class="friend-pick-avatar">
               <img
-                v-if="f.avatar"
-                :src="f.avatar"
+                v-if="getFriendAvatarUrl(f.avatar)"
+                :src="getFriendAvatarUrl(f.avatar)"
                 alt=""
                 class="friend-pick-avatar-img"
               />
@@ -51,17 +51,17 @@
 
 <script setup lang="ts">
 import { computed, watch } from "vue";
-import { useFriendStore } from "@/stores/friend/show-friend";
-import { useAuthStore } from "@/stores/auth";
-import { useConvCreateStore } from "@/store/conv-create";
-import { displayNameResolver } from "@/capabilities/show-display-name";
+import { useFriendStore } from "@/store/friend/showFriend";
+import { useUserStore } from "@/store/user/user";
+import { useConvCreateStore } from "@/store/conv/convCreate";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 
 const props = defineProps<{
   searchQuery?: string;
 }>();
 
 const friendStore = useFriendStore();
-const authStore = useAuthStore();
+const authStore = useUserStore();
 const convCreateStore = useConvCreateStore();
 
 watch(
@@ -77,15 +77,14 @@ const myUserId = computed(() => Number(authStore.user?.userId) || 0);
 const getFriendDisplayName = (friend: {
   displayName?: string;
   nickname?: string;
-}) =>
-  displayNameResolver.person({
-    userNickname: friend.displayName || friend.nickname,
-    fallbackName: "Unknown user",
-  });
+}) => friend.displayName || friend.nickname || "Unknown user";
 
 const selectableFriends = computed(() =>
   friendStore.filteredFriends.filter((f) => f.friendId !== myUserId.value)
 );
+
+const getFriendAvatarUrl = (avatar?: string | null): string =>
+  normalizeAvatarUrl(avatar || "");
 
 function toggle(friendId: number) {
   convCreateStore.toggleFriendId(friendId);

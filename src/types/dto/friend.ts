@@ -23,9 +23,6 @@ export interface FriendSummaryDTO {
   friendOnlineStatus?: number | null;
 }
 
-// 兼容旧命名
-export type FriendRelationDetailDTO = FriendSummaryDTO;
-
 /**
  * 获取好友列表响应
  */

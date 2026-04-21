@@ -233,15 +233,14 @@
 <script setup>
 import { ref, computed, onMounted, reactive, watch } from "vue";
 import { useRouter } from "vue-router";
-import { useThemeStore } from "@/stores/theme";
-import { useAuthStore } from "@/stores/auth";
-import { useConvStore } from "@/store/conv";
-import { useShowMessageStore } from "@/stores/message/show-message";
-import { useSendMessageStore } from "@/stores/message/send-message";
-import { useConvCreateStore } from "@/store/conv-create";
-import { useSystemNotificationsStore } from "@/stores/notification/system-notifications";
-import { useSingleChatPeerAvatarStore } from "@/store/conv-peer-avatar";
-import { useAppBootstrapStore } from "@/stores/app/bootstrap";
+import { useThemeStore } from "@/store/theme/theme";
+import { useUserStore } from "@/store/user/user";
+import { useConvStore } from "@/store/conv/conv";
+import { useShowMessageStore } from "@/store/message/showMessage";
+import { useSendMessageStore } from "@/store/message/sendMessage";
+import { useConvCreateStore } from "@/store/conv/convCreate";
+import { useSystemNotificationsStore } from "@/store/notification/systemNotifications";
+import { useAppBootstrapStore } from "@/store/app/bootstrap";
 import UserProfileEdit from "@/components/UserProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
@@ -263,13 +262,12 @@ import "@/assets/styles/night/homeview-night.css";
 import "@/assets/styles/night/searchbar-night.css";
 
 const themeStore = useThemeStore();
-const authStore = useAuthStore();
+const authStore = useUserStore();
 const conversationStore = useConvStore();
 const showMessageStore = useShowMessageStore();
 const sendMessageStore = useSendMessageStore();
 const convCreateStore = useConvCreateStore();
 const notificationStore = useSystemNotificationsStore();
-const singleChatPeerAvatarStore = useSingleChatPeerAvatarStore();
 const appBootstrapStore = useAppBootstrapStore();
 
 const getAuthUserIdOr = (fallback) => {
@@ -840,7 +838,6 @@ const handleLogout = async () => {
       console.log("? 清理会话数据...");
       convCreateStore.exit(true);
       notificationStore.reset();
-      singleChatPeerAvatarStore.reset();
       conversationStore.resetConversations();
       showMessageStore.resetMessages();
 

@@ -37,10 +37,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from "vue";
-import { useConvStore } from "@/store/conv";
-import { useShowMessageStore } from "@/stores/message/show-message";
+import { useConvStore } from "@/store/conv/conv";
+import { useShowMessageStore } from "@/store/message/showMessage";
 import { findConversationIdsByKeywordFromDB } from "@/commons/utils/local-db";
-import { displayNameResolver } from "@/capabilities/show-display-name";
 import ConversationItem from "./ConversationItem.vue";
 
 // Store
@@ -86,12 +85,7 @@ const filteredConversations = computed(() => {
     }
 
     // match by sender display name
-    const senderName = lastMsg
-      ? displayNameResolver.person({
-          userNickname: lastMsg.senderDisplayName,
-          fallbackName: `User${lastMsg.senderId}`,
-        })
-      : "";
+    const senderName = lastMsg?.senderDisplayName || `User${lastMsg?.senderId || ""}`;
     if (senderName.toLowerCase().includes(keyword)) {
       return true;
     }

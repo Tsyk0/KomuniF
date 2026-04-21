@@ -192,7 +192,7 @@
 
 <script>
 import { ref, reactive, onMounted, watch } from "vue";
-import { useUserStore } from "@/stores/user";
+import { useUserStore } from "@/store/user/user";
 import toast from "@/commons/utils/toast"; // 导入独立的toast服务
 
 export default {

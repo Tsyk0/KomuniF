@@ -1,7 +1,7 @@
 // File: src/router/index.ts
 // router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/store/user/user'
 
 const routes = [
   {
@@ -36,7 +36,7 @@ const router = createRouter({
 
 // 路由守卫 - 检查登录状态 + access token 有效性
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
+  const authStore = useUserStore()
 
   // 不需要登录的页面，直接放行
   if (!to.meta.requiresAuth) {

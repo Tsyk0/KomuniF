@@ -74,6 +74,7 @@
                 class="field-input"
                 type="text"
                 placeholder="Enter remark name"
+                maxlength="50"
               />
             </div>
           </div>
@@ -85,6 +86,7 @@
                 class="field-input"
                 type="text"
                 placeholder="Enter group name"
+                maxlength="50"
               />
             </div>
           </div>
@@ -360,15 +362,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import toast from "@/commons/utils/toast";
-import { useAuthStore } from "@/stores/auth";
-import { useFriendStore } from "@/stores/friend/show-friend";
-import { useConvStore } from "@/store/conv";
-import { conversationMemberApi } from "@/apis/chat/conversation-member";
-import { manageConversationApi } from "@/apis/chat/manage-conversation";
-import { friendApi } from "@/apis/friend";
+import { useUserStore } from "@/store/user/user";
+import { useFriendStore } from "@/store/friend/showFriend";
+import { useConvStore } from "@/store/conv/conv";
+import { useConversationInfoStore } from "@/store/conversationInfo/conversationInfo";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
-import { displayNameResolver } from "@/capabilities/show-display-name";
-import { BootstrapLoader } from "@/capabilities/load";
+import { useAppBootstrapStore } from "@/store/app/bootstrap";
 import type {
   ConversationEntity,
   ConversationMemberDTO,
@@ -385,10 +384,11 @@ const emit = defineEmits<{
   "changes-pending": [pending: boolean];
 }>();
 
-const authStore = useAuthStore();
+const authStore = useUserStore();
 const friendStore = useFriendStore();
 const conversationStore = useConvStore();
-const bootstrapLoader = new BootstrapLoader();
+const conversationInfoStore = useConversationInfoStore();
+const appBootstrapStore = useAppBootstrapStore();
 
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -411,11 +411,7 @@ const resolveDisplayName = (member: ConversationMemberDTO): string => {
 
   const friends = friendStore.friends;
   const relatedFriend = friends.find((f) => f.friendId === member.userId);
-  return displayNameResolver.person({
-    remarkName: relatedFriend?.remarkName == null ? "" : relatedFriend.remarkName,
-    userNickname: member.userNickname == null ? "" : member.userNickname,
-    fallbackName: "Unknown user",
-  });
+  return relatedFriend?.displayName || member.userNickname || "Unknown user";
 };
 
 const currentUserRole = computed<number | null>(() => {
@@ -446,11 +442,7 @@ const friendAvatarUrl = computed(() => {
 });
 const friendDisplayName = computed(() => {
   if (!friendInfo.value) return "";
-  return displayNameResolver.person({
-    remarkName: friendInfo.value.remarkName,
-    userNickname: friendInfo.value.friendNickname,
-    fallbackName: "Unknown user",
-  });
+  return friendInfo.value.remarkName || friendInfo.value.friendNickname || "Unknown user";
 });
 const friendGenderText = computed(() => {
   if (!friendInfo.value || friendInfo.value.friendGender == null) return "";
@@ -567,13 +559,7 @@ const loadFriendInfo = async () => {
   try {
     loading.value = true;
     error.value = null;
-    const response = await friendApi.getFriendInfoByUserIdAndFriendId(
-      props.friendId
-    );
-    if (response.code !== 200 || !response.data) {
-      throw new Error(response.message || "Failed to load friend info");
-    }
-    friendInfo.value = response.data;
+    friendInfo.value = await conversationInfoStore.loadFriendDetail(props.friendId);
     syncEditableFromFriend();
   } catch (e: any) {
     console.error("Failed to load friend info:", e);
@@ -588,29 +574,32 @@ const handleFriendApply = async () => {
   if (!friendInfo.value || !props.friendId) return;
   const remark = editableRemark.value.trim();
   const group = editableGroup.value.trim();
+  if (remark.length > 50) {
+    toast.error("Remark 最多 50 个字符");
+    return;
+  }
+  if (group.length > 50) {
+    toast.error("Group 最多 50 个字符");
+    return;
+  }
   const sameRemark = (friendInfo.value.remarkName || "") === remark;
   const sameGroup = (friendInfo.value.friendGroup || "") === group;
   if (sameRemark && sameGroup) return;
   try {
-    const resp = await friendApi.updateFriendRemarkAndGroup(
-      props.friendId,
-      {
-      remarkName: sameRemark ? undefined : remark || null,
-      friendGroup: sameGroup ? undefined : group || null,
-      }
+    await conversationInfoStore.updateFriendRemark(props.friendId, {
+      // 后端约定：清空统一传 null；未变更字段不传。
+      remarkName: sameRemark ? undefined : (remark === "" ? null : remark),
+      friendGroup: sameGroup ? undefined : (group === "" ? null : group),
+    });
+    await loadFriendInfo();
+    await appBootstrapStore.loadOne(
+      "friends",
+      Number(authStore.user?.userId || 0)
     );
-    if (resp.code === 200) {
-      await loadFriendInfo();
-      await bootstrapLoader.loadOne("friends", {
-        userId: Number(authStore.user?.userId || 0),
-      });
-      if (props.convId != null) {
-        await conversationStore.refreshConversationById(props.convId);
-      }
-      toast.success("Friend remark/group updated");
-    } else {
-      toast.error(resp.message || "Update failed");
+    if (props.convId != null) {
+      await conversationStore.refreshConversationById(props.convId);
     }
+    toast.success("Friend remark/group updated");
   } catch (e: any) {
     console.error("Failed to update remark/group:", e);
     toast.error(e?.message || "Failed to update friend remark/group");
@@ -633,16 +622,9 @@ const loadConversationInfo = async () => {
     loading.value = true;
     error.value = null;
 
-    const response = await conversationMemberApi.getConversationWithMembers(
-      props.convId
-    );
-
-    if (response.code !== 200 || !response.data) {
-      throw new Error(response.message || "Failed to load conversation info");
-    }
-
-    conversation.value = response.data.conversation;
-    members.value = response.data.members || [];
+    const detail = await conversationInfoStore.loadConversationDetail(props.convId);
+    conversation.value = detail.conversation;
+    members.value = detail.members;
     syncEditableFromConversation();
   } catch (e: any) {
     console.error("Failed to load conversation info:", e);
@@ -744,18 +726,12 @@ const handleAvatarChange = async (event: Event) => {
 
     const compressedBase64 = await compressImage(file, 400, 400, 0.7);
 
-    const resp =
-      await manageConversationApi.updateConversationAttriUserOrientedByConvId({
-        convId: conversation.value.convId,
-        convAvatar: compressedBase64,
-      });
-
-    if (resp.code === 200) {
-      conversation.value.convAvatar = compressedBase64;
-      await fetchConversationDetails("Avatar updated");
-    } else {
-      toast.error(resp.message || "Failed to upload avatar");
-    }
+    await conversationInfoStore.updateConversationInfo({
+      convId: conversation.value.convId,
+      convAvatar: compressedBase64,
+    });
+    conversation.value.convAvatar = compressedBase64;
+    await fetchConversationDetails("Avatar updated");
   } catch (e) {
     console.error("Failed to upload avatar:", e);
     toast.error("Avatar upload failed, please retry");
@@ -785,24 +761,15 @@ const handleApply = async () => {
       return;
     }
 
-    const resp =
-      await manageConversationApi.updateConversationAttriUserOrientedByConvId(
-        payload
-      );
-
-    if (resp.code === 200) {
-      if (payload.convName !== undefined) {
-        conversation.value.convName = payload.convName;
-      }
-      if (payload.convDescription !== undefined) {
-        conversation.value.convDescription = payload.convDescription;
-      }
-      syncEditableFromConversation();
-      await fetchConversationDetails("Conversation info updated");
-    } else {
-      console.error("Failed to update conversation info:", resp.message);
-      toast.error(resp.message || "Failed to update conversation info");
+    await conversationInfoStore.updateConversationInfo(payload);
+    if (payload.convName !== undefined) {
+      conversation.value.convName = payload.convName;
     }
+    if (payload.convDescription !== undefined) {
+      conversation.value.convDescription = payload.convDescription;
+    }
+    syncEditableFromConversation();
+    await fetchConversationDetails("Conversation info updated");
   } catch (e) {
     console.error("Failed to update conversation info:", e);
     toast.error("Update failed, please retry");

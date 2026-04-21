@@ -64,7 +64,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import ChatSearchResultItem from "@/components/ChatSearchResultItem.vue";
 import type { DisplayMessage } from "@/entity/message";
 import type { MessageSummaryDTO } from "@/types/dto/message";
-import { searchMessagesApi } from "@/apis/chat/message-search";
+import { searchMessagesNormalized } from "@/normalize/message";
 import { searchMessagesInConvFromDB } from "@/commons/utils/local-db";
 
 const props = defineProps<{
@@ -211,7 +211,7 @@ const runSearch = async (nextPage: number) => {
       return;
     }
 
-    const resp = await searchMessagesApi(
+    const resp = await searchMessagesNormalized(
       {
         keyword: kw,
         convId: props.convId,

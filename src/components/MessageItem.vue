@@ -64,10 +64,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useMessageItemAvatar } from "@/capabilities/show-display-avatar";
-import { useShowMessageStore } from "@/stores/message/show-message";
-import { useFriendStore } from "@/stores/friend/show-friend";
+import { computed, ref, watch } from "vue";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import { useShowMessageStore } from "@/store/message/showMessage";
+import { useConvStore } from "@/store/conv/conv";
+import { useUserStore } from "@/store/user/user";
+import { useFriendStore } from "@/store/friend/showFriend";
 import type { DisplayMessage } from "@/entity/message";
 
 interface Props {
@@ -80,12 +82,41 @@ interface Props {
 
 const props = defineProps<Props>();
 const showMessageStore = useShowMessageStore();
+const convStore = useConvStore();
+const authStore = useUserStore();
 const friendStore = useFriendStore();
 
-const { avatarDisplayUrl, onAvatarError } = useMessageItemAvatar(
-  () => props.message,
-  () => (props.convType == null ? null : props.convType)
-);
+const isAvatarLoadSuccessful = ref(true);
+
+/** 会话类型优先使用父组件传入，未就绪时回退到 convStore 映射。 */
+const resolvedConvType = computed<number | null>(() => {
+  if (props.convType != null) return Number(props.convType);
+  const conv = convStore.conversationMap.get(Number(props.message.convId));
+  return conv?.convType == null ? null : Number(conv.convType);
+});
+
+const rawAvatarSource = computed(() => {
+  if (resolvedConvType.value === 1) {
+    if (props.message.isSentByMe) return authStore.user?.userAvatar || "";
+    const conv = convStore.conversationMap.get(Number(props.message.convId));
+    return conv?.convAvatar || "";
+  }
+  if (props.message.isSentByMe) return authStore.user?.userAvatar || "";
+  return props.message.senderAvatar || "";
+});
+
+watch(rawAvatarSource, () => {
+  isAvatarLoadSuccessful.value = true;
+});
+
+const avatarDisplayUrl = computed(() => {
+  if (!isAvatarLoadSuccessful.value) return "";
+  return normalizeAvatarUrl(rawAvatarSource.value);
+});
+
+const onAvatarError = () => {
+  isAvatarLoadSuccessful.value = false;
+};
 
 const isSentByMe = computed(() => props.message.isSentByMe);
 

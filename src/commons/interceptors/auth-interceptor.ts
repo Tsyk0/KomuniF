@@ -6,7 +6,7 @@ import type {
   AxiosError
 } from 'axios'
 import router from '@/router'
-import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/store/user/user'
 
 /**
  * 认证相关的拦截器整合
@@ -66,7 +66,7 @@ export const authResponseInterceptor = {
     // 401 未授权 / Token 失效：清理登录状态并跳转到登录页
     if (error.response?.status === 401) {
       try {
-        const authStore = useAuthStore()
+        const authStore = useUserStore()
         authStore.logout()
       } catch (e) {
         // 如果在极少数场景下 store 未就绪，至少清理本地存储

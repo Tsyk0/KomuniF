@@ -135,11 +135,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useSystemNotificationsStore } from "@/stores/notification/system-notifications";
-import { useFriendStore } from "@/stores/friend/show-friend";
-import { useAuthStore } from "@/stores/auth";
-import { useAppBootstrapStore } from "@/stores/app/bootstrap";
-import { displayNameResolver } from "@/capabilities/show-display-name";
+import { useSystemNotificationsStore } from "@/store/notification/systemNotifications";
+import { useFriendStore } from "@/store/friend/showFriend";
+import { useUserStore } from "@/store/user/user";
+import { useAppBootstrapStore } from "@/store/app/bootstrap";
 import SystemNotificationItem from "./SystemNotificationItem.vue";
 import {
   notificationRequiresAction,
@@ -149,7 +148,7 @@ import {
 
 const store = useSystemNotificationsStore();
 const friendStore = useFriendStore();
-const authStore = useAuthStore();
+const authStore = useUserStore();
 const appBootstrapStore = useAppBootstrapStore();
 
 /** 点击某条 item 后才展开右侧按钮；再次点击同一条收起 */
@@ -163,11 +162,7 @@ const displayItems = computed(() =>
 function resolveRelatedLabel(relatedUserId: number | null | undefined) {
   if (relatedUserId == null || relatedUserId <= 0) return null;
   const f = friendStore.friends.find((x) => x.friendId === relatedUserId);
-  return displayNameResolver.person({
-    remarkName: f?.remarkName,
-    userNickname: f?.nickname,
-    fallbackName: null,
-  });
+  return f?.displayName || f?.nickname || null;
 }
 
 function refresh() {
