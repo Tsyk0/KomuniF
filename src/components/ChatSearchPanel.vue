@@ -63,9 +63,13 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import ChatSearchResultItem from "@/components/ChatSearchResultItem.vue";
 import type { DisplayMessage } from "@/entity/message";
-import type { MessageSummaryDTO } from "@/types/dto/message";
 import { searchMessagesNormalized } from "@/normalize/message";
 import { searchMessagesInConvFromDB } from "@/commons/utils/local-db";
+import {
+  buildChatSearchEmptyState,
+  mapChatSearchErrorMessage,
+  runChatMessageSearch,
+} from "@/interactions/chatSearchPanel/ChatSearchPanelInteraction";
 
 const props = defineProps<{
   open: boolean;
@@ -117,25 +121,6 @@ const hintText = computed(() => {
 
 const canLoadMore = computed(() => results.value.length > 0 && results.value.length < total.value);
 
-const toDisplayMessage = (dto: MessageSummaryDTO): DisplayMessage => {
-  return {
-    messageId: dto.messageId,
-    convId: dto.convId,
-    senderId: dto.senderId,
-    messageType: dto.messageType,
-    messageContent: dto.messageContent,
-    messageStatus: dto.messageStatus,
-    isRecalled: dto.isRecalled,
-    replyToMessageId: dto.replyToMessageId == null ? null : dto.replyToMessageId,
-    atUserIds: dto.atUserIds == null ? null : dto.atUserIds,
-    sendTime: dto.sendTime,
-    recallTime: dto.recallTime == null ? null : dto.recallTime,
-    senderAvatar: dto.senderAvatar == null ? null : dto.senderAvatar,
-    senderName: dto.displayName,
-    isSentByMe: dto.isSentByMe,
-  };
-};
-
 const cancelInFlight = () => {
   if (abortController) {
     abortController.abort();
@@ -144,23 +129,25 @@ const cancelInFlight = () => {
 };
 
 const clearKeyword = () => {
+  const emptyState = buildChatSearchEmptyState();
   keyword.value = "";
-  results.value = [];
-  total.value = 0;
-  page.value = 1;
-  error.value = null;
-  searchSource.value = "remote";
+  results.value = emptyState.results;
+  total.value = emptyState.total;
+  page.value = emptyState.page;
+  error.value = emptyState.error;
+  searchSource.value = emptyState.source;
   cancelInFlight();
 };
 
 const runSearch = async (nextPage: number) => {
   const kw = keyword.value.trim();
   if (!kw) {
-    results.value = [];
-    total.value = 0;
-    page.value = 1;
-    error.value = null;
-    searchSource.value = "remote";
+    const emptyState = buildChatSearchEmptyState();
+    results.value = emptyState.results;
+    total.value = emptyState.total;
+    page.value = emptyState.page;
+    error.value = emptyState.error;
+    searchSource.value = emptyState.source;
     cancelInFlight();
     return;
   }
@@ -177,66 +164,34 @@ const runSearch = async (nextPage: number) => {
   else loading.value = true;
 
   try {
-    if (!isLoadMore && props.convId) {
-      const localFirst = await searchMessagesInConvFromDB(
-        props.convId,
-        kw,
-        1,
-        effectivePageSize.value
-      );
-      if (requestId !== latestRequestId) return;
-      if (localFirst.total > 0) {
-        searchSource.value = "local";
-        results.value = localFirst.messages.map(toDisplayMessage);
-        total.value = localFirst.total;
-        page.value = 1;
-        return;
-      }
-      searchSource.value = "remote";
-    }
-
-    if (isLoadMore && searchSource.value === "local" && props.convId) {
-      const localPage = await searchMessagesInConvFromDB(
-        props.convId,
-        kw,
-        nextPage,
-        effectivePageSize.value
-      );
-      if (requestId !== latestRequestId) return;
-      total.value = localPage.total;
-      page.value = nextPage;
-      results.value = results.value.concat(
-        localPage.messages.map(toDisplayMessage)
-      );
-      return;
-    }
-
-    const resp = await searchMessagesNormalized(
-      {
-        keyword: kw,
-        convId: props.convId,
-        page: nextPage,
-        pageSize: effectivePageSize.value,
-      },
-      { signal: abortController.signal }
-    );
-
-    if (requestId !== latestRequestId) return;
-
-    const rawMessages = resp.data?.messages;
-    const incoming = (rawMessages ? rawMessages : []).map(toDisplayMessage);
-    const totalFromResp = resp.data?.total;
-    total.value = totalFromResp == null ? 0 : totalFromResp;
-    const pageFromResp = resp.data?.page;
-    page.value = pageFromResp == null ? nextPage : pageFromResp;
-
-    results.value = isLoadMore ? results.value.concat(incoming) : incoming;
-    searchSource.value = "remote";
+    const searchResult = await runChatMessageSearch({
+      keyword: kw,
+      convId: props.convId,
+      nextPage,
+      pageSize: effectivePageSize.value,
+      requestId,
+      latestRequestId,
+      searchSource: searchSource.value,
+      results: results.value,
+      searchLocal: (convId, keyword, page, pageSize) =>
+        searchMessagesInConvFromDB(convId, keyword, page, pageSize),
+      searchRemote: ({ keyword, convId, page, pageSize, signal }) =>
+        searchMessagesNormalized(
+          { keyword, convId, page, pageSize },
+          { signal }
+        ),
+      signal: abortController.signal,
+    });
+    if (!searchResult.requestMatched) return;
+    searchSource.value = searchResult.source;
+    results.value = searchResult.results;
+    total.value = searchResult.total;
+    page.value = searchResult.page;
   } catch (e: any) {
-    if (e?.name === "CanceledError" || e?.code === "ERR_CANCELED") return;
-    if (e?.name === "AbortError") return;
+    const mappedError = mapChatSearchErrorMessage(e);
+    if (!mappedError) return;
     if (requestId !== latestRequestId) return;
-    error.value = e?.message ? `搜索失败：${e.message}` : "搜索失败";
+    error.value = mappedError;
   } finally {
     if (requestId === latestRequestId) {
       loading.value = false;

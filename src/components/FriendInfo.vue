@@ -125,6 +125,15 @@
 import { computed, watch, onMounted, onUnmounted } from "vue";
 import { useFriendInfoStore } from "@/store/friend/friendInfo";
 import type { FriendListItem } from "@/types/dto/friend";
+import {
+  loadFriendInfoFlow,
+  resolveFriendDisplayInitial,
+  resolveFriendDisplayName,
+  resolveFriendGenderText,
+  resolveNormalizedOnlineStatus,
+  resolveOnlineStatusClass,
+  resolveOnlineStatusText,
+} from "@/interactions/friendInfo/FriendInfoInteraction";
 
 const props = defineProps<{
   friend: FriendListItem;
@@ -141,45 +150,34 @@ const friendInfoStore = useFriendInfoStore();
 const info = computed(() => friendInfoStore.friendInfo);
 
 const displayName = computed(() => {
-  if (!info.value) return "未知用户";
-  return info.value.remarkName || info.value.friendNickname || "未知用户";
+  return resolveFriendDisplayName(info.value);
 });
 
 const displayInitial = computed(() =>
-  displayName.value.charAt(0).toUpperCase()
+  resolveFriendDisplayInitial(displayName.value)
 );
 
 const normalizedOnlineStatus = computed(() => {
-  const raw = info.value?.friendOnlineStatus;
-  const status = typeof raw === "number" ? raw : Number(raw);
-  return Number.isFinite(status) ? status : 0;
+  return resolveNormalizedOnlineStatus(info.value?.friendOnlineStatus);
 });
 
 const onlineStatusText = computed(() => {
-  const s = normalizedOnlineStatus.value;
-  if (s === 1) return "在线";
-  if (s === 2) return "离开";
-  return "离线";
+  return resolveOnlineStatusText(normalizedOnlineStatus.value);
 });
 
 const onlineStatusClass = computed(() => {
-  const s = normalizedOnlineStatus.value;
-  if (s === 1) return "online";
-  if (s === 2) return "away";
-  return "offline";
+  return resolveOnlineStatusClass(normalizedOnlineStatus.value);
 });
 
 const genderText = computed(() => {
-  const g = info.value?.friendGender;
-  if (g === 1) return "男";
-  if (g === 2) return "女";
-  return "未知";
+  return resolveFriendGenderText(info.value?.friendGender);
 });
 
 function loadInfo() {
-  if (props.friend?.friendId) {
-    friendInfoStore.loadFriendInfo(props.friend.friendId);
-  }
+  void loadFriendInfoFlow({
+    friendId: props.friend?.friendId,
+    loadFriendInfo: (friendId) => friendInfoStore.loadFriendInfo(friendId),
+  });
 }
 
 watch(

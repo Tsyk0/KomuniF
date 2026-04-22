@@ -61,6 +61,12 @@ import { computed, ref } from "vue";
 import { useConvCreateStore } from "@/store/conv/convCreate";
 import { createGroupConversationNormalized } from "@/normalize/conversation";
 import toast from "@/commons/utils/toast";
+import {
+  canSubmitConvCreate,
+  mapConvCreateErrorMessage,
+  normalizeSelectedMemberIds,
+  validateConvCreateDraft,
+} from "@/interactions/convCreatePanel/ConvCreatePanelInteraction";
 
 const emit = defineEmits<{
   exit: [];
@@ -76,8 +82,10 @@ const convName = computed({
 });
 
 const canSubmit = computed(() => {
-  const name = convName.value.trim();
-  return name.length > 0 && convCreateStore.selectedCount >= 1;
+  return canSubmitConvCreate({
+    draftConvName: convName.value,
+    selectedCount: convCreateStore.selectedCount,
+  });
 });
 
 function resetDraft() {
@@ -85,19 +93,17 @@ function resetDraft() {
 }
 
 async function submit() {
+  const validationMessage = validateConvCreateDraft({
+    draftConvName: convName.value,
+    selectedCount: convCreateStore.selectedCount,
+  });
+  if (validationMessage) {
+    toast.error(validationMessage);
+    return;
+  }
   const name = convName.value.trim();
-  if (!name) {
-    toast.error("请填写群名称");
-    return;
-  }
-  if (convCreateStore.selectedCount < 1) {
-    toast.error("请在左侧至少选择 1 位好友");
-    return;
-  }
 
-  const memberUserIds = [...convCreateStore.selectedFriendIds]
-    .map(Number)
-    .filter((id) => id > 0);
+  const memberUserIds = normalizeSelectedMemberIds(convCreateStore.selectedFriendIds);
   if (memberUserIds.length < 1) {
     toast.error("成员 ID 无效");
     return;
@@ -118,15 +124,7 @@ async function submit() {
     convCreateStore.resetDraft();
     emit("created", Number(result.convId));
   } catch (e: unknown) {
-    const err = e as {
-      response?: { data?: { message?: string } };
-      message?: string;
-    };
-    toast.error(
-      err?.response?.data?.message ||
-        err?.message ||
-        "创建群聊失败，请稍后重试"
-    );
+    toast.error(mapConvCreateErrorMessage(e));
   } finally {
     submitting.value = false;
   }

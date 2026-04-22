@@ -90,6 +90,12 @@
 
 <script>
 import { useUserStore } from "@/store/user/user";
+import {
+  buildRegisterSuccessNotice,
+  createRegisterErrors,
+  mapRegisterExceptionMessage,
+  validateRegisterForm,
+} from "@/interactions/registerForm/RegisterFormInteraction";
 
 export default {
   data() {
@@ -101,10 +107,7 @@ export default {
       },
       acceptedTerms: false,
       errors: {
-        userNickname: "",
-        userPassword: "",
-        confirmPassword: "",
-        terms: "",
+        ...createRegisterErrors(),
       },
       loading: false,
     };
@@ -118,47 +121,14 @@ export default {
 
   methods: {
     validateForm() {
-      let isValid = true;
-
-      // 清空错误
-      this.errors = {
-        userNickname: "",
-        userPassword: "",
-        confirmPassword: "",
-        terms: "",
-      };
-
-      // 验证昵称
-      if (!this.form.userNickname.trim()) {
-        this.errors.userNickname = "昵称不能为空";
-        isValid = false;
-      } else if (this.form.userNickname.length < 2) {
-        this.errors.userNickname = "昵称至少2个字符";
-        isValid = false;
-      }
-
-      // 验证密码
-      if (!this.form.userPassword) {
-        this.errors.userPassword = "密码不能为空";
-        isValid = false;
-      } else if (this.form.userPassword.length < 6) {
-        this.errors.userPassword = "密码至少6个字符";
-        isValid = false;
-      }
-
-      // 验证确认密码
-      if (this.form.userPassword !== this.form.confirmPassword) {
-        this.errors.confirmPassword = "两次输入的密码不一致";
-        isValid = false;
-      }
-
-      // 验证条款
-      if (!this.acceptedTerms) {
-        this.errors.terms = "请同意服务条款和隐私政策";
-        isValid = false;
-      }
-
-      return isValid;
+      const result = validateRegisterForm({
+        userNickname: this.form.userNickname,
+        userPassword: this.form.userPassword,
+        confirmPassword: this.form.confirmPassword,
+        acceptedTerms: this.acceptedTerms,
+      });
+      this.errors = result.errors;
+      return result.valid;
     },
 
     async handleSubmit() {
@@ -182,9 +152,7 @@ export default {
           console.log("🎉 注册成功！用户ID:", result.userId);
 
           // 显示成功消息
-          alert(
-            `注册成功！\n\n您的用户ID是：${result.userId}\n\n请务必记住这个ID，这是您登录的唯一凭证`
-          );
+          alert(buildRegisterSuccessNotice(result.userId));
 
           // 注册成功后，自动切换到登录页
           this.$emit("register-success", {
@@ -207,7 +175,7 @@ export default {
       } catch (error) {
         console.error("注册异常:", error);
         alert("注册异常，请稍后重试");
-        this.errors.terms = "注册异常: " + (error.message || "未知错误");
+        this.errors.terms = mapRegisterExceptionMessage(error);
       } finally {
         this.loading = false;
       }

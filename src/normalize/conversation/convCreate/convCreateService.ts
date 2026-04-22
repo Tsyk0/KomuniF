@@ -8,7 +8,12 @@ function normalizeMemberIds(memberUserIds: number[]): number[] {
   return [...new Set(memberUserIds.map(Number).filter((id) => id > 0))];
 }
 
-export async function createSingleConversationNormalized(
+/**
+ * 创建或复用单聊会话：
+ * - 若单聊已存在，返回已有 convId
+ * - 若不存在，创建后返回新 convId
+ */
+export async function createOrGetSingleConversationNormalized(
   peerUserId: number
 ): Promise<ConvCreateResult> {
   const memberUserIds = normalizeMemberIds([peerUserId]);
@@ -16,7 +21,8 @@ export async function createSingleConversationNormalized(
     return { success: false, convId: null, message: "无效的用户 ID" };
   }
 
-  const response = await conversationCreateApi.createConversation({
+  // 单聊语义：有会话就复用并返回；没有才创建。
+  const response = await conversationCreateApi.createOrGetConversation({
     single: true,
     memberUserIds,
   });
@@ -37,7 +43,7 @@ export async function createGroupConversationNormalized(
     return { success: false, convId: null, message: "请至少选择 1 位好友" };
   }
 
-  const response = await conversationCreateApi.createConversation({
+  const response = await conversationCreateApi.createOrGetConversation({
     single: false,
     memberUserIds: normalizedIds,
     convName: name,

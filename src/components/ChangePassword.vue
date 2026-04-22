@@ -88,6 +88,12 @@
 import { ref, reactive, computed } from "vue";
 import { useUserStore } from "@/store/user/user";
 import toast from "@/commons/utils/toast";
+import {
+  createEmptyChangePasswordErrors,
+  createEmptyChangePasswordForm,
+  isChangePasswordFormSubmittable,
+  validateNewPasswordInput,
+} from "@/interactions/changePassword/ChangePasswordInteraction";
 
 export default {
   name: "ChangePassword",
@@ -103,33 +109,21 @@ export default {
     const loading = ref(false);
 
     // 表单数据
-    const formData = reactive({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+    const formData = reactive(createEmptyChangePasswordForm());
 
     // 错误信息
-    const errors = reactive({
-      currentPassword: "",
-      confirmPassword: "",
-    });
+    const errors = reactive(createEmptyChangePasswordErrors());
 
     // 表单验证
     const isFormValid = computed(() => {
-      return (
-        formData.currentPassword &&
-        formData.newPassword &&
-        formData.confirmPassword &&
-        formData.newPassword === formData.confirmPassword &&
-        formData.newPassword.length >= 6
-      );
+      return isChangePasswordFormSubmittable(formData);
     });
 
     // 清除错误信息
     const clearErrors = () => {
-      errors.currentPassword = "";
-      errors.confirmPassword = "";
+      const empty = createEmptyChangePasswordErrors();
+      errors.currentPassword = empty.currentPassword;
+      errors.confirmPassword = empty.confirmPassword;
     };
 
     // 验证原密码
@@ -156,27 +150,12 @@ export default {
 
     // 验证新密码
     const validateNewPassword = () => {
-      // 检查密码长度
-      if (formData.newPassword.length < 6) {
-        errors.confirmPassword = "新密码至少需要6个字符";
-        toast.error("新密码至少需要6个字符");
+      const validationMessage = validateNewPasswordInput(formData);
+      if (validationMessage) {
+        errors.confirmPassword = validationMessage;
+        toast.error(validationMessage);
         return false;
       }
-
-      // 检查两次输入是否一致
-      if (formData.newPassword !== formData.confirmPassword) {
-        errors.confirmPassword = "两次输入的新密码不一致";
-        toast.error("两次输入的新密码不一致");
-        return false;
-      }
-
-      // 检查新密码是否与原密码相同
-      if (formData.newPassword === formData.currentPassword) {
-        errors.confirmPassword = "新密码不能与原密码相同";
-        toast.error("新密码不能与原密码相同");
-        return false;
-      }
-
       return true;
     };
 
@@ -230,9 +209,10 @@ export default {
 
     // 重置表单
     const resetForm = () => {
-      formData.currentPassword = "";
-      formData.newPassword = "";
-      formData.confirmPassword = "";
+      const empty = createEmptyChangePasswordForm();
+      formData.currentPassword = empty.currentPassword;
+      formData.newPassword = empty.newPassword;
+      formData.confirmPassword = empty.confirmPassword;
     };
 
     // 返回处理

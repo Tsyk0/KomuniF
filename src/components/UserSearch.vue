@@ -196,6 +196,20 @@ import { sendFriendRequestNormalized } from "@/normalize/notification";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import toast from "@/commons/utils/toast";
 import UserSearchResultItem from "./UserSearchResultItem.vue";
+import {
+  buildSyncHint,
+  canLoadMoreUsers,
+  executeFriendRequestFlow,
+  executeUserSearchFlow,
+  isSelfUser,
+  mapFriendRequestErrorMessage,
+  mapUserSearchErrorMessage,
+  resolveDetailGender,
+  resolveDetailInitial,
+  resolveDetailNickname,
+  resolveSelfUserId,
+  shouldClearUserDetailOnPaneClick,
+} from "@/interactions/userSearch/UserSearchInteraction";
 
 const DEBOUNCE_MS = 300;
 
@@ -229,44 +243,32 @@ const userKey = (u: User): string => {
 };
 
 const selfUserId = computed(() => {
-  const id = authStore.user?.userId;
-  if (id == null) return null;
-  const n = Number(id);
-  return Number.isFinite(n) ? n : null;
+  return resolveSelfUserId(authStore.user?.userId);
 });
 
 const syncHint = computed(() => {
-  if (total.value > 0 && users.value.length < total.value && users.value.length > 0) {
-    const delta = total.value - users.value.length;
-    if (delta > 0) {
-      return `共约 ${total.value} 条命中，当前已加载 ${users.value.length} 条；若数量不一致可能为数据同步中。`;
-    }
-  }
-  return "";
+  return buildSyncHint(total.value, users.value.length);
 });
 
 const canLoadMore = computed(() => {
-  if (!lastSearchedKeyword.value || listError.value) return false;
-  return users.value.length < total.value;
+  return canLoadMoreUsers({
+    hasKeyword: !!lastSearchedKeyword.value,
+    hasError: !!listError.value,
+    loaded: users.value.length,
+    total: total.value,
+  });
 });
 
 const detailNickname = computed(() => {
-  if (!selectedUser.value) return "";
-  return (
-    selectedUser.value.userNickname?.trim() ||
-    `用户 ${selectedUser.value.userId == null ? "" : selectedUser.value.userId}`
-  );
+  return resolveDetailNickname(selectedUser.value);
 });
 
 const detailInitial = computed(() =>
-  detailNickname.value.charAt(0).toUpperCase() || "?"
+  resolveDetailInitial(detailNickname.value)
 );
 
 const detailGender = computed(() => {
-  const g = selectedUser.value?.userGender;
-  if (g === 1) return "男";
-  if (g === 2) return "女";
-  return "未知";
+  return resolveDetailGender(selectedUser.value?.userGender);
 });
 
 const detailAvatar = computed(() => {
@@ -279,8 +281,7 @@ watch(selectedUser, () => {
 });
 
 function isSelf(u: User): boolean {
-  if (selfUserId.value == null || u.userId == null) return false;
-  return Number(u.userId) === selfUserId.value;
+  return isSelfUser(selfUserId.value, u);
 }
 
 function clearDebounce() {
@@ -305,76 +306,45 @@ function onSearchBlur() {
 
 async function runSearch(reset: boolean) {
   const kw = keywordInput.value.trim();
-  if (!kw) {
-    users.value = [];
-    total.value = 0;
-    lastSearchedKeyword.value = "";
-    listError.value = "";
-    selectedUser.value = null;
-    return;
-  }
-
   if (reset) {
     page.value = 1;
     selectedUser.value = null;
   }
-
-  const keywordForRequest = reset ? kw : lastSearchedKeyword.value || kw;
-
   searching.value = true;
   listError.value = "";
   try {
-    const resp = await searchUsersNormalized({
-      keyword: keywordForRequest,
+    const result = await executeUserSearchFlow({
+      keyword: kw,
+      reset,
       page: page.value,
       pageSize,
+      lastSearchedKeyword: lastSearchedKeyword.value,
+      prevUsers: users.value,
+      searchUsers: (params) => searchUsersNormalized(params),
     });
-
-    if (resp.code === 401) {
-      if (reset) {
-        listError.value = resp.message || "请先登录";
-      } else {
-        toast.error(resp.message || "请先登录");
-        if (page.value > 1) page.value -= 1;
-      }
+    if (result.clearAll) {
+      users.value = [];
+      total.value = 0;
+      lastSearchedKeyword.value = "";
+      listError.value = "";
+      selectedUser.value = null;
       return;
     }
-    if (resp.code !== 200 || !resp.data) {
-      if (reset) {
-        listError.value = resp.message || "搜索失败";
-      } else {
-        toast.error(resp.message || "加载更多失败");
-        if (page.value > 1) page.value -= 1;
-      }
+    if (result.rollbackPage && page.value > 1) {
+      page.value -= 1;
+    }
+    if (result.listError) {
+      if (reset) listError.value = result.listError;
+      else toast.error(result.listError);
       return;
     }
-
-    const data = resp.data;
-    if (reset) {
-      lastSearchedKeyword.value = kw;
-    }
-    total.value = Number(data.total) || 0;
-    if (reset) {
-      users.value = Array.isArray(data.users) ? [...data.users] : [];
-    } else {
-      const prev = users.value;
-      const next = Array.isArray(data.users) ? data.users : [];
-      const seen = new Set(prev.map((u) => Number(u.userId)));
-      for (const u of next) {
-        const id = Number(u.userId);
-        if (!seen.has(id)) {
-          seen.add(id);
-          prev.push(u);
-        }
-      }
-      users.value = prev;
+    if (result.users) users.value = result.users;
+    if (typeof result.total === "number") total.value = result.total;
+    if (typeof result.lastSearchedKeyword === "string") {
+      lastSearchedKeyword.value = result.lastSearchedKeyword;
     }
   } catch (e: unknown) {
-    const err = e as { response?: { data?: { message?: string } }; message?: string };
-    const msg =
-      err?.response?.data?.message ||
-      err?.message ||
-      "网络异常，请稍后重试";
+    const msg = mapUserSearchErrorMessage(e);
     if (reset) {
       listError.value = msg;
     } else {
@@ -403,62 +373,23 @@ function onPickUser(u: User) {
 
 function onLeftPaneClick(e: MouseEvent) {
   const el = e.target as HTMLElement | null;
-  if (!el) return;
-  if (
-    el.closest(".user-search-result-item") ||
-    el.closest("input") ||
-    el.closest("textarea") ||
-    el.closest("button") ||
-    el.closest(".user-search-field")
-  ) {
-    return;
-  }
-  selectedUser.value = null;
+  if (shouldClearUserDetailOnPaneClick(el)) selectedUser.value = null;
 }
 
 async function sendFriendRequest() {
   const u = selectedUser.value;
   const targetId = u?.userId;
-  if (targetId == null || isSelf(u!)) {
-    toast.error("无法向该用户发送申请");
-    return;
-  }
   friendRequestSending.value = true;
   try {
-    const resp = await sendFriendRequestNormalized(Number(targetId));
-    if (resp.code === 200) {
-      toast.success(resp.message || "已发送申请");
-      return;
-    }
-    if (resp.code === 400) {
-      toast.error(resp.message || "请求被拒绝");
-      return;
-    }
-    if (resp.code === 401) {
-      toast.error(resp.message || "登录已失效，请重新登录");
-      return;
-    }
-    if (resp.code === 500) {
-      toast.error("请稍后重试");
-      return;
-    }
-    toast.error(resp.message || "发送失败");
+    const result = await executeFriendRequestFlow({
+      targetUserId: targetId,
+      isSelfTarget: !!u && isSelf(u),
+      sendFriendRequest: (id) => sendFriendRequestNormalized(id),
+    });
+    if (result.ok) toast.success(result.message);
+    else toast.error(result.message);
   } catch (e: unknown) {
-    const err = e as {
-      response?: { status?: number; data?: { message?: string; code?: number } };
-      message?: string;
-    };
-    const status = err.response?.status;
-    const data = err.response?.data;
-    if (status === 400 && data?.message) {
-      toast.error(data.message);
-      return;
-    }
-    if (status === 401) {
-      toast.error(data?.message || "请先登录");
-      return;
-    }
-    toast.error(data?.message || err.message || "发送失败，请稍后重试");
+    toast.error(mapFriendRequestErrorMessage(e));
   } finally {
     friendRequestSending.value = false;
   }

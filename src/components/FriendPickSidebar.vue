@@ -54,7 +54,11 @@ import { computed, watch } from "vue";
 import { useFriendStore } from "@/store/friend/showFriend";
 import { useUserStore } from "@/store/user/user";
 import { useConvCreateStore } from "@/store/conv/convCreate";
-import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import {
+  filterSelectableFriends,
+  resolveFriendAvatarUrl,
+  resolveFriendDisplayName,
+} from "@/interactions/friendPickSidebar/FriendPickSidebarInteraction";
 
 const props = defineProps<{
   searchQuery?: string;
@@ -77,14 +81,14 @@ const myUserId = computed(() => Number(authStore.user?.userId) || 0);
 const getFriendDisplayName = (friend: {
   displayName?: string;
   nickname?: string;
-}) => friend.displayName || friend.nickname || "Unknown user";
+}) => resolveFriendDisplayName(friend);
 
 const selectableFriends = computed(() =>
-  friendStore.filteredFriends.filter((f) => f.friendId !== myUserId.value)
+  filterSelectableFriends(friendStore.filteredFriends, myUserId.value)
 );
 
 const getFriendAvatarUrl = (avatar?: string | null): string =>
-  normalizeAvatarUrl(avatar || "");
+  resolveFriendAvatarUrl(avatar);
 
 function toggle(friendId: number) {
   convCreateStore.toggleFriendId(friendId);

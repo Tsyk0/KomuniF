@@ -18,10 +18,12 @@ export interface CreateConversationResult {
 export type CreateConversationResponse = BaseResponse<CreateConversationResult>;
 
 /**
- * 创建会话（单聊/群聊）
+ * 创建或复用会话（单聊/群聊）
  * POST /conversations/create
+ * - 单聊：若已存在同一对端会话，则直接返回已有 convId（不重复创建）
+ * - 群聊：创建新会话并返回新 convId
  */
-export function createConversationApi(
+export function createOrGetConversationApi(
   payload: CreateConversationPayload
 ): Promise<CreateConversationResponse> {
   const body: {
@@ -43,7 +45,7 @@ export function createConversationApi(
 }
 
 export const conversationCreateApi = {
-  createConversation: createConversationApi,
+  createOrGetConversation: createOrGetConversationApi,
 };
 
 export default conversationCreateApi;

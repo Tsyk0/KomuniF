@@ -194,6 +194,15 @@
 import { ref, reactive, onMounted, watch } from "vue";
 import { useUserStore } from "@/store/user/user";
 import toast from "@/commons/utils/toast"; // 导入独立的toast服务
+import {
+  buildProfileFormData,
+  buildUserProfileUpdatePayload,
+  compressImageToBase64,
+  mapAvatarUploadError,
+  mapUserProfileSaveError,
+  shouldResetProfileForm,
+  validateUserProfileForm,
+} from "@/interactions/userProfileEdit/UserProfileEditInteraction";
 
 export default {
   name: "UserProfileEdit",
@@ -227,87 +236,18 @@ export default {
 
     // 初始化表单数据
     const initFormData = () => {
-      Object.assign(formData, {
-        userId: props.userData.userId || "",
-        userNickname: props.userData.userNickname || "",
-        userAvatar: props.userData.userAvatar || "",
-        userGender: props.userData.userGender || 0,
-        userBirthday: formatDateForInput(props.userData.userBirthday),
-        userLocation: props.userData.userLocation || "",
-        userSignature: props.userData.userSignature || "",
-        userPhone: props.userData.userPhone || "",
-        userEmail: props.userData.userEmail || "",
-      });
+      Object.assign(formData, buildProfileFormData(props.userData));
 
       originalData.value = JSON.parse(JSON.stringify(formData));
     };
 
-    // 日期格式化
-    const formatDateForInput = (dateString) => {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      return date.toISOString().split("T")[0];
-    };
-
-    // 图片压缩
-    const compressImage = (
-      file,
-      maxWidth = 400,
-      maxHeight = 400,
-      quality = 0.7
-    ) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement("canvas");
-            let width = img.width;
-            let height = img.height;
-
-            if (width > maxWidth || height > maxHeight) {
-              const ratio = Math.min(maxWidth / width, maxHeight / height);
-              width *= ratio;
-              height *= ratio;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, width, height);
-
-            const compressedBase64 = canvas.toDataURL("image/jpeg", quality);
-            resolve(compressedBase64);
-          };
-          img.onerror = reject;
-          img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    };
-
     // 表单验证
     const validateForm = () => {
-      if (!formData.userNickname?.trim()) {
-        toast.error("昵称不能为空");
+      const msg = validateUserProfileForm(formData);
+      if (msg) {
+        toast.error(msg);
         return false;
       }
-
-      if (formData.userPhone && !/^1[3-9]\d{9}$/.test(formData.userPhone)) {
-        toast.error("请输入有效的手机号");
-        return false;
-      }
-
-      if (
-        formData.userEmail &&
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.userEmail)
-      ) {
-        toast.error("请输入有效的邮箱地址");
-        return false;
-      }
-
       return true;
     };
 
@@ -318,23 +258,7 @@ export default {
       saving.value = true;
 
       try {
-        const userUpdateData = {
-          userId: formData.userId,
-          userNickname: formData.userNickname?.trim(),
-          userGender: formData.userGender,
-          userBirthday: formData.userBirthday || null,
-          userLocation: formData.userLocation?.trim() || null,
-          userSignature: formData.userSignature?.trim() || null,
-          userPhone: formData.userPhone?.trim() || null,
-          userEmail: formData.userEmail?.trim() || null,
-        };
-
-        if (
-          formData.userAvatar &&
-          formData.userAvatar.startsWith("data:image/")
-        ) {
-          userUpdateData.userAvatar = formData.userAvatar;
-        }
+        const userUpdateData = buildUserProfileUpdatePayload(formData);
 
         const result = await userStore.updateUser(userUpdateData);
 
@@ -359,7 +283,7 @@ export default {
         }
       } catch (error) {
         console.error("保存资料失败:", error);
-        toast.error("保存失败，请稍后重试");
+        toast.error(mapUserProfileSaveError(error));
       } finally {
         saving.value = false;
       }
@@ -387,12 +311,12 @@ export default {
 
       try {
         saving.value = true;
-        const compressedBase64 = await compressImage(file, 400, 400, 0.7);
+        const compressedBase64 = await compressImageToBase64(file, 400, 400, 0.7);
         formData.userAvatar = compressedBase64;
         toast.success("头像上传成功");
       } catch (error) {
         console.error("图片处理失败:", error);
-        toast.error("图片处理失败，请重试");
+        toast.error(mapAvatarUploadError(error));
       } finally {
         saving.value = false;
         event.target.value = "";
@@ -401,7 +325,7 @@ export default {
 
     // 重置表单
     const resetForm = () => {
-      if (confirm("确定要重置所有修改吗？")) {
+      if (shouldResetProfileForm(confirm)) {
         Object.assign(formData, JSON.parse(JSON.stringify(originalData.value)));
         toast.info("表单已重置");
       }

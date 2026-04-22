@@ -373,6 +373,23 @@ import type {
   ConversationMemberDTO,
 } from "@/types/dto/conversation-member";
 import type { FriendProfileDTO } from "@/types/dto/friend";
+import {
+  applyConversationAvatarFlow,
+  applyConversationInfoFlow,
+  applyFriendRemarkFlow,
+  compressImageToBase64,
+  hasConversationEditableChanges,
+  hasFriendEditableChanges,
+  loadConversationInfoFlow,
+  loadFriendInfoFlow,
+  refreshConversationAfterUpdateFlow,
+  resolveConversationStatusText,
+  resolveFriendGenderText,
+  resolveMemberDisplayName,
+  syncConversationEditableFields,
+  syncFriendEditableFields,
+  validateFriendRemarkInputs,
+} from "@/interactions/conversationInfo/ConversationInfoInteraction";
 
 const props = defineProps<{
   convId: number | null;
@@ -406,12 +423,7 @@ const currentUserId = computed(() => {
 });
 
 const resolveDisplayName = (member: ConversationMemberDTO): string => {
-  const memberNickname = member.memberNickname?.trim() || "";
-  if (memberNickname) return memberNickname;
-
-  const friends = friendStore.friends;
-  const relatedFriend = friends.find((f) => f.friendId === member.userId);
-  return relatedFriend?.displayName || member.userNickname || "Unknown user";
+  return resolveMemberDisplayName(member, friendStore.friends);
 };
 
 const currentUserRole = computed<number | null>(() => {
@@ -445,11 +457,7 @@ const friendDisplayName = computed(() => {
   return friendInfo.value.remarkName || friendInfo.value.friendNickname || "Unknown user";
 });
 const friendGenderText = computed(() => {
-  if (!friendInfo.value || friendInfo.value.friendGender == null) return "";
-  const g = friendInfo.value.friendGender;
-  if (g === 1) return "?";
-  if (g === 2) return "?";
-  return "Unknown";
+  return resolveFriendGenderText(friendInfo.value?.friendGender);
 });
 
 const ownerDisplayName = computed(() => {
@@ -462,11 +470,7 @@ const ownerDisplayName = computed(() => {
 });
 
 const convStatusText = computed(() => {
-  if (!conversation.value) return "";
-  const status = conversation.value.convStatus;
-  if (status === 1) return "Active";
-  if (status === 0) return "Dismissed";
-  return "Unknown status";
+  return resolveConversationStatusText(conversation.value?.convStatus);
 });
 
 const rawVisibleMembers = computed(() => {
@@ -517,28 +521,30 @@ const editableRemark = ref("");
 const editableGroup = ref("");
 
 const syncEditableFromConversation = () => {
-  editableName.value = conversation.value?.convName || "";
-  editableDescription.value = conversation.value?.convDescription || "";
+  const fields = syncConversationEditableFields(conversation.value);
+  editableName.value = fields.name;
+  editableDescription.value = fields.description;
 };
 
 const syncEditableFromFriend = () => {
-  editableRemark.value = friendInfo.value?.remarkName || "";
-  editableGroup.value = friendInfo.value?.friendGroup || "";
+  const fields = syncFriendEditableFields(friendInfo.value);
+  editableRemark.value = fields.remark;
+  editableGroup.value = fields.group;
 };
 
 const hasPendingChanges = computed(() => {
-  if (!conversation.value) return false;
-  return (
-    editableName.value !== (conversation.value.convName || "") ||
-    editableDescription.value !== (conversation.value.convDescription || "")
+  return hasConversationEditableChanges(
+    editableName.value,
+    editableDescription.value,
+    conversation.value
   );
 });
 
 const hasFriendPendingChanges = computed(() => {
-  if (!friendInfo.value) return false;
-  return (
-    editableRemark.value !== (friendInfo.value.remarkName || "") ||
-    editableGroup.value !== (friendInfo.value.friendGroup || "")
+  return hasFriendEditableChanges(
+    editableRemark.value,
+    editableGroup.value,
+    friendInfo.value
   );
 });
 
@@ -559,50 +565,39 @@ const loadFriendInfo = async () => {
   try {
     loading.value = true;
     error.value = null;
-    friendInfo.value = await conversationInfoStore.loadFriendDetail(props.friendId);
+    const result = await loadFriendInfoFlow({
+      friendId: props.friendId,
+      loadFriendDetail: (friendId) => conversationInfoStore.loadFriendDetail(friendId),
+    });
+    friendInfo.value = result.friendInfo as FriendProfileDTO | null;
+    error.value = result.error;
     syncEditableFromFriend();
-  } catch (e: any) {
-    console.error("Failed to load friend info:", e);
-    error.value = e?.message || "Unable to load friend info";
-    friendInfo.value = null;
   } finally {
     loading.value = false;
   }
 };
 
 const handleFriendApply = async () => {
-  if (!friendInfo.value || !props.friendId) return;
-  const remark = editableRemark.value.trim();
-  const group = editableGroup.value.trim();
-  if (remark.length > 50) {
-    toast.error("Remark 最多 50 个字符");
-    return;
-  }
-  if (group.length > 50) {
-    toast.error("Group 最多 50 个字符");
-    return;
-  }
-  const sameRemark = (friendInfo.value.remarkName || "") === remark;
-  const sameGroup = (friendInfo.value.friendGroup || "") === group;
-  if (sameRemark && sameGroup) return;
-  try {
-    await conversationInfoStore.updateFriendRemark(props.friendId, {
-      // 后端约定：清空统一传 null；未变更字段不传。
-      remarkName: sameRemark ? undefined : (remark === "" ? null : remark),
-      friendGroup: sameGroup ? undefined : (group === "" ? null : group),
-    });
-    await loadFriendInfo();
-    await appBootstrapStore.loadOne(
-      "friends",
-      Number(authStore.user?.userId || 0)
-    );
-    if (props.convId != null) {
-      await conversationStore.refreshConversationById(props.convId);
-    }
-    toast.success("Friend remark/group updated");
-  } catch (e: any) {
-    console.error("Failed to update remark/group:", e);
-    toast.error(e?.message || "Failed to update friend remark/group");
+  if (!friendInfo.value) return;
+  const result = await applyFriendRemarkFlow({
+    friendId: props.friendId,
+    convId: props.convId,
+    currentUserId: Number(authStore.user?.userId || 0),
+    editableRemark: editableRemark.value,
+    editableGroup: editableGroup.value,
+    oldRemark: friendInfo.value.remarkName || "",
+    oldGroup: friendInfo.value.friendGroup || "",
+    validateInputs: (remark, group) => validateFriendRemarkInputs(remark, group),
+    updateFriendRemark: (friendId, payload) =>
+      conversationInfoStore.updateFriendRemark(friendId, payload),
+    reloadFriendInfo: () => loadFriendInfo(),
+    reloadFriendsBootstrap: (userId) => appBootstrapStore.loadOne("friends", userId),
+    refreshConversationById: (convId) =>
+      conversationStore.refreshConversationById(convId),
+  });
+  if (result.message) {
+    if (result.ok) toast.success(result.message);
+    else toast.error(result.message);
   }
 };
 
@@ -611,31 +606,18 @@ const handleFriendCancel = () => {
 };
 
 const loadConversationInfo = async () => {
-  if (!props.convId) {
-    conversation.value = null;
-    members.value = [];
-    error.value = null;
-    return;
-  }
-
   try {
     loading.value = true;
     error.value = null;
-
-    const detail = await conversationInfoStore.loadConversationDetail(props.convId);
-    conversation.value = detail.conversation;
-    members.value = detail.members;
+    const result = await loadConversationInfoFlow({
+      convId: props.convId,
+      loadConversationDetail: (convId) =>
+        conversationInfoStore.loadConversationDetail(convId),
+    });
+    conversation.value = result.conversation as ConversationEntity | null;
+    members.value = result.members as ConversationMemberDTO[];
+    error.value = result.error;
     syncEditableFromConversation();
-  } catch (e: any) {
-    console.error("Failed to load conversation info:", e);
-    if (e?.response?.status === 401 || e?.code === 401) {
-      error.value =
-        e.response?.data?.message || "No permission to view this conversation";
-    } else {
-      error.value = e?.message || "Unable to load conversation info";
-    }
-    conversation.value = null;
-    members.value = [];
   } finally {
     loading.value = false;
   }
@@ -651,128 +633,56 @@ const handleAvatarClick = () => {
 };
 
 const fetchConversationDetails = async (successMessage: string) => {
-  if (!conversation.value) {
-    toast.success(successMessage);
-    return;
-  }
-  const convId = conversation.value.convId;
-  try {
-    await conversationStore.refreshConversationById(convId);
-    await loadConversationInfo();
-    toast.success(successMessage);
-  } catch (e) {
-    console.error("Failed to refresh conversation details:", e);
-    toast.error("Saved but failed to refresh conversation details");
-  }
-};
-
-const compressImage = (
-  file: File,
-  maxWidth = 400,
-  maxHeight = 400,
-  quality = 0.7
-) => {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width *= ratio;
-          height *= ratio;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          reject(new Error("Failed to get Canvas context"));
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const compressedBase64 = canvas.toDataURL("image/jpeg", quality);
-        resolve(compressedBase64);
-      };
-      img.onerror = reject;
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+  const result = await refreshConversationAfterUpdateFlow({
+    conversationId: conversation.value?.convId,
+    successMessage,
+    refreshConversationById: (convId) =>
+      conversationStore.refreshConversationById(convId),
+    reloadConversationInfo: () => loadConversationInfo(),
   });
+  if (result.ok) toast.success(result.message);
+  else toast.error(result.message);
 };
 
 const handleAvatarChange = async (event: Event) => {
   if (!conversation.value || !canEditConversation.value) return;
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
-  if (!file) return;
-
-  try {
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Image size cannot exceed 2MB");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
-
-    const compressedBase64 = await compressImage(file, 400, 400, 0.7);
-
-    await conversationInfoStore.updateConversationInfo({
-      convId: conversation.value.convId,
-      convAvatar: compressedBase64,
-    });
-    conversation.value.convAvatar = compressedBase64;
-    await fetchConversationDetails("Avatar updated");
-  } catch (e) {
-    console.error("Failed to upload avatar:", e);
-    toast.error("Avatar upload failed, please retry");
-  } finally {
-    input.value = "";
-  }
+  const result = await applyConversationAvatarFlow({
+    file,
+    convId: conversation.value.convId,
+    compressImage: (avatarFile) =>
+      compressImageToBase64(avatarFile, 400, 400, 0.7),
+    updateConversationInfo: (payload) =>
+      conversationInfoStore.updateConversationInfo(payload),
+    refreshAfterUpdate: (successMessage) => fetchConversationDetails(successMessage),
+    setConversationAvatar: (avatar) => {
+      if (conversation.value) conversation.value.convAvatar = avatar;
+    },
+  });
+  if (result.message) toast.error(result.message);
+  input.value = "";
 };
 
 const handleApply = async () => {
-  if (!conversation.value || !canEditConversation.value) return;
-
-  try {
-    const payload: Partial<ConversationEntity> & { convId: number } = {
-      convId: conversation.value.convId,
-    };
-
-    if (editableName.value !== conversation.value.convName) {
-      payload.convName = editableName.value.trim();
-    }
-    if (
-      editableDescription.value !== (conversation.value.convDescription || "")
-    ) {
-      payload.convDescription = editableDescription.value.trim();
-    }
-
-    if (Object.keys(payload).length === 1) {
-      return;
-    }
-
-    await conversationInfoStore.updateConversationInfo(payload);
-    if (payload.convName !== undefined) {
-      conversation.value.convName = payload.convName;
-    }
-    if (payload.convDescription !== undefined) {
-      conversation.value.convDescription = payload.convDescription;
-    }
-    syncEditableFromConversation();
-    await fetchConversationDetails("Conversation info updated");
-  } catch (e) {
-    console.error("Failed to update conversation info:", e);
-    toast.error("Update failed, please retry");
+  const result = await applyConversationInfoFlow({
+    conversation: conversation.value,
+    canEditConversation: canEditConversation.value,
+    editableName: editableName.value,
+    editableDescription: editableDescription.value,
+    updateConversationInfo: (payload) =>
+      conversationInfoStore.updateConversationInfo(payload),
+    setConversationName: (name) => {
+      if (conversation.value) conversation.value.convName = name ?? "";
+    },
+    setConversationDescription: (description) => {
+      if (conversation.value) conversation.value.convDescription = description ?? "";
+    },
+    syncEditableFromConversation,
+    refreshAfterUpdate: (successMessage) => fetchConversationDetails(successMessage),
+  });
+  if (!result.ok && result.message) {
+    toast.error(result.message);
   }
 };
 

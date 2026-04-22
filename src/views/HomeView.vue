@@ -254,7 +254,19 @@ import FriendPickSidebar from "@/components/FriendPickSidebar.vue";
 import SystemNotificationContainer from "@/components/SystemNotificationContainer.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import toast from "@/commons/utils/toast";
-import { createSingleConversationNormalized } from "@/normalize/conversation";
+import { createOrGetSingleConversationNormalized } from "@/normalize/conversation";
+import {
+  buildHomeUserStateFromSession,
+  formatDateForInputInHome,
+  handleSidebarResizeFlow,
+  loadSidebarWidthFromStorage,
+  mergeUserToSessionFlow,
+  normalizeBackendUserPayload,
+  processHomeAvatarUrl,
+  runHomeLogoutFlow,
+  startSidebarResizeFlow,
+  stopSidebarResizeFlow,
+} from "@/interactions/homeView/HomeViewInteraction";
 
 import "@/assets/styles/homeview.css";
 import "@/assets/styles/searchbar.css";
@@ -293,57 +305,41 @@ let animationFrameId = null;
 const SIDEBAR_WIDTH_KEY = "komunif_sidebar_width";
 
 const startResize = (e) => {
-  e.preventDefault();
-  isResizing.value = true;
-  startX.value = e.type.includes("touch") ? e.touches[0].clientX : e.clientX;
-  startWidth.value = sidebarWidth.value;
-
-  document.addEventListener("mousemove", handleResize);
-  document.addEventListener("mouseup", stopResize);
-  document.addEventListener("touchmove", handleResize);
-  document.addEventListener("touchend", stopResize);
-
-  document.body.style.userSelect = "none";
-  document.body.style.cursor = "col-resize";
+  startSidebarResizeFlow({
+    event: e,
+    currentWidth: sidebarWidth.value,
+    setResizing: (value) => (isResizing.value = value),
+    setStartX: (value) => (startX.value = value),
+    setStartWidth: (value) => (startWidth.value = value),
+    onPointerMove: handleResize,
+    onPointerUp: stopResize,
+  });
 };
 
 const handleResize = (e) => {
-  if (!isResizing.value) return;
-
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-  }
-
-  animationFrameId = requestAnimationFrame(() => {
-    const currentX = e.type.includes("touch")
-      ? e.touches[0].clientX
-      : e.clientX;
-    const deltaX = currentX - startX.value;
-
-    let newWidth = startWidth.value + deltaX;
-    newWidth = Math.max(300, Math.min(600, newWidth));
-
-    sidebarWidth.value = newWidth;
+  handleSidebarResizeFlow({
+    event: e,
+    isResizing: isResizing.value,
+    startX: startX.value,
+    startWidth: startWidth.value,
+    minWidth: 300,
+    maxWidth: 600,
+    animationFrameId,
+    setAnimationFrameId: (id) => (animationFrameId = id),
+    setWidth: (value) => (sidebarWidth.value = value),
   });
 };
 
 const stopResize = () => {
-  isResizing.value = false;
-
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
-
-  document.removeEventListener("mousemove", handleResize);
-  document.removeEventListener("mouseup", stopResize);
-  document.removeEventListener("touchmove", handleResize);
-  document.removeEventListener("touchend", stopResize);
-
-  document.body.style.userSelect = "";
-  document.body.style.cursor = "";
-
-  saveSidebarWidth();
+  stopSidebarResizeFlow({
+    width: sidebarWidth.value,
+    widthKey: SIDEBAR_WIDTH_KEY,
+    animationFrameId,
+    setAnimationFrameId: (id) => (animationFrameId = id),
+    setResizing: (value) => (isResizing.value = value),
+    onPointerMove: handleResize,
+    onPointerUp: stopResize,
+  });
 };
 
 const saveSidebarWidth = () => {
@@ -355,17 +351,12 @@ const saveSidebarWidth = () => {
 };
 
 const loadSidebarWidth = () => {
-  try {
-    const savedWidth = localStorage.getItem(SIDEBAR_WIDTH_KEY);
-    if (savedWidth) {
-      const width = parseInt(savedWidth, 10);
-      if (!isNaN(width) && width >= 300 && width <= 600) {
-        sidebarWidth.value = width;
-      }
-    }
-  } catch (error) {
-    console.warn("无法从localStorage加载侧边栏宽度:", error);
-  }
+  const savedWidth = loadSidebarWidthFromStorage({
+    widthKey: SIDEBAR_WIDTH_KEY,
+    minWidth: 300,
+    maxWidth: 600,
+  });
+  if (savedWidth != null) sidebarWidth.value = savedWidth;
 };
 
 const currentListView = ref("chat"); // 'chat' | 'friends' | 'create-group'
@@ -478,6 +469,12 @@ const exitConvCreate = () => {
   selectedFriend.value = null;
 };
 
+/**
+ * 以“对方 userId”为入口，确保单聊会话可被打开：
+ * 1) 创建/获取单聊 convId；
+ * 2) 刷新会话缓存（必要时补一次 conversations bootstrap）；
+ * 3) 设为当前会话并加载消息。
+ */
 const openSingleChatWithPeerUserId = async (peerUserId) => {
   const pid = Number(peerUserId);
   if (!Number.isFinite(pid) || pid <= 0) {
@@ -486,7 +483,7 @@ const openSingleChatWithPeerUserId = async (peerUserId) => {
   }
 
   try {
-    const result = await createSingleConversationNormalized(pid);
+    const result = await createOrGetSingleConversationNormalized(pid);
     if (!result.success || result.convId == null) {
       toast.error(result.message || "创建会话失败");
       return false;
@@ -549,6 +546,12 @@ const onUserSearchSendMessage = async (user) => {
   selectedFriend.value = null;
 };
 
+/**
+ * 群聊创建成功后的收口动作（由 ConvCreatePanel 的 created 事件触发）：
+ * - 确认 convId 可用；
+ * - 确保该会话在本地会话缓存中；
+ * - 自动打开该群聊并加载消息。
+ */
 const handleGroupCreated = async (convId) => {
   const id = Number(convId);
   if (Number.isNaN(id)) {
@@ -623,11 +626,6 @@ const clearSelectedFriend = () => {
   currentMainView.value = null;
 };
 
-const handleAddFriend = () => {
-  console.log("添加好友");
-  // TODO
-};
-
 const handleSendMessageToFriend = async (friend) => {
   const peerId = friend?.friendId;
   if (peerId == null || Number.isNaN(Number(peerId))) {
@@ -643,14 +641,12 @@ const handleSendMessageToFriend = async (friend) => {
   selectedFriend.value = null;
 };
 
+/**
+ * 删除好友入口：当前后端删除接口未接入，明确提示而不是伪实现。
+ */
 const handleDeleteFriend = (friend) => {
-  if (
-    confirm(`确定要删除好友「${friend.displayName || friend.nickname}」吗？`)
-  ) {
-    console.log("删除好友:", friend);
-    // TODO
-    clearSelectedFriend();
-  }
+  const name = friend?.displayName || friend?.nickname || "该好友";
+  toast.warning(`删除好友（${name}）功能暂未接入，请先在后端完成接口后再启用`);
 };
 
 const handleAvatarError = () => {
@@ -660,62 +656,24 @@ const handleAvatarError = () => {
 
 const loadUserData = () => {
   const userStr = sessionStorage.getItem("user");
-  console.log("loadUserData调用, sessionStorage:", userStr);
-
-  if (userStr) {
-    try {
-      const user = JSON.parse(userStr);
-      userId.value = user.userId || "";
-      userNickname.value = user.userNickname || "用户";
-
-      let avatarUrl = user.userAvatar || "";
-      avatarUrl = processAvatarUrl(avatarUrl);
-      currentUserAvatar.value = avatarUrl;
-
-      Object.assign(editForm, {
-        userId: user.userId || "",
-        userNickname: user.userNickname || "",
-        userAvatar: avatarUrl,
-        userGender: user.userGender || 0,
-        userBirthday: formatDateForInput(user.userBirthday),
-        userLocation: user.userLocation || "",
-        userSignature: user.userSignature || "",
-        userPhone: user.userPhone || "",
-        userEmail: user.userEmail || "",
-      });
-
-      console.log("用户数据加载完成");
-    } catch (e) {
-      console.error("解析用户信息失败:", e);
-    }
-  } else {
-    console.log("sessionStorage中没有用户数据");
-  }
+  const userState = buildHomeUserStateFromSession({
+    sessionUserRaw: userStr,
+    baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:8081",
+  });
+  if (!userState) return;
+  userId.value = userState.userId;
+  userNickname.value = userState.userNickname;
+  currentUserAvatar.value = userState.userAvatar;
+  Object.assign(editForm, userState.formData);
 };
 
 const processAvatarUrl = (avatarUrl) => {
-  if (!avatarUrl || avatarUrl === "") {
-    return "";
-  }
-
-  if (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:image/")) {
-    return avatarUrl;
-  }
-
-  avatarUrl = avatarUrl.trim();
-
-  if (!avatarUrl.startsWith("/")) {
-    avatarUrl = "/" + avatarUrl;
-  }
-
   const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
-  return base.replace(/\/$/, "") + avatarUrl;
+  return processHomeAvatarUrl(avatarUrl, base);
 };
 
 const formatDateForInput = (dateString) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  return date.toISOString().split("T")[0];
+  return formatDateForInputInHome(dateString);
 };
 
 const handleConversationClick = (convId) => {
@@ -744,57 +702,7 @@ const handlePasswordSuccess = (message) => {
 
 const handleUserDataUpdate = (backendUser) => {
   if (!backendUser) return;
-
-  const pickFirstDefined = (...values) => {
-    for (const v of values) {
-      if (v !== undefined && v !== null) return v;
-    }
-    return undefined;
-  };
-
-  const normalized = {
-    userId: pickFirstDefined(backendUser.userId, backendUser.user_id),
-    userNickname: pickFirstDefined(
-      backendUser.userNickname,
-      backendUser.user_nickname,
-      "用户"
-    ),
-    userAvatar: pickFirstDefined(
-      backendUser.userAvatar,
-      backendUser.user_avatar,
-      ""
-    ),
-    userGender: pickFirstDefined(
-      backendUser.userGender,
-      backendUser.user_gender,
-      0
-    ),
-    userBirthday: pickFirstDefined(
-      backendUser.userBirthday,
-      backendUser.user_birthday,
-      ""
-    ),
-    userLocation: pickFirstDefined(
-      backendUser.userLocation,
-      backendUser.user_location,
-      ""
-    ),
-    userSignature: pickFirstDefined(
-      backendUser.userSignature,
-      backendUser.user_signature,
-      ""
-    ),
-    userPhone: pickFirstDefined(
-      backendUser.userPhone,
-      backendUser.user_phone,
-      ""
-    ),
-    userEmail: pickFirstDefined(
-      backendUser.userEmail,
-      backendUser.user_email,
-      ""
-    ),
-  };
+  const normalized = normalizeBackendUserPayload(backendUser);
 
   Object.assign(editForm, {
     ...normalized,
@@ -803,18 +711,7 @@ const handleUserDataUpdate = (backendUser) => {
   userNickname.value = normalized.userNickname;
   currentUserAvatar.value = processAvatarUrl(normalized.userAvatar);
 
-  const existingStr = sessionStorage.getItem("user");
-  const existing = existingStr
-    ? (() => {
-        try {
-          return JSON.parse(existingStr) || {};
-        } catch {
-          return {};
-        }
-      })()
-    : {};
-  const mergedUser = { ...existing, ...normalized };
-  sessionStorage.setItem("user", JSON.stringify(mergedUser));
+  const mergedUser = mergeUserToSessionFlow(normalized);
   authStore.user = mergedUser;
 };
 
@@ -831,25 +728,19 @@ const startNewChat = () => {
 };
 
 const handleLogout = async () => {
-  if (confirm("确定要退出登录吗？")) {
-    try {
-      console.log("? 开始登出流程...");
-
-      console.log("? 清理会话数据...");
-      convCreateStore.exit(true);
-      notificationStore.reset();
-      conversationStore.resetConversations();
-      showMessageStore.resetMessages();
-
-      console.log("? 清除认证状态...");
-      authStore.logout();
-
-      console.log("? 跳转到登录页...");
-      router.push("/");
-    } catch (error) {
-      console.error("? 登出失败:", error);
-      alert("登出失败，请重试");
-    }
+  try {
+    await runHomeLogoutFlow({
+      confirmLogout: () => confirm("确定要退出登录吗？"),
+      resetConvCreate: () => convCreateStore.exit(true),
+      resetNotification: () => notificationStore.reset(),
+      resetConversation: () => conversationStore.resetConversations(),
+      resetMessage: () => showMessageStore.resetMessages(),
+      logoutAuth: () => authStore.logout(),
+      goLogin: () => router.push("/"),
+    });
+  } catch (error) {
+    console.error("? 登出失败:", error);
+    alert("登出失败，请重试");
   }
 };
 

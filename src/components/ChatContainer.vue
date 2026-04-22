@@ -227,8 +227,6 @@ import ChatSearchPanel from "./ChatSearchPanel.vue";
 import ConversationInfo from "./ConversationInfo.vue";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import {
-  handleRealtimeIncomingMessage,
-  buildTempTextMessage,
   resetMessageComposerView,
   resizeMessageComposer,
   loadConversationMessagesAndSyncRealtime,
@@ -236,7 +234,14 @@ import {
   scrollContainerToBottom,
   isContainerNearBottom,
   runSearchAnchorJumpFlow,
+  startInfoPanelResizeFlow,
+  handleInfoPanelResizeFlow,
+  stopInfoPanelResizeFlow,
   bindWindowWebSocketListeners,
+} from "@/interactions/chatContainer/ChatContainerInteraction";
+import {
+  handleRealtimeIncomingMessage,
+  buildTempTextMessage,
 } from "@/normalize/message";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
@@ -743,70 +748,40 @@ const closeGroupInfo = () => {
 };
 
 const startInfoPanelResize = (e: MouseEvent | TouchEvent) => {
-  if (!isGroupInfoOpen.value) return;
-
-  e.preventDefault();
-  isResizingInfoPanel.value = true;
-
-  const clientX =
-    "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
-  infoPanelStartX.value = clientX;
-  infoPanelStartWidth.value = infoPanelWidth.value;
-
-  document.addEventListener("mousemove", handleInfoPanelResize as any);
-  document.addEventListener("mouseup", stopInfoPanelResize as any);
-  document.addEventListener("touchmove", handleInfoPanelResize as any);
-  document.addEventListener("touchend", stopInfoPanelResize as any);
-
-  document.body.style.userSelect = "none";
-  document.body.style.cursor = "col-resize";
+  startInfoPanelResizeFlow({
+    event: e,
+    canResize: isGroupInfoOpen.value,
+    currentPanelWidth: infoPanelWidth.value,
+    setResizing: (value) => (isResizingInfoPanel.value = value),
+    setStartX: (value) => (infoPanelStartX.value = value),
+    setStartWidth: (value) => (infoPanelStartWidth.value = value),
+    onPointerMove: handleInfoPanelResize,
+    onPointerUp: stopInfoPanelResize,
+  });
 };
 
 const handleInfoPanelResize = (e: MouseEvent | TouchEvent) => {
-  if (!isResizingInfoPanel.value) return;
-
-  if (infoPanelAnimationFrameId !== null) {
-    cancelAnimationFrame(infoPanelAnimationFrameId);
-  }
-
-  infoPanelAnimationFrameId = requestAnimationFrame(() => {
-    const currentX =
-      "touches" in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
-    // 右侧面板左边缘跟随光标：向左拖动变宽，向右拖动变窄
-    const deltaX = infoPanelStartX.value - currentX;
-    let newWidth = infoPanelStartWidth.value + deltaX;
-
-    const minWidth = 360;
-    const maxWidth = 800;
-    if (newWidth < minWidth) newWidth = minWidth;
-    if (newWidth > maxWidth) newWidth = maxWidth;
-
-    infoPanelWidth.value = newWidth;
+  handleInfoPanelResizeFlow({
+    event: e,
+    isResizing: isResizingInfoPanel.value,
+    startX: infoPanelStartX.value,
+    startWidth: infoPanelStartWidth.value,
+    animationFrameId: infoPanelAnimationFrameId,
+    setAnimationFrameId: (id) => (infoPanelAnimationFrameId = id),
+    setPanelWidth: (width) => (infoPanelWidth.value = width),
   });
 };
 
 const stopInfoPanelResize = () => {
-  isResizingInfoPanel.value = false;
-
-  if (infoPanelAnimationFrameId !== null) {
-    cancelAnimationFrame(infoPanelAnimationFrameId);
-    infoPanelAnimationFrameId = null;
-  }
-
-  document.removeEventListener("mousemove", handleInfoPanelResize as any);
-  document.removeEventListener("mouseup", stopInfoPanelResize as any);
-  document.removeEventListener("touchmove", handleInfoPanelResize as any);
-  document.removeEventListener("touchend", stopInfoPanelResize as any);
-
-  document.body.style.userSelect = "";
-  document.body.style.cursor = "";
-
-  // 可选：与会话列表类似，保存宽度到 localStorage
-  try {
-    localStorage.setItem(INFO_PANEL_WIDTH_KEY, infoPanelWidth.value.toString());
-  } catch (error) {
-    console.warn("无法保存群信息面板宽度:", error);
-  }
+  stopInfoPanelResizeFlow({
+    panelWidth: infoPanelWidth.value,
+    widthStorageKey: INFO_PANEL_WIDTH_KEY,
+    animationFrameId: infoPanelAnimationFrameId,
+    setAnimationFrameId: (id) => (infoPanelAnimationFrameId = id),
+    setResizing: (value) => (isResizingInfoPanel.value = value),
+    onPointerMove: handleInfoPanelResize,
+    onPointerUp: stopInfoPanelResize,
+  });
 };
 
 /** rAF 合并滚动事件，状态机入口在 normalize。 */

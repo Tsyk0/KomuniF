@@ -141,10 +141,18 @@ import { useUserStore } from "@/store/user/user";
 import { useAppBootstrapStore } from "@/store/app/bootstrap";
 import SystemNotificationItem from "./SystemNotificationItem.vue";
 import {
-  notificationRequiresAction,
   type NotificationHandleSummaryDTO,
   type NotificationHandleAction,
 } from "@/types/dto/notification";
+import {
+  canToggleNotificationActions,
+  handleNotificationActionFlow,
+  resolveNotificationOpenedActionId,
+  resolveNotificationRelatedLabel,
+  resolveNotificationAccentVariant,
+  shouldShowNotificationActionButtons,
+  shouldShowNotificationUnreadMeta,
+} from "@/interactions/systemNotification/SystemNotificationContainerInteraction";
 
 const store = useSystemNotificationsStore();
 const friendStore = useFriendStore();
@@ -160,9 +168,7 @@ const displayItems = computed(() =>
 );
 
 function resolveRelatedLabel(relatedUserId: number | null | undefined) {
-  if (relatedUserId == null || relatedUserId <= 0) return null;
-  const f = friendStore.friends.find((x) => x.friendId === relatedUserId);
-  return f?.displayName || f?.nickname || null;
+  return resolveNotificationRelatedLabel(relatedUserId, friendStore.friends);
 }
 
 function refresh() {
@@ -178,42 +184,35 @@ function loadMore() {
 }
 
 function rowCanToggleActions(n: NotificationHandleSummaryDTO) {
-  return (
-    notificationRequiresAction(n.notification.notificationType) &&
-    !store.isNotificationProcessed(n)
-  );
+  return canToggleNotificationActions(n, (item) => store.isNotificationProcessed(item));
 }
 
 function rowShowsActionButtons(n: NotificationHandleSummaryDTO) {
-  return rowCanToggleActions(n);
+  return shouldShowNotificationActionButtons(
+    n,
+    (item) => store.isNotificationProcessed(item)
+  );
 }
 
 /** 竖条颜色：pending(灰) / accept(绿) / reject(红) / dismiss(黑) */
 function rowAccentVariant(n: NotificationHandleSummaryDTO) {
-  const action = n.handle?.handleAction?.trim().toLowerCase();
-  if (action === "accept") return "accept";
-  if (action === "reject") return "reject";
-  if (action === "dismiss" || action === "block") return "dismiss";
-  return "pending";
+  return resolveNotificationAccentVariant(n);
 }
 
 /** 未读角标：同上，与 isRead===false 对齐（含 null 视为未读） */
 function rowShowUnreadMeta(n: NotificationHandleSummaryDTO) {
-  return (
-    !store.isNotificationProcessed(n) &&
-    (n.notification.isRead === false || n.notification.isRead === null)
+  return shouldShowNotificationUnreadMeta(
+    n,
+    (item) => store.isNotificationProcessed(item)
   );
 }
 
 function onItemCardClick(n: NotificationHandleSummaryDTO) {
-  if (!rowCanToggleActions(n)) {
-    if (openedActionId.value === n.notificationId) {
-      openedActionId.value = null;
-    }
-    return;
-  }
-  openedActionId.value =
-    openedActionId.value === n.notificationId ? null : n.notificationId;
+  openedActionId.value = resolveNotificationOpenedActionId({
+    item: n,
+    currentOpenedActionId: openedActionId.value,
+    canToggle: rowCanToggleActions(n),
+  });
 }
 
 function isHandling(notificationId: number) {
@@ -224,8 +223,14 @@ async function onHandle(
   notificationId: number,
   handleAction: NotificationHandleAction
 ) {
-  await store.submitNotificationHandle(notificationId, handleAction);
-  openedActionId.value = null;
+  const result = await handleNotificationActionFlow({
+    notificationId,
+    handleAction,
+    submitHandle: (id, action) => store.submitNotificationHandle(id, action as NotificationHandleAction),
+  });
+  if (result.shouldCloseActions) {
+    openedActionId.value = null;
+  }
 }
 </script>
 

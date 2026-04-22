@@ -3,8 +3,6 @@ export * from "./load/messageLoadMapper";
 export * from "./realtime/messageRealtimeMapper";
 export * from "./realtime/messageReceiveService";
 export * from "./realtime/messageSendBuilder";
-export * from "./realtime/messageChatContainerService";
-export * from "./ui/messageUiInteractionService";
 export * from "./search/messageSearchService";
 export * from "./send/sendMessageService";
 export * from "./send/sendMessageMapper";

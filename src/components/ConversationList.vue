@@ -39,7 +39,10 @@
 import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import { useConvStore } from "@/store/conv/conv";
 import { useShowMessageStore } from "@/store/message/showMessage";
-import { findConversationIdsByKeywordFromDB } from "@/commons/utils/local-db";
+import {
+  openConversationByClick,
+  searchConversationMatchedIdsByMessages,
+} from "@/interactions/conversationList/ConversationListInteraction";
 import ConversationItem from "./ConversationItem.vue";
 
 // Store
@@ -121,24 +124,10 @@ const searchConversationByMessages = async (keyword: string) => {
     messageMatchedConversationIds.value = new Set();
     return;
   }
-
-  const normalizedKeyword = keyword.toLowerCase();
-  const matchedIds = new Set<number>();
-
-  // search message hits in IndexedDB first
-  try {
-    const localMatchedConvIds = await findConversationIdsByKeywordFromDB(
-      normalizedKeyword,
-      {
-        convIds: conversations.value.map((c) => c.convId),
-      }
-    );
-    localMatchedConvIds.forEach((id) => matchedIds.add(id));
-  } catch (error) {
-    console.warn("IndexedDB search failed:", error);
-  }
-
-  messageMatchedConversationIds.value = matchedIds;
+  messageMatchedConversationIds.value = await searchConversationMatchedIdsByMessages(
+    keyword,
+    conversations.value
+  );
 };
 
 // load conversations
@@ -159,33 +148,15 @@ const loadConversations = async () => {
 // click conversation
 const handleConversationClick = async (convId: number) => {
   try {
-    console.log("conversation-list: clicked convId:", convId);
-    console.log("current conversation id:", currentConversationId.value);
-
-    // 1. detect whether user switched conversation
-    const isSwitchingConversation = currentConversationId.value !== convId;
-
-    // 2. set current conversation
-    convStore.selectConversation(convId);
-
-    // 3. clear stale messages when switching
-    if (isSwitchingConversation) {
-      console.log("conversation switched, clearing stale messages");
-      showMessageStore.clearMessages();
-    } else {
-      console.log("same conversation, keep current messages");
-    }
-
-    // 4. load messages
-    console.log("loading messages...");
-    await showMessageStore.loadMessages(convId);
-    console.log("messages loaded");
-
-    // 5. mark as read
-    convStore.markConversationRead(convId);
-
-    // 6. emit event to parent
-    emit("conversation-click", convId);
+    await openConversationByClick({
+      convId,
+      currentConversationId: currentConversationId.value,
+      selectConversation: (id) => convStore.selectConversation(id),
+      clearMessages: () => showMessageStore.clearMessages(),
+      loadMessages: (id) => showMessageStore.loadMessages(id),
+      markConversationRead: (id) => convStore.markConversationRead(id),
+      emitConversationClick: (id) => emit("conversation-click", id),
+    });
   } catch (error) {
     console.error("Failed to open conversation:", error);
     errorMessage.value = "Failed to open conversation. Please retry.";

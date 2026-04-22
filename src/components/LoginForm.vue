@@ -90,6 +90,12 @@
 <script>
 import { useUserStore } from "@/store/user/user";
 import { useRouter } from "vue-router";
+import {
+  mapLoginErrorMessage,
+  resolveRememberedAccountState,
+  resolveUserIdChangeState,
+  validateLoginForm,
+} from "@/interactions/loginForm/LoginFormInteraction";
 
 export default {
   name: "LoginForm",
@@ -133,36 +139,29 @@ export default {
   methods: {
     // 检查是否有记住的账户
     checkRememberedAccount() {
-      if (this.authStore.hasRememberedAccount) {
-        try {
-          const savedDataStr = localStorage.getItem("rememberMeData");
-          if (savedDataStr) {
-            const rememberMeData = JSON.parse(savedDataStr);
-            this.savedUserId = rememberMeData.userId;
-            this.form.userId = rememberMeData.userId; // 自动填充用户ID
-            this.form.rememberMe = true; // 自动勾选记住我
-
-            // 显示免密登录提示
-            this.showAutoLoginHint = true;
-          }
-        } catch (error) {
-          console.error("检查记住账户失败:", error);
-          localStorage.removeItem("rememberMeData");
-        }
+      const state = resolveRememberedAccountState({
+        hasRememberedAccount: this.authStore.hasRememberedAccount,
+        rememberMeDataRaw: localStorage.getItem("rememberMeData"),
+      });
+      if (state.shouldClearCorruptedData) {
+        localStorage.removeItem("rememberMeData");
       }
+      this.savedUserId = state.savedUserId;
+      this.form.userId = state.formUserId;
+      this.form.rememberMe = state.rememberMe;
+      this.showAutoLoginHint = state.showAutoLoginHint;
     },
 
     // 用户ID变化时隐藏免密登录提示
     onUserIdChange() {
-      if (this.form.userId !== this.savedUserId) {
-        this.showAutoLoginHint = false;
-        this.form.rememberMe = false;
-      } else if (this.authStore.checkAutoLoginAvailable(this.form.userId)) {
-        this.form.rememberMe = true;
-        if (!this.showAutoLoginHint) {
-          this.showAutoLoginHint = true;
-        }
-      }
+      const state = resolveUserIdChangeState({
+        currentUserId: this.form.userId,
+        savedUserId: this.savedUserId,
+        autoLoginAvailable: this.authStore.checkAutoLoginAvailable(this.form.userId),
+        showAutoLoginHint: this.showAutoLoginHint,
+      });
+      this.form.rememberMe = state.rememberMe;
+      this.showAutoLoginHint = state.showAutoLoginHint;
     },
 
     // 免密登录
@@ -211,14 +210,12 @@ export default {
       this.errorMessage = "";
       this.hasError = false;
 
-      // 简单验证
-      if (!this.form.userId.trim()) {
-        this.errorMessage = "请输入用户ID";
-        this.hasError = true;
-        return;
-      }
-      if (!this.form.userPwd) {
-        this.errorMessage = "请输入密码";
+      const validationError = validateLoginForm({
+        userId: this.form.userId,
+        userPwd: this.form.userPwd,
+      });
+      if (validationError) {
+        this.errorMessage = validationError;
         this.hasError = true;
         return;
       }
@@ -245,7 +242,7 @@ export default {
         }
       } catch (error) {
         console.error("登录异常:", error);
-        this.errorMessage = "发生未知错误: " + error.message;
+        this.errorMessage = mapLoginErrorMessage(error, "发生未知错误: ");
         this.hasError = true;
       } finally {
         this.loading = false;

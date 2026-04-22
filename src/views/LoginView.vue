@@ -40,7 +40,6 @@
         <div class="form-content">
           <LoginForm
             v-if="activeTab === 'login'"
-            @login-success="handleLoginSuccess"
             @show-register="activeTab = 'register'"
             @show-forgot="activeTab = 'forgot'"
           />
@@ -72,6 +71,10 @@
 <script>
 import LoginForm from "@/components/LoginForm.vue";
 import RegisterForm from "@/components/RegisterForm.vue";
+import {
+  buildRegisterSuccessNotice,
+  resolveLoginViewTab,
+} from "@/interactions/loginView/LoginViewInteraction";
 import "@/assets/styles/loginview.css"; // 导入外部CSS文件
 
 export default {
@@ -87,14 +90,9 @@ export default {
   },
 
   methods: {
-    handleLoginSuccess(userData) {
-      console.log("登录成功:", userData);
-      alert(`欢迎回来，${userData.username}!`);
-    },
-
     handleRegisterSuccess() {
-      alert("注册成功！请登录");
-      this.activeTab = "login";
+      alert(buildRegisterSuccessNotice());
+      this.activeTab = resolveLoginViewTab("login");
     },
   },
 };
