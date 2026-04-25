@@ -14,7 +14,7 @@
  * - validateFriendRemarkInputs：校验好友备注与分组长度。
  * - buildFriendRemarkUpdatePayload：生成好友备注更新 payload。
  * - buildConversationUpdatePayload：生成会话资料更新 payload。
- * - compressImageToBase64：压缩图片并转为 base64。
+ * - compressImageToBase64：压缩图片并转为 base64（仅保留为通用工具，不用于会话头像上传）。
  * - loadFriendInfoFlow：加载好友资料并返回统一结果。
  * - loadConversationInfoFlow：加载会话资料并返回统一结果。
  * - refreshConversationAfterUpdateFlow：更新后刷新会话详情。
@@ -129,17 +129,16 @@ export function buildConversationUpdatePayload(input: {
   editableName: string;
   // 当前编辑中的描述
   editableDescription: string;
-}): (Partial<ConversationEntity> & { convId: number }) | null {
-  const payload: Partial<ConversationEntity> & { convId: number } = {
-    convId: input.conversation.convId,
-  };
+}): Partial<ConversationEntity> | null {
+  // Partial<T> 是 TypeScript 内置的工具类型，作用是把类型 T 的所有属性都变成可选的。
+  const payload: Partial<ConversationEntity> = {};
   if (input.editableName !== input.conversation.convName) {
     payload.convName = input.editableName.trim();
   }
   if (input.editableDescription !== (input.conversation.convDescription || "")) {
     payload.convDescription = input.editableDescription.trim();
   }
-  return Object.keys(payload).length === 1 ? null : payload;
+  return Object.keys(payload).length === 0 ? null : payload;
 }
 
 export function compressImageToBase64(
@@ -298,10 +297,12 @@ export async function applyFriendRemarkFlow(input: {
 export async function applyConversationAvatarFlow(input: {
   file: File | null | undefined;
   convId: number;
-  compressImage: (file: File) => Promise<string>;
-  updateConversationInfo: (payload: { convId: number; convAvatar: string }) => Promise<void>;
+  updateConversation: (
+    convId: number,
+    payload?: Partial<ConversationEntity>,
+    convAvatarFile?: File
+  ) => Promise<void>;
   refreshAfterUpdate: (successMessage: string) => Promise<void>;
-  setConversationAvatar: (avatar: string) => void;
 }): Promise<{ ok: boolean; message: string | null }> {
   const file = input.file;
   if (!file) return { ok: false, message: null };
@@ -312,16 +313,13 @@ export async function applyConversationAvatarFlow(input: {
     return { ok: false, message: "Please select an image file" };
   }
   try {
-    const compressedBase64 = await input.compressImage(file);
-    await input.updateConversationInfo({
-      convId: input.convId,
-      convAvatar: compressedBase64,
-    });
-    input.setConversationAvatar(compressedBase64);
+    await input.updateConversation(input.convId, {}, file);
     await input.refreshAfterUpdate("Avatar updated");
     return { ok: true, message: null };
-  } catch {
-    return { ok: false, message: "Avatar upload failed, please retry" };
+  } catch (e: unknown) {
+    const rawMessage =
+      e instanceof Error ? e.message : typeof e === "string" ? e : "Avatar upload failed, please retry";
+    return { ok: false, message: rawMessage || "Avatar upload failed, please retry" };
   }
 }
 
@@ -331,8 +329,11 @@ export async function applyConversationInfoFlow(input: {
   canEditConversation: boolean;
   editableName: string;
   editableDescription: string;
-  updateConversationInfo: (
-    payload: Partial<ConversationEntity> & { convId: number }
+  avatarFile?: File | null;
+  updateConversation: (
+    convId: number,
+    payload?: Partial<ConversationEntity>,
+    convAvatarFile?: File
   ) => Promise<void>;
   setConversationName: (name: string | null) => void;
   setConversationDescription: (description: string | null) => void;
@@ -347,13 +348,18 @@ export async function applyConversationInfoFlow(input: {
     editableName: input.editableName,
     editableDescription: input.editableDescription,
   });
-  if (!payload) return { ok: true, message: null };
+  const avatarFile = input.avatarFile ?? undefined;
+  if (!payload && !avatarFile) return { ok: true, message: null };
   try {
-    await input.updateConversationInfo(payload);
-    if (payload.convName !== undefined) {
+    await input.updateConversation(
+      input.conversation.convId,
+      payload || {},
+      avatarFile
+    );
+    if (payload?.convName !== undefined) {
       input.setConversationName(payload.convName);
     }
-    if (payload.convDescription !== undefined) {
+    if (payload?.convDescription !== undefined) {
       input.setConversationDescription(payload.convDescription);
     }
     input.syncEditableFromConversation();

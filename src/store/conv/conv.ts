@@ -77,6 +77,24 @@ export const useConvStore = defineStore("conv", {
       return this.conversationMap.get(convId);
     },
 
+    /**
+     * 本地补丁更新会话摘要并保持 currentConversation 响应式同步。
+     * 使用场景：会话属性编辑成功后立即反映在列表与当前会话头部，无需等待整页重载。
+     */
+    patchConversationLocal(convId: number, patch: Partial<ConversationSummaryDTO>) {
+      const current = this.conversationMap.get(convId);
+      if (!current) return;
+      const merged = { ...current, ...patch };
+      const index = this.conversations.findIndex((item) => item.convId === convId);
+      if (index >= 0) {
+        this.conversations.splice(index, 1, merged);
+      }
+      this.conversationMap.set(convId, merged);
+      if (this.currentConversation?.convId === convId) {
+        this.currentConversation = merged;
+      }
+    },
+
     async loadCompressedCM(convId: number, force = false) {
       if (!force && this.compressedCMMap.has(convId)) return;
       const members = await loadConversationMembersNormalized(convId);

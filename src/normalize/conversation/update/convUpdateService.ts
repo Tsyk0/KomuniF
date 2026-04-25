@@ -18,12 +18,17 @@ export async function updateFriendRemarkNormalized(
   }
 }
 
-/** 更新会话用户侧属性（群聊语义）。 */
+/** 更新会话属性（统一 multipart，可选头像文件）。 */
 export async function updateConversationInfoNormalized(
-  payload: Partial<ConversationEntity> & { convId: number }
+  convId: number,
+  payload: Partial<ConversationEntity>,
+  convAvatarFile?: File
 ): Promise<void> {
-  const response =
-    await manageConversationApi.updateConversationAttriUserOrientedByConvId(payload);
+  const response = await manageConversationApi.updateConversationInfo(
+    convId,
+    payload,
+    convAvatarFile
+  );
   if (response.code !== 200) {
     throw new Error(response.message || "Failed to update conversation info");
   }

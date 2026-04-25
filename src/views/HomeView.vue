@@ -191,9 +191,7 @@
           @delete-friend="handleDeleteFriend"
         />
 
-        <NotificationCenter
-          v-else-if="currentMainView === 'notifications'"
-        />
+        <NotificationCenter v-else-if="currentMainView === 'notifications'" />
 
         <ConvCreatePanel
           v-else-if="

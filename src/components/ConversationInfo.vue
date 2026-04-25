@@ -360,7 +360,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import toast from "@/commons/utils/toast";
 import { useUserStore } from "@/store/user/user";
 import { useFriendStore } from "@/store/friend/showFriend";
@@ -372,12 +372,11 @@ import type {
   ConversationEntity,
   ConversationMemberDTO,
 } from "@/types/dto/conversation-member";
+import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import type { FriendProfileDTO } from "@/types/dto/friend";
 import {
-  applyConversationAvatarFlow,
   applyConversationInfoFlow,
   applyFriendRemarkFlow,
-  compressImageToBase64,
   hasConversationEditableChanges,
   hasFriendEditableChanges,
   loadConversationInfoFlow,
@@ -444,6 +443,7 @@ const conversationFieldClass = computed(() =>
 );
 
 const conversationAvatarUrl = computed(() => {
+  if (stagedAvatarPreviewUrl.value) return stagedAvatarPreviewUrl.value;
   if (!conversation.value?.convAvatar) return "";
   return normalizeAvatarUrl(conversation.value.convAvatar);
 });
@@ -516,6 +516,10 @@ const myDisplayName = computed(() => {
 const editableName = ref("");
 const editableDescription = ref("");
 const avatarInputRef = ref<HTMLInputElement | null>(null);
+/** 暂存待提交的会话头像文件，仅在点击 Apply 时随表单一起提交。 */
+const stagedAvatarFile = ref<File | null>(null);
+/** 暂存头像的本地预览 URL，用于“未提交前”在面板即时预览。 */
+const stagedAvatarPreviewUrl = ref("");
 
 const editableRemark = ref("");
 const editableGroup = ref("");
@@ -533,11 +537,12 @@ const syncEditableFromFriend = () => {
 };
 
 const hasPendingChanges = computed(() => {
-  return hasConversationEditableChanges(
+  const textChanged = hasConversationEditableChanges(
     editableName.value,
     editableDescription.value,
     conversation.value
   );
+  return textChanged || stagedAvatarFile.value != null;
 });
 
 const hasFriendPendingChanges = computed(() => {
@@ -632,6 +637,18 @@ const handleAvatarClick = () => {
   avatarInputRef.value?.click();
 };
 
+/**
+ * 清理头像暂存态（文件与预览 URL）。
+ * 使用场景：重新选图、点击 Cancel、组件卸载，避免预览 URL 泄漏。
+ */
+const clearStagedAvatar = () => {
+  if (stagedAvatarPreviewUrl.value) {
+    URL.revokeObjectURL(stagedAvatarPreviewUrl.value);
+  }
+  stagedAvatarPreviewUrl.value = "";
+  stagedAvatarFile.value = null;
+};
+
 const fetchConversationDetails = async (successMessage: string) => {
   const result = await refreshConversationAfterUpdateFlow({
     conversationId: conversation.value?.convId,
@@ -644,34 +661,47 @@ const fetchConversationDetails = async (successMessage: string) => {
   else toast.error(result.message);
 };
 
+/**
+ * 选择会话头像时仅执行本地暂存，不直接提交。
+ * 使用场景：用户希望头像与会话名称/描述在 Apply 时一次性提交。
+ */
 const handleAvatarChange = async (event: Event) => {
   if (!conversation.value || !canEditConversation.value) return;
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
-  const result = await applyConversationAvatarFlow({
-    file,
-    convId: conversation.value.convId,
-    compressImage: (avatarFile) =>
-      compressImageToBase64(avatarFile, 400, 400, 0.7),
-    updateConversationInfo: (payload) =>
-      conversationInfoStore.updateConversationInfo(payload),
-    refreshAfterUpdate: (successMessage) => fetchConversationDetails(successMessage),
-    setConversationAvatar: (avatar) => {
-      if (conversation.value) conversation.value.convAvatar = avatar;
-    },
-  });
-  if (result.message) toast.error(result.message);
+  if (!file) {
+    input.value = "";
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    toast.error("Image size cannot exceed 2MB");
+    input.value = "";
+    return;
+  }
+  if (!file.type.startsWith("image/")) {
+    toast.error("Please select an image file");
+    input.value = "";
+    return;
+  }
+  clearStagedAvatar();
+  stagedAvatarFile.value = file;
+  stagedAvatarPreviewUrl.value = URL.createObjectURL(file);
   input.value = "";
 };
 
+/**
+ * 提交会话信息变更（名称/描述/头像）并同步当前详情视图。
+ * 使用场景：用户点击 Apply 后统一提交，保证一次请求完成复合编辑。
+ */
 const handleApply = async () => {
   const result = await applyConversationInfoFlow({
     conversation: conversation.value,
     canEditConversation: canEditConversation.value,
     editableName: editableName.value,
     editableDescription: editableDescription.value,
-    updateConversationInfo: (payload) =>
-      conversationInfoStore.updateConversationInfo(payload),
+    avatarFile: stagedAvatarFile.value,
+    updateConversation: (convId, payload, convAvatarFile) =>
+      conversationInfoStore.updateConversation(convId, payload, convAvatarFile),
     setConversationName: (name) => {
       if (conversation.value) conversation.value.convName = name ?? "";
     },
@@ -683,11 +713,36 @@ const handleApply = async () => {
   });
   if (!result.ok && result.message) {
     toast.error(result.message);
+    return;
+  }
+  clearStagedAvatar();
+  const cid = Number(conversation.value?.convId || 0);
+  if (cid > 0) {
+    await conversationStore.refreshConversationById(cid);
+    const updated = conversationStore.getConversationById(cid);
+    if (updated && conversation.value) {
+      const patch = updated as ConversationSummaryDTO & {
+        convDescription?: string | null;
+        enableReadReceipt?: boolean;
+      };
+      conversation.value.convName = patch.convName ?? conversation.value.convName;
+      conversation.value.convAvatar = patch.convAvatar ?? conversation.value.convAvatar;
+      if (patch.convDescription !== undefined) {
+        conversation.value.convDescription = patch.convDescription;
+      }
+      if (patch.enableReadReceipt !== undefined) {
+        conversation.value.enableReadReceipt = patch.enableReadReceipt;
+      }
+      if (patch.convType !== undefined) {
+        conversation.value.convType = patch.convType;
+      }
+    }
   }
 };
 
 const handleCancel = () => {
   syncEditableFromConversation();
+  clearStagedAvatar();
 };
 
 onMounted(() => {
@@ -696,6 +751,10 @@ onMounted(() => {
   } else if (props.convId) {
     loadConversationInfo();
   }
+});
+
+onUnmounted(() => {
+  clearStagedAvatar();
 });
 
 watch(

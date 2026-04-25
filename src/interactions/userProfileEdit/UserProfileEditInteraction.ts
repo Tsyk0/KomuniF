@@ -37,9 +37,9 @@ export function buildProfileFormData(userData: any) {
 
 export function compressImageToBase64(
   file: File,
-  maxWidth = 400,
-  maxHeight = 400,
-  quality = 0.7
+  maxWidth = 1024,
+  maxHeight = 1024,
+  quality = 0.94
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
