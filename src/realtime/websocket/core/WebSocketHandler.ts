@@ -192,6 +192,20 @@ export class WebSocketHandler {
           });
         }
         break;
+      case "newSystemNotification":
+        console.info("[WS-NOTIF-RT][INCOMING]", "newSystemNotification", message);
+        realtimeEventBus.emit("newSystemNotification", message);
+        window.dispatchEvent(
+          new CustomEvent("websocket:newSystemNotification", { detail: message })
+        );
+        break;
+      case "newRequestHandle":
+        console.info("[WS-NOTIF-RT][INCOMING]", "newRequestHandle", message);
+        realtimeEventBus.emit("newRequestHandle", message);
+        window.dispatchEvent(
+          new CustomEvent("websocket:newRequestHandle", { detail: message })
+        );
+        break;
       case "error": {
         const err = String(message.message || "WebSocket错误");
         this.sessionManager.setConnectionError(err);

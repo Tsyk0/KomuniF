@@ -11,6 +11,8 @@ export type RealtimeEventMap = {
   subscribed: { convId?: number; subscriptions?: number[] };
   unsubscribed: { convId?: number };
   conversationPresence: { convId: number; onlineCount: number };
+  newSystemNotification: Record<string, unknown>;
+  newRequestHandle: Record<string, unknown>;
   serverError: { code?: number | string; message: string };
 };
 

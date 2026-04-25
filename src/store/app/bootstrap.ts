@@ -34,7 +34,7 @@ export const useAppBootstrapStore = defineStore("appBootstrap", {
           return { target, success: true };
         }
 
-        await useSystemNotificationsStore().fetchRecent();
+        await useSystemNotificationsStore().initialize();
         return { target, success: true };
       } catch (error) {
         return {

@@ -31,6 +31,7 @@ export const WS_SERVER_ACTION = {
   unsubscribed: "unsubscribed",
   conversationPresence: "conversationPresence",
   newSystemNotification: "newSystemNotification",
+  newRequestHandle: "newRequestHandle",
   speechToTextCompleted: "speechToTextCompleted",
   subscriptionUpdate: "subscriptionUpdate",
 } as const;

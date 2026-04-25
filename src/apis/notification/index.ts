@@ -2,10 +2,12 @@
 import service from "@/apis/service";
 import type {
   ApiResponse,
-  NotificationHandleSummaryDTO,
+  NotificationCursorDTO,
+  NotificationRecentItemDTO,
+  NotificationUnreadSummaryDTO,
   SendFriendRequestResult,
-  NotificationHandlePayload,
-  NotificationHandleRecord,
+  RequestHandlePayload,
+  RequestHandle,
 } from "@/types/dto/notification";
 
 /**
@@ -15,7 +17,7 @@ import type {
 export async function getRecentNotifications(
   page?: number,
   pageSize?: number
-): Promise<ApiResponse<NotificationHandleSummaryDTO[]>> {
+): Promise<ApiResponse<NotificationRecentItemDTO[]>> {
   const params: Record<string, number> = {};
   if (page != null && Number.isFinite(page)) {
     params.page = Math.max(1, Math.floor(Number(page)));
@@ -37,7 +39,7 @@ export async function getRecentNotifications(
 export async function getRecentNotificationsBeforeAnchor(
   anchorId: number,
   pageSize?: number
-): Promise<ApiResponse<NotificationHandleSummaryDTO[]>> {
+): Promise<ApiResponse<NotificationRecentItemDTO[]>> {
   const id = Math.floor(Number(anchorId));
   if (!Number.isFinite(id) || id <= 0) {
     throw new Error("无效的通知锚点 ID");
@@ -54,6 +56,38 @@ export async function getRecentNotificationsBeforeAnchor(
     url: "/notifications/recent/more",
     method: "get",
     params,
+  });
+}
+
+/** GET /notifications/cursor */
+export async function getNotificationCursor(): Promise<
+  ApiResponse<NotificationCursorDTO>
+> {
+  return service({
+    url: "/notifications/cursor",
+    method: "get",
+  });
+}
+
+/** POST /notifications/cursor */
+export async function updateNotificationCursor(payload: {
+  notificationLastReadId?: number;
+}): Promise<ApiResponse<null>> {
+  return service({
+    url: "/notifications/cursor",
+    method: "post",
+    headers: { "Content-Type": "application/json" },
+    data: payload,
+  });
+}
+
+/** GET /notifications/unread-summary */
+export async function getNotificationUnreadSummary(): Promise<
+  ApiResponse<NotificationUnreadSummaryDTO>
+> {
+  return service({
+    url: "/notifications/unread-summary",
+    method: "get",
   });
 }
 
@@ -81,11 +115,12 @@ export async function sendFriendRequest(
  * 请求头由 axios 拦截器统一附加 Authorization: Bearer <access_token>
  */
 export async function handleNotificationApi(
-  payload: NotificationHandlePayload
-): Promise<ApiResponse<NotificationHandleRecord>> {
-  const body: NotificationHandlePayload = {
-    notificationId: payload.notificationId,
+  payload: RequestHandlePayload
+): Promise<ApiResponse<RequestHandle>> {
+  const body: RequestHandlePayload = {
+    rahId: payload.rahId,
     handleAction: payload.handleAction,
+    rahFeedback: payload.rahFeedback,
   };
   return service({
     url: "/notifications/handle",
@@ -98,6 +133,9 @@ export async function handleNotificationApi(
 export const notificationApi = {
   getRecentNotifications,
   getRecentNotificationsBeforeAnchor,
+  getNotificationCursor,
+  updateNotificationCursor,
+  getNotificationUnreadSummary,
   sendFriendRequest,
   handleNotification: handleNotificationApi,
 };

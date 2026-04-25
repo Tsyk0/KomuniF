@@ -1,182 +1,279 @@
-// src/store/notification/systemNotifications.ts
-import { ref, computed } from "vue";
+import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import {
-  loadRecentNotificationsNormalized,
+  advanceNotificationCursorNormalized,
+  loadNotificationCursorNormalized,
+  loadNotificationUnreadSummaryNormalized,
   loadRecentNotificationsBeforeAnchorNormalized,
+  loadRecentNotificationsNormalized,
   submitNotificationHandleActionNormalized,
-  mergeNotificationHandleResult,
 } from "@/normalize/notification";
+import { realtimeEventBus } from "@/realtime/websocket";
 import type {
-  NotificationHandleSummaryDTO,
-  NotificationHandleAction,
+  NotificationCursorDTO,
+  NotificationRecentItemDTO,
+  NotificationUnreadSummaryDTO,
+  RequestHandle,
+  RequestHandleAction,
+  SystemNotification,
 } from "@/types/dto/notification";
 import toast from "@/commons/utils/toast";
 
 const DEFAULT_PAGE_SIZE = 10;
 
-export const useSystemNotificationsStore = defineStore(
-  "systemNotifications",
-  () => {
-    const items = ref<NotificationHandleSummaryDTO[]>([]);
-    const loading = ref(false);
-    const loadingMore = ref(false);
-    const hasMore = ref(true);
-    const errorMessage = ref("");
-    const lastFetchedAt = ref<number | null>(null);
-    const handlingNotificationId = ref<number | null>(null);
-    const currentPage = ref(1);
-    const lastAnchorId = ref<number | null>(null);
+export const useSystemNotificationsStore = defineStore("systemNotifications", () => {
+  const itemsMap = ref<Map<number, NotificationRecentItemDTO>>(new Map());
+  const requestHandlesMap = ref<Map<number, RequestHandle>>(new Map());
+  const loading = ref(false);
+  const loadingMore = ref(false);
+  const hasMore = ref(true);
+  const errorMessage = ref("");
+  const handlingNotificationId = ref<number | null>(null);
+  const lastAnchorId = ref<number | null>(null);
+  const cursor = ref<NotificationCursorDTO>({ notificationLastReadId: 0 });
+  const unreadSummary = ref<NotificationUnreadSummaryDTO>({ notificationUnread: 0 });
+  const hasBoundRealtime = ref(false);
+  const recentRealtimeEventKeys = ref<Set<string>>(new Set());
 
-    /** 是否已处理（存在 handle 记录）。 */
-    function isNotificationProcessed(n: NotificationHandleSummaryDTO): boolean {
-      return n.handle != null;
-    }
+  const items = computed<NotificationRecentItemDTO[]>(() =>
+    [...itemsMap.value.values()].sort((a, b) => a.notificationId - b.notificationId)
+  );
+  const pendingRequestHandleList = computed<RequestHandle[]>(() =>
+    [...requestHandlesMap.value.values()]
+      .filter((rah) => (rah.status || "").toLowerCase() === "pending")
+      .sort((a, b) => b.id - a.id)
+  );
+  const unreadCount = computed(() => unreadSummary.value.notificationUnread);
 
-    /** 未读数量（null 与 false 都视为未读）。 */
-    const unreadCount = computed(
-      () =>
-        items.value.filter(
-          (n) =>
-            n.notification.isRead === false || n.notification.isRead === null
-        ).length
-    );
-
-    /** 重置通知状态（登出/切换账号场景）。 */
-    function reset() {
-      items.value = [];
-      loading.value = false;
-      loadingMore.value = false;
-      hasMore.value = true;
-      errorMessage.value = "";
-      lastFetchedAt.value = null;
-      handlingNotificationId.value = null;
-      currentPage.value = 1;
-      lastAnchorId.value = null;
-    }
-
-    /** 计算最老通知 ID（分页锚点）。 */
-    function getOldestNotificationId(): number | null {
-      if (!items.value.length) return null;
-      const minId = items.value[0]?.notificationId;
-      return Number.isFinite(minId) && minId > 0 ? minId : null;
-    }
-
-    /** 覆盖当前通知列表并更新分页元数据。 */
-    function setNotifications(list: NotificationHandleSummaryDTO[]) {
-      items.value = Array.isArray(list) ? list : [];
-      lastAnchorId.value = getOldestNotificationId();
-      currentPage.value = 1;
-      hasMore.value = items.value.length >= DEFAULT_PAGE_SIZE;
-      lastFetchedAt.value = Date.now();
-      errorMessage.value = "";
-    }
-
-    /** 提交通知处理动作并回写本地列表。 */
-    async function submitNotificationHandle(
-      notificationId: number,
-      handleAction: NotificationHandleAction
-    ) {
-      if (handlingNotificationId.value != null) return;
-      handlingNotificationId.value = notificationId;
-      try {
-        const resp = await submitNotificationHandleActionNormalized({
-          notificationId,
-          handleAction,
-        });
-        items.value = mergeNotificationHandleResult(
-          items.value,
-          notificationId,
-          handleAction,
-          resp.data
-        );
-        const msg = (resp.message && resp.message.trim()) || "已记录处理";
-        toast.show(msg, "success", 2200);
-      } catch (e: unknown) {
-        const msg =
-          (e as { response?: { data?: { message?: string } } })?.response?.data
-            ?.message ||
-          (e as Error)?.message ||
-          "网络异常，请稍后重试";
-        toast.error(msg);
-      } finally {
-        handlingNotificationId.value = null;
-      }
-    }
-
-    /** 拉取最近通知。 */
-    async function fetchRecent(
-      page: number = 1,
-      pageSize: number = DEFAULT_PAGE_SIZE
-    ) {
-      loading.value = true;
-      errorMessage.value = "";
-      try {
-        const list = await loadRecentNotificationsNormalized(page, pageSize);
-        setNotifications(list);
-        currentPage.value = Math.max(1, Math.floor(page));
-        hasMore.value = items.value.length >= Math.max(1, Math.floor(pageSize));
-      } catch {
-        errorMessage.value = "加载失败，请稍后重试";
-        toast.error("加载失败，请稍后重试");
-      } finally {
-        loading.value = false;
-      }
-    }
-
-    /** 以最老通知为锚点加载更多历史。 */
-    async function fetchOlderByAnchor(pageSize: number = DEFAULT_PAGE_SIZE) {
-      if (loading.value || loadingMore.value || !hasMore.value) return;
-      const anchorId = lastAnchorId.value || getOldestNotificationId();
-      if (anchorId == null) {
-        hasMore.value = false;
-        return;
-      }
-
-      loadingMore.value = true;
-      try {
-        const incoming = await loadRecentNotificationsBeforeAnchorNormalized(
-          anchorId,
-          pageSize
-        );
-        if (!incoming.length) {
-          hasMore.value = false;
-          return;
-        }
-
-        const existing = new Set(items.value.map((n) => n.notificationId));
-        const older = incoming.filter((n) => !existing.has(n.notificationId));
-        if (!older.length) {
-          hasMore.value = false;
-          return;
-        }
-        items.value = [...older, ...items.value];
-        lastAnchorId.value = getOldestNotificationId();
-        hasMore.value = incoming.length >= Math.max(1, Math.floor(pageSize));
-      } catch {
-        toast.error("加载失败，请稍后重试");
-      } finally {
-        loadingMore.value = false;
-      }
-    }
-
-    return {
-      items,
-      loading,
-      loadingMore,
-      hasMore,
-      errorMessage,
-      lastFetchedAt,
-      handlingNotificationId,
-      currentPage,
-      lastAnchorId,
-      isNotificationProcessed,
-      unreadCount,
-      reset,
-      setNotifications,
-      submitNotificationHandle,
-      fetchRecent,
-      fetchOlderByAnchor,
-    };
+  function reset() {
+    itemsMap.value = new Map();
+    requestHandlesMap.value = new Map();
+    loading.value = false;
+    loadingMore.value = false;
+    hasMore.value = true;
+    errorMessage.value = "";
+    handlingNotificationId.value = null;
+    lastAnchorId.value = null;
+    cursor.value = { notificationLastReadId: 0 };
+    unreadSummary.value = { notificationUnread: 0 };
   }
-);
+
+  function getOldestNotificationId(): number | null {
+    if (!items.value.length) return null;
+    const id = Number(items.value[0]?.notificationId);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }
+
+  function setNotifications(list: NotificationRecentItemDTO[]) {
+    const mergedItems = new Map<number, NotificationRecentItemDTO>(itemsMap.value);
+    const mergedRah = new Map<number, RequestHandle>(requestHandlesMap.value);
+    for (const row of Array.isArray(list) ? list : []) {
+      const id = Number(row?.notificationId);
+      if (!Number.isFinite(id) || id <= 0) continue;
+      const cur = mergedItems.get(id);
+      const next: NotificationRecentItemDTO = {
+        notificationId: id,
+        notification: row.notification || cur?.notification,
+        rah: row.rah ?? cur?.rah ?? null,
+      };
+      mergedItems.set(id, next);
+      if (next.rah) mergedRah.set(next.rah.id, next.rah);
+    }
+    itemsMap.value = mergedItems;
+    requestHandlesMap.value = mergedRah;
+    lastAnchorId.value = getOldestNotificationId();
+    hasMore.value = (Array.isArray(list) ? list.length : 0) >= DEFAULT_PAGE_SIZE;
+  }
+
+  function upsertSystemNotification(notification: SystemNotification): void {
+    const id = Number(notification.notificationId);
+    if (!Number.isFinite(id) || id <= 0) return;
+    const current = itemsMap.value.get(id);
+    const next = new Map(itemsMap.value);
+    next.set(id, {
+      notificationId: id,
+      notification,
+      rah: current?.rah ?? null,
+    });
+    itemsMap.value = next;
+  }
+
+  function upsertRequestHandle(rah: RequestHandle): void {
+    const id = Number(rah.id);
+    if (!Number.isFinite(id) || id <= 0) return;
+    const nextRah = new Map(requestHandlesMap.value);
+    nextRah.set(id, rah);
+    requestHandlesMap.value = nextRah;
+    const nextItems = new Map(itemsMap.value);
+    for (const [k, v] of nextItems.entries()) {
+      if (v.notification?.rahId === id || v.rah?.id === id) {
+        nextItems.set(k, { ...v, rah });
+      }
+    }
+    itemsMap.value = nextItems;
+  }
+
+  async function fetchRecent(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
+    loading.value = true;
+    errorMessage.value = "";
+    try {
+      const list = await loadRecentNotificationsNormalized(page, pageSize);
+      setNotifications(list);
+      hasMore.value = list.length >= Math.max(1, Math.floor(pageSize));
+    } catch {
+      errorMessage.value = "??????????";
+      toast.error(errorMessage.value);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function fetchOlderByAnchor(pageSize = DEFAULT_PAGE_SIZE) {
+    if (loading.value || loadingMore.value || !hasMore.value) return;
+    const anchorId = lastAnchorId.value || getOldestNotificationId();
+    if (anchorId == null) return;
+    loadingMore.value = true;
+    try {
+      const incoming = await loadRecentNotificationsBeforeAnchorNormalized(anchorId, pageSize);
+      setNotifications(incoming);
+      hasMore.value = incoming.length >= Math.max(1, Math.floor(pageSize));
+    } catch {
+      toast.error("??????????");
+    } finally {
+      loadingMore.value = false;
+    }
+  }
+
+  async function submitRequestHandle(rahId: number, handleAction: RequestHandleAction, rahFeedback?: string) {
+    if (handlingNotificationId.value != null) return;
+    handlingNotificationId.value = rahId;
+    try {
+      const resp = await submitNotificationHandleActionNormalized({ rahId, handleAction, rahFeedback });
+      if (resp.data) upsertRequestHandle(resp.data);
+      toast.show(resp.message || "????", "success", 2000);
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message || "????");
+    } finally {
+      handlingNotificationId.value = null;
+    }
+  }
+
+  async function fetchCursor() {
+    try {
+      cursor.value = await loadNotificationCursorNormalized();
+    } catch {
+      cursor.value = { notificationLastReadId: 0 };
+    }
+  }
+
+  async function fetchUnreadSummary() {
+    try {
+      unreadSummary.value = await loadNotificationUnreadSummaryNormalized();
+    } catch {
+      unreadSummary.value = { notificationUnread: 0 };
+    }
+  }
+
+  async function initialize() {
+    await Promise.all([fetchRecent(), fetchCursor(), fetchUnreadSummary()]);
+  }
+
+  async function advanceCursorToLocalMaxAndSyncUnread() {
+    const maxId = items.value.reduce((m, item) => Math.max(m, Number(item.notificationId || 0)), 0);
+    const nextId = Math.max(Number(cursor.value.notificationLastReadId || 0), maxId);
+    await advanceNotificationCursorNormalized({ notificationLastReadId: nextId });
+    cursor.value = { notificationLastReadId: nextId };
+    await fetchUnreadSummary();
+  }
+
+  function bindRealtimeListeners(): void {
+    if (hasBoundRealtime.value) return;
+    hasBoundRealtime.value = true;
+
+    const consumeOnce = (key: string): boolean => {
+      if (recentRealtimeEventKeys.value.has(key)) return false;
+      const next = new Set(recentRealtimeEventKeys.value);
+      next.add(key);
+      recentRealtimeEventKeys.value = next;
+      window.setTimeout(() => {
+        const cleanup = new Set(recentRealtimeEventKeys.value);
+        cleanup.delete(key);
+        recentRealtimeEventKeys.value = cleanup;
+      }, 2000);
+      return true;
+    };
+
+    const onSystem = (payload: unknown) => {
+      const p = payload as Record<string, any>;
+      const body = ((p.data as Record<string, any>) || p) as Record<string, any>;
+      const id = Number(body.notificationId ?? body.id);
+      if (!Number.isFinite(id) || id <= 0) return;
+      const key = `sys:${id}:${String(body.createTime ?? "")}`;
+      if (!consumeOnce(key)) return;
+      upsertSystemNotification({
+        notificationId: id,
+        mode: String(body.mode || "inform"),
+        type: String(body.type || body.notificationType || ""),
+        notificationTitle: body.notificationTitle ?? null,
+        notificationContent: body.notificationContent ?? null,
+        receiverId: Number(body.receiverId || 0),
+        relatedUserId: body.relatedUserId == null ? null : Number(body.relatedUserId),
+        rahId: body.rahId == null ? null : Number(body.rahId),
+        createTime: body.createTime ?? Date.now(),
+      });
+      unreadSummary.value.notificationUnread += 1;
+      console.info("[WS-NOTIF-RT][STORE][MERGED]", "newSystemNotification", { notificationId: id });
+    };
+
+    const onRequest = (payload: unknown) => {
+      const p = payload as Record<string, any>;
+      const body = ((p.data as Record<string, any>) || p) as Record<string, any>;
+      const id = Number(body.id ?? body.rahId);
+      if (!Number.isFinite(id) || id <= 0) return;
+      const key = `rah:${id}:${String(body.createTime ?? body.handleTime ?? "")}`;
+      if (!consumeOnce(key)) return;
+      upsertRequestHandle({
+        id,
+        type: String(body.type || ""),
+        status: String(body.status || "pending"),
+        requester: Number(body.requester || 0),
+        handler: Number(body.handler || body.receiverUserId || 0),
+        rahTitle: body.rahTitle ?? null,
+        rahContent: body.rahContent ?? null,
+        rahFeedback: body.rahFeedback ?? null,
+        createTime: String(body.createTime || new Date().toISOString()),
+        handleTime: body.handleTime == null ? null : String(body.handleTime),
+      });
+      console.info("[WS-NOTIF-RT][STORE][MERGED]", "newRequestHandle", { rahId: id });
+    };
+
+    realtimeEventBus.on("newSystemNotification", onSystem);
+    realtimeEventBus.on("newRequestHandle", onRequest);
+    window.addEventListener("websocket:newSystemNotification", (event) => onSystem((event as CustomEvent).detail));
+    window.addEventListener("websocket:newRequestHandle", (event) => onRequest((event as CustomEvent).detail));
+  }
+
+  bindRealtimeListeners();
+
+  return {
+    items,
+    pendingRequestHandleList,
+    loading,
+    loadingMore,
+    hasMore,
+    errorMessage,
+    handlingNotificationId,
+    cursor,
+    unreadSummary,
+    unreadCount,
+    reset,
+    setNotifications,
+    fetchRecent,
+    fetchOlderByAnchor,
+    submitRequestHandle,
+    fetchCursor,
+    fetchUnreadSummary,
+    initialize,
+    advanceCursorToLocalMaxAndSyncUnread,
+  };
+});

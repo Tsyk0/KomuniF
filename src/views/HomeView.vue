@@ -191,7 +191,7 @@
           @delete-friend="handleDeleteFriend"
         />
 
-        <SystemNotificationContainer
+        <NotificationCenter
           v-else-if="currentMainView === 'notifications'"
         />
 
@@ -251,7 +251,7 @@ import FriendList from "@/components/FriendList.vue";
 import ConvCreatePanel from "@/components/ConvCreatePanel.vue";
 import UserSearch from "@/components/UserSearch.vue";
 import FriendPickSidebar from "@/components/FriendPickSidebar.vue";
-import SystemNotificationContainer from "@/components/SystemNotificationContainer.vue";
+import NotificationCenter from "@/components/NotificationCenter.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import toast from "@/commons/utils/toast";
 import { createOrGetSingleConversationNormalized } from "@/normalize/conversation";
@@ -446,7 +446,7 @@ const goToFriends = () => {
   conversationStore.clearCurrentConversation();
 };
 
-const goToNotifications = () => {
+const goToNotifications = async () => {
   if (convCreateStore.active) {
     convCreateStore.exit(false);
   }
@@ -456,7 +456,8 @@ const goToNotifications = () => {
   currentMainView.value = "notifications";
   const uid = getAuthUserIdOr(Number(userId.value));
   if (Number.isFinite(uid) && uid > 0) {
-    void appBootstrapStore.loadOne("notifications", uid);
+    await appBootstrapStore.loadOne("notifications", uid);
+    await notificationStore.advanceCursorToLocalMaxAndSyncUnread();
   }
 };
 
