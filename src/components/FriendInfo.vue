@@ -9,23 +9,13 @@
       <h2 class="friend-detail-title">好友信息</h2>
     </div>
 
-    <!-- 加载状态 -->
-    <div v-if="friendInfoStore.loading" class="friend-detail-content friend-loading">
-      <p>加载中...</p>
-    </div>
-
-    <!-- 错误状态 -->
-    <div v-else-if="friendInfoStore.error" class="friend-detail-content friend-error">
-      <p>{{ friendInfoStore.error }}</p>
-    </div>
-
     <!-- 好友详情内容 -->
-    <div v-else-if="info" class="friend-detail-content">
+    <div v-if="info" class="friend-detail-content">
       <!-- 好友头像 -->
       <div class="friend-avatar-large">
         <img
-          v-if="friendInfoStore.avatarUrl"
-          :src="friendInfoStore.avatarUrl"
+          v-if="avatarUrl"
+          :src="avatarUrl"
           alt="头像"
           class="avatar-large-img"
         />
@@ -123,17 +113,30 @@
 
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted } from "vue";
-import { useFriendInfoStore } from "@/store/friend/friendInfo";
+import { useFriendStore } from "@/store/friend/showFriend";
 import type { FriendListItem } from "@/types/dto/friend";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import {
-  loadFriendInfoFlow,
   resolveFriendDisplayInitial,
-  resolveFriendDisplayName,
   resolveFriendGenderText,
   resolveNormalizedOnlineStatus,
   resolveOnlineStatusClass,
   resolveOnlineStatusText,
 } from "@/interactions/friendInfo/FriendInfoInteraction";
+
+type FriendInfoViewModel = FriendListItem & {
+  friendNickname?: string;
+  friendAvatar?: string | null;
+  friendGender?: number | null;
+  friendGroup?: string | null;
+  friendBirthday?: string | null;
+  friendLocation?: string | null;
+  friendSignature?: string | null;
+  friendPhone?: string | null;
+  friendEmail?: string | null;
+  friendOnlineStatus?: number | null;
+  friendLastLoginTime?: string | null;
+};
 
 const props = defineProps<{
   friend: FriendListItem;
@@ -145,12 +148,29 @@ const emit = defineEmits<{
   "delete-friend": [friend: FriendListItem];
 }>();
 
-const friendInfoStore = useFriendInfoStore();
+const friendStore = useFriendStore();
 
-const info = computed(() => friendInfoStore.friendInfo);
+/**
+ * 当前好友详情数据统一来源于 friend store 的 currentFriend。
+ * 使用场景：确保详情页与好友列表数据一致，不再额外维护 friendInfo store 状态。
+ */
+const info = computed<FriendInfoViewModel | null>(() => {
+  if (friendStore.currentFriend) return friendStore.currentFriend;
+  return (props.friend as FriendInfoViewModel) || null;
+});
+
+const avatarUrl = computed(() =>
+  normalizeAvatarUrl((info.value as any)?.avatar || (info.value as any)?.friendAvatar || "")
+);
 
 const displayName = computed(() => {
-  return resolveFriendDisplayName(info.value);
+  if (!info.value) return "未知用户";
+  return (
+    info.value.remarkName ||
+    info.value.friendNickname ||
+    info.value.nickname ||
+    "未知用户"
+  );
 });
 
 const displayInitial = computed(() =>
@@ -158,7 +178,12 @@ const displayInitial = computed(() =>
 );
 
 const normalizedOnlineStatus = computed(() => {
-  return resolveNormalizedOnlineStatus(info.value?.friendOnlineStatus);
+  const raw = info.value?.friendOnlineStatus;
+  if (raw != null) return resolveNormalizedOnlineStatus(raw);
+  const listStatus = info.value?.onlineStatus;
+  if (listStatus === "online") return 1;
+  if (listStatus === "away") return 2;
+  return 0;
 });
 
 const onlineStatusText = computed(() => {
@@ -173,11 +198,12 @@ const genderText = computed(() => {
   return resolveFriendGenderText(info.value?.friendGender);
 });
 
+/**
+ * 同步当前详情好友上下文到 friend store。
+ * 使用场景：详情页首次进入或 friendId 切换时，保持 currentFriend 与页面一致。
+ */
 function loadInfo() {
-  void loadFriendInfoFlow({
-    friendId: props.friend?.friendId,
-    loadFriendInfo: (friendId) => friendInfoStore.loadFriendInfo(friendId),
-  });
+  friendStore.setCurrentFriend(props.friend as FriendInfoViewModel);
 }
 
 watch(
@@ -192,7 +218,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  friendInfoStore.clearFriendInfo();
+  friendStore.clearCurrentFriend();
 });
 
 const handleBack = () => {

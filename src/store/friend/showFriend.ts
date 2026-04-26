@@ -1,12 +1,24 @@
 // src/store/friend/showFriend.ts
-import { defineStore } from "pinia";
-import { loadFriendsNormalized } from "@/normalize/friend";
+import { acceptHMRUpdate, defineStore } from "pinia";
+import { loadFriendsNormalized, searchUsersNormalized } from "@/normalize/friend";
+import { sendFriendRequestNormalized } from "@/normalize/notification";
 import type { FriendListItem } from "@/types/dto/friend";
+
+type FriendCurrentItem = FriendListItem & {
+  friendBirthday?: string | null;
+  friendLocation?: string | null;
+  friendPhone?: string | null;
+  friendEmail?: string | null;
+  friendLastLoginTime?: string | null;
+  friendOnlineStatus?: number | null;
+};
 
 export const useFriendStore = defineStore("friend", {
   state: () => ({
     /** 好友列表（已标准化为可展示项）。 */
     friends: [] as FriendListItem[],
+    /** 当前打开详情的好友对象（来源于好友列表）。 */
+    currentFriend: null as FriendCurrentItem | null,
     /** 列表加载态。 */
     loadingFriends: false,
     /** 好友列表搜索关键词（本地 UI 状态）。 */
@@ -17,6 +29,36 @@ export const useFriendStore = defineStore("friend", {
     /** 外部写入好友列表（引导期兼容）。 */
     setFriends(friends: FriendListItem[]) {
       this.friends = Array.isArray(friends) ? friends : [];
+    },
+
+    /**
+     * 设置当前详情好友对象。
+     * 使用场景：从好友列表点击某个好友进入详情页时，固定详情页的数据来源。
+     */
+    setCurrentFriend(friend: FriendCurrentItem | null) {
+      this.currentFriend = friend;
+    },
+
+    /**
+     * 按 friendId 从好友列表定位并设置当前详情好友对象。
+     * 使用场景：组件仅持有 friendId 时，通过 store 列表建立详情上下文。
+     */
+    setCurrentFriendById(friendId: number) {
+      const targetId = Number(friendId);
+      if (!Number.isFinite(targetId) || targetId <= 0) {
+        this.currentFriend = null;
+        return;
+      }
+      const hit = this.friends.find(
+        (item) =>
+          Number(item.friendId) === targetId || Number(item.id) === targetId
+      );
+      this.currentFriend = (hit as FriendCurrentItem | undefined) || null;
+    },
+
+    /** 清空当前详情好友对象。 */
+    clearCurrentFriend() {
+      this.currentFriend = null;
     },
 
     /** 从 normalize 层加载好友列表。 */
@@ -32,6 +74,22 @@ export const useFriendStore = defineStore("friend", {
       }
     },
 
+    /**
+     * 搜索用户列表（用于“添加好友”面板）。
+     * 使用场景：UserSearch 输入关键词后，通过 store 统一触发用户搜索。
+     */
+    async searchUsers(params: { keyword: string; page: number; pageSize: number }) {
+      return searchUsersNormalized(params);
+    },
+
+    /**
+     * 发送好友申请。
+     * 使用场景：UserSearch 点击“添加好友”后统一通过 store 提交请求。
+     */
+    async sendFriendRequest(targetUserId: number) {
+      return sendFriendRequestNormalized(targetUserId);
+    },
+
     /** 更新搜索关键词。 */
     setSearchKeyword(keyword: string) {
       this.searchKeyword = keyword;
@@ -40,6 +98,7 @@ export const useFriendStore = defineStore("friend", {
     /** 退出登录/重置场景：清空好友状态。 */
     resetFriends() {
       this.friends = [];
+      this.currentFriend = null;
       this.searchKeyword = "";
     },
   },
@@ -70,3 +129,7 @@ export const useFriendStore = defineStore("friend", {
     isLoading: (state) => state.loadingFriends,
   },
 });
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useFriendStore, import.meta.hot));
+}

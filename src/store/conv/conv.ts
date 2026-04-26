@@ -112,14 +112,6 @@ export const useConvStore = defineStore("conv", {
       this.compressedCMMap.clear();
     },
 
-    hydrateSingleChatPeerFromFriendList(convId: number, peerFriendUserId: number) {
-      const conv = this.getConversationById(convId);
-      if (!conv || conv.convType !== 1 || peerFriendUserId <= 0) return;
-      if (conv.targetUserId == null || conv.targetUserId <= 0) {
-        conv.targetUserId = peerFriendUserId;
-      }
-    },
-
     // 过渡期兼容旧方法命名
     setCurrentConversation(convId: number) {
       this.selectConversation(convId);

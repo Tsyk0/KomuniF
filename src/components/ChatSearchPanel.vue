@@ -63,7 +63,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import ChatSearchResultItem from "@/components/ChatSearchResultItem.vue";
 import type { DisplayMessage } from "@/entity/message";
-import { searchMessagesNormalized } from "@/normalize/message";
+import { useShowMessageStore } from "@/store/message/showMessage";
 import { searchMessagesInConvFromDB } from "@/commons/utils/local-db";
 import {
   buildChatSearchEmptyState,
@@ -85,6 +85,7 @@ const emit = defineEmits<{
 }>();
 
 const emitClose = () => emit("close");
+const showMessageStore = useShowMessageStore();
 
 const onSelectResult = (m: DisplayMessage) => {
   emit("jump-to-message", m.messageId);
@@ -176,7 +177,7 @@ const runSearch = async (nextPage: number) => {
       searchLocal: (convId, keyword, page, pageSize) =>
         searchMessagesInConvFromDB(convId, keyword, page, pageSize),
       searchRemote: ({ keyword, convId, page, pageSize, signal }) =>
-        searchMessagesNormalized(
+        showMessageStore.searchMessages(
           { keyword, convId, page, pageSize },
           { signal }
         ),

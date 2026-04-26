@@ -14,7 +14,6 @@
  * - validateFriendRemarkInputs：校验好友备注与分组长度。
  * - buildFriendRemarkUpdatePayload：生成好友备注更新 payload。
  * - buildConversationUpdatePayload：生成会话资料更新 payload。
- * - loadFriendInfoFlow：加载好友资料并返回统一结果。
  * - loadConversationInfoFlow：加载会话资料并返回统一结果。
  * - refreshConversationAfterUpdateFlow：更新后刷新会话详情。
  * - applyFriendRemarkFlow：执行好友备注保存流程。
@@ -194,22 +193,6 @@ export function buildConversationUpdatePayload(input: {
   return Object.keys(payload).length === 0 ? null : payload;
 }
 
-/** 加载好友资料并返回统一结果。 */
-export async function loadFriendInfoFlow<T>(input: {
-  friendId: number | null | undefined;
-  loadFriendDetail: (friendId: number) => Promise<T>;
-}): Promise<{ friendInfo: T | null; error: string | null }> {
-  if (input.friendId == null || input.friendId <= 0) {
-    return { friendInfo: null, error: null };
-  }
-  try {
-    const friendInfo = await input.loadFriendDetail(input.friendId);
-    return { friendInfo, error: null };
-  } catch (e: any) {
-    return { friendInfo: null, error: e?.message || "Unable to load friend info" };
-  }
-}
-
 /** 加载会话资料并返回统一结果。 */
 export async function loadConversationInfoFlow<TConversation, TMember>(input: {
   convId: number | null | undefined;
@@ -295,8 +278,8 @@ export async function applyFriendRemarkFlow(input: {
   if (!payload) return { ok: true, message: null };
   try {
     await input.updateFriendRemark(input.friendId, payload);
-    await input.reloadFriendInfo();
     await input.reloadFriendsBootstrap(input.currentUserId);
+    await input.reloadFriendInfo();
     if (input.convId != null) {
       await input.refreshConversationById(input.convId);
     }

@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import type { ConversationEntity } from "@/types/dto/conversation-member";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
-import { loadFriendInfoNormalized } from "@/normalize/friend";
 import { useConvStore } from "@/store/conv/conv";
 import {
   loadConversationInfoNormalized,
@@ -18,11 +17,6 @@ export const useConversationInfoStore = defineStore("conversationInfo", {
     /** 会话详情加载：供 ConversationInfo 组件调用。 */
     async loadConversationDetail(convId: number): Promise<ConversationInfoDetail> {
       return loadConversationInfoNormalized(convId);
-    },
-
-    /** 好友详情加载：供单聊信息面板调用。 */
-    async loadFriendDetail(friendId: number) {
-      return loadFriendInfoNormalized(friendId);
     },
 
     /** 单聊备注更新入口。 */

@@ -59,11 +59,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useConvCreateStore } from "@/store/conv/convCreate";
-import { createGroupConversationNormalized } from "@/normalize/conversation";
 import toast from "@/commons/utils/toast";
 import {
   canSubmitConvCreate,
-  mapConvCreateErrorMessage,
   normalizeSelectedMemberIds,
   validateConvCreateDraft,
 } from "@/interactions/convCreatePanel/ConvCreatePanelInteraction";
@@ -111,11 +109,11 @@ async function submit() {
 
   submitting.value = true;
   try {
-    const result = await createGroupConversationNormalized(
-      name,
+    const result = await convCreateStore.createGroupConversation({
+      convName: name,
       memberUserIds,
-    );
-    if (!result.success || result.convId == null) {
+    });
+    if (!result.ok || result.convId == null) {
       toast.error(result.message || "创建群聊失败");
       return;
     }
@@ -123,8 +121,6 @@ async function submit() {
     toast.success(result.message || "创建成功");
     convCreateStore.resetDraft();
     emit("created", Number(result.convId));
-  } catch (e: unknown) {
-    toast.error(mapConvCreateErrorMessage(e));
   } finally {
     submitting.value = false;
   }

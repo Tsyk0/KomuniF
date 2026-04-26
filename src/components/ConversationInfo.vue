@@ -390,8 +390,6 @@ import type {
   ConversationMemberDTO,
 } from "@/types/dto/conversation-member";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
-import type { FriendProfileDTO } from "@/types/dto/friend";
-import { updateConversationMemberNamesNormalized } from "@/normalize/conversation";
 import {
   submitConversationInfoFlow,
   applyMyMemberNamesFlow,
@@ -400,7 +398,6 @@ import {
   hasFriendEditableChanges,
   hasMyMemberNameChanges,
   loadConversationInfoFlow,
-  loadFriendInfoFlow,
   refreshConversationAfterUpdateFlow,
   resolveConversationStatusText,
   resolveFriendGenderText,
@@ -411,6 +408,29 @@ import {
   validateMyMemberNameInputs,
   validateFriendRemarkInputs,
 } from "@/interactions/conversationInfo/ConversationInfoInteraction";
+
+type FriendInfoViewModel = {
+  id: number;
+  friendId: number;
+  displayName?: string;
+  nickname?: string;
+  remarkName?: string | null;
+  friendNickname?: string | null;
+  avatar?: string | null;
+  friendAvatar?: string | null;
+  friendGender?: number | null;
+  friendGroup?: string | null;
+  group?: string | null;
+  addSource?: string | null;
+  addTime?: string | null;
+  updateTime?: string | null;
+  friendSignature?: string | null;
+  friendBirthday?: string | null;
+  friendLocation?: string | null;
+  friendPhone?: string | null;
+  friendEmail?: string | null;
+  friendLastLoginTime?: string | null;
+};
 
 const props = defineProps<{
   convId: number | null;
@@ -432,7 +452,7 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const conversation = ref<ConversationEntity | null>(null);
 const members = ref<ConversationMemberDTO[]>([]);
-const friendInfo = ref<FriendProfileDTO | null>(null);
+const friendInfo = ref<FriendInfoViewModel | null>(null);
 
 const isFriendMode = computed(
   () => props.friendId != null && props.friendId > 0
@@ -471,12 +491,19 @@ const conversationAvatarUrl = computed(() => {
 });
 
 const friendAvatarUrl = computed(() => {
-  if (!friendInfo.value?.friendAvatar) return "";
-  return normalizeAvatarUrl(friendInfo.value.friendAvatar);
+  return normalizeAvatarUrl(
+    friendInfo.value?.avatar || friendInfo.value?.friendAvatar || ""
+  );
 });
 const friendDisplayName = computed(() => {
   if (!friendInfo.value) return "";
-  return friendInfo.value.remarkName || friendInfo.value.friendNickname || "Unknown user";
+  return (
+    friendInfo.value.remarkName ||
+    friendInfo.value.displayName ||
+    friendInfo.value.nickname ||
+    friendInfo.value.friendNickname ||
+    "Unknown user"
+  );
 });
 const friendGenderText = computed(() => {
   return resolveFriendGenderText(friendInfo.value?.friendGender);
@@ -560,23 +587,15 @@ const editableMemberNickname = ref("");
 const editablePrivateDisplayName = ref("");
 const isApplying = ref(false);
 
+/**
+ * 仅通过 conversationInfoStore 持久化当前用户会话内昵称设置。
+ * 使用场景：点击 Apply 提交 memberNickname/privateDisplayName 时，统一走 pinia 数据链路。
+ */
 const updateConversationMemberNamesSafely = async (
   convId: number,
   payload: { memberNickname?: string; privateDisplayName?: string }
 ) => {
-  const storeMethod = (
-    conversationInfoStore as unknown as {
-      updateConversationMemberNames?: (
-        convId: number,
-        payload: { memberNickname?: string; privateDisplayName?: string }
-      ) => Promise<void>;
-    }
-  ).updateConversationMemberNames;
-  if (typeof storeMethod === "function") {
-    await storeMethod(convId, payload);
-    return;
-  }
-  await updateConversationMemberNamesNormalized(convId, payload);
+  await conversationInfoStore.updateConversationMemberNames(convId, payload);
 };
 
 const syncEditableFromConversation = () => {
@@ -643,23 +662,21 @@ watch(anyPendingChanges, (pending) => {
 
 const loadFriendInfo = async () => {
   if (props.friendId == null || props.friendId <= 0) {
+    friendStore.clearCurrentFriend();
     friendInfo.value = null;
     error.value = null;
     return;
   }
-  try {
-    loading.value = true;
-    error.value = null;
-    const result = await loadFriendInfoFlow({
-      friendId: props.friendId,
-      loadFriendDetail: (friendId) => conversationInfoStore.loadFriendDetail(friendId),
-    });
-    friendInfo.value = result.friendInfo as FriendProfileDTO | null;
-    error.value = result.error;
+  loading.value = true;
+  error.value = null;
+  friendStore.setCurrentFriendById(props.friendId);
+  friendInfo.value = (friendStore.currentFriend as FriendInfoViewModel | null) || null;
+  if (!friendInfo.value) {
+    error.value = "Friend not found in store";
+  } else {
     syncEditableFromFriend();
-  } finally {
-    loading.value = false;
   }
+  loading.value = false;
 };
 
 const handleFriendApply = async () => {
@@ -671,7 +688,7 @@ const handleFriendApply = async () => {
     editableRemark: editableRemark.value,
     editableGroup: editableGroup.value,
     oldRemark: friendInfo.value.remarkName || "",
-    oldGroup: friendInfo.value.friendGroup || "",
+    oldGroup: friendInfo.value.friendGroup || friendInfo.value.group || "",
     validateInputs: (remark, group) => validateFriendRemarkInputs(remark, group),
     updateFriendRemark: (friendId, payload) =>
       conversationInfoStore.updateFriendRemark(friendId, payload),
@@ -862,6 +879,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   clearStagedAvatar();
+  friendStore.clearCurrentFriend();
 });
 
 watch(

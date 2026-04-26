@@ -292,34 +292,18 @@ const currentConvTypeOrNull = computed(() => {
   return t == null ? null : t;
 });
 
-/**
- * 单聊对端 userId：与 HomeView 的 currentFriendId 一致——
- * 优先父组件传入的 friendId，否则用会话 targetUserId，再没有则从当前消息列表推断。
- * 避免「无消息且摘要未带 targetUserId」时父组件传 null 导致不显示通话按钮 / 无法打开侧栏。
- */
+/** 单聊对端 userId：仅来源于 currentConversation.peer（Pinia conv 状态）。 */
 const singlePeerUserId = computed((): number | null => {
-  if (props.friendId != null && props.friendId > 0) {
-    return props.friendId;
-  }
   const c = currentConversation.value;
-  if (c?.convType !== 1) return null;
-  if (c.targetUserId != null && c.targetUserId > 0) {
-    return c.targetUserId;
-  }
-  const myId = authStore.user?.userId;
-  const msgs = showMessageStore.messages || [];
-  const otherIds = [
-    ...new Set(
-      msgs.map((m) => m.senderId).filter((id) => id !== myId && id > 0)
-    ),
-  ];
-  return otherIds.length > 0 ? otherIds[0]! : null;
+  if (!c?.peer) return null;
+  const peerId = Number(c.peer.peerUserId);
+  return Number.isFinite(peerId) && peerId > 0 ? peerId : null;
 });
 
 /** 1 对 1 通话：单聊且能解析到对端 userId */
 const canVoiceVideoCall = computed(
   () =>
-    currentConversation.value?.convType === 1 &&
+    !!currentConversation.value?.peer &&
     singlePeerUserId.value != null &&
     singlePeerUserId.value > 0
 );
@@ -446,7 +430,10 @@ const isLoading = computed(() => showMessageStore.loading);
 
 // 是否为群聊
 const isGroupChat = computed(() => {
-  return conversationStore.currentConversation?.convType === 2;
+  return (
+    conversationStore.currentConversation?.convType === 2 &&
+    !conversationStore.currentConversation?.peer
+  );
 });
 
 const hasInfoPendingChanges = ref(false);

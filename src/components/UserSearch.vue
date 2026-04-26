@@ -187,12 +187,9 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from "vue";
 import { useConvCreateStore } from "@/store/conv/convCreate";
+import { useFriendStore } from "@/store/friend/showFriend";
 import { useUserStore } from "@/store/user/user";
 import type { User } from "@/entity/user";
-import {
-  searchUsersNormalized
-} from "@/normalize/friend";
-import { sendFriendRequestNormalized } from "@/normalize/notification";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import toast from "@/commons/utils/toast";
 import UserSearchResultItem from "./UserSearchResultItem.vue";
@@ -220,6 +217,7 @@ const emit = defineEmits<{
 }>();
 
 const convCreateStore = useConvCreateStore();
+const friendStore = useFriendStore();
 const authStore = useUserStore();
 
 const keywordInput = ref("");
@@ -320,7 +318,7 @@ async function runSearch(reset: boolean) {
       pageSize,
       lastSearchedKeyword: lastSearchedKeyword.value,
       prevUsers: users.value,
-      searchUsers: (params) => searchUsersNormalized(params),
+      searchUsers: (params) => friendStore.searchUsers(params),
     });
     if (result.clearAll) {
       users.value = [];
@@ -384,7 +382,7 @@ async function sendFriendRequest() {
     const result = await executeFriendRequestFlow({
       targetUserId: targetId,
       isSelfTarget: !!u && isSelf(u),
-      sendFriendRequest: (id) => sendFriendRequestNormalized(id),
+      sendFriendRequest: (id) => friendStore.sendFriendRequest(id),
     });
     if (result.ok) toast.success(result.message);
     else toast.error(result.message);

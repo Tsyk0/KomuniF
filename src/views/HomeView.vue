@@ -252,7 +252,6 @@ import FriendPickSidebar from "@/components/FriendPickSidebar.vue";
 import NotificationCenter from "@/components/NotificationCenter.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import toast from "@/commons/utils/toast";
-import { createOrGetSingleConversationNormalized } from "@/normalize/conversation";
 import {
   buildHomeUserStateFromSession,
   formatDateForInputInHome,
@@ -405,16 +404,9 @@ const isGroupChat = computed(() => {
 
 const currentFriendId = computed(() => {
   const c = conversationStore.currentConversation;
-  if (c?.convType !== 1) return null;
-  if (c.targetUserId != null && c.targetUserId > 0) return c.targetUserId;
-  const myId = authStore.user?.userId;
-  const messages = showMessageStore.messages || [];
-  const otherIds = [
-    ...new Set(
-      messages.map((m) => m.senderId).filter((id) => id !== myId && id > 0)
-    ),
-  ];
-  return otherIds.length > 0 ? otherIds[0] : null;
+  if (!c?.peer) return null;
+  const peerId = Number(c.peer.peerUserId);
+  return Number.isFinite(peerId) && peerId > 0 ? peerId : null;
 });
 
 const notificationUnreadCount = computed(() => notificationStore.unreadCount);
@@ -475,50 +467,18 @@ const exitConvCreate = () => {
  * 3) 设为当前会话并加载消息。
  */
 const openSingleChatWithPeerUserId = async (peerUserId) => {
-  const pid = Number(peerUserId);
-  if (!Number.isFinite(pid) || pid <= 0) {
-    toast.error("无效的用户 ID");
+  const result = await convCreateStore.openOrCreateSingleConversation({
+    peerUserId: Number(peerUserId),
+    currentUserId: getAuthUserIdOr(0),
+    loadMessages: (convId) => showMessageStore.loadMessages(convId),
+    loadConversationsBootstrap: (userId) =>
+      appBootstrapStore.loadOne("conversations", userId),
+  });
+  if (!result.ok) {
+    if (result.message) toast.error(result.message);
     return false;
   }
-
-  try {
-    const result = await createOrGetSingleConversationNormalized(pid);
-    if (!result.success || result.convId == null) {
-      toast.error(result.message || "创建会话失败");
-      return false;
-    }
-
-    const convId = Number(result.convId);
-    await conversationStore.refreshConversationById(convId);
-    if (!conversationStore.getConversationById(convId)) {
-      const loadResult = await appBootstrapStore.loadOne(
-        "conversations",
-        getAuthUserIdOr(0)
-      );
-      if (!loadResult.success) {
-        throw new Error(loadResult.message || "加载会话失败");
-      }
-    }
-    const conv = conversationStore.getConversationById(convId);
-    if (!conv) {
-      toast.error("会话已创建，但拉取会话详情失败，请稍后在会话列表中打开");
-      return false;
-    }
-
-    if (conv.convType === 1 && pid > 0) {
-      conversationStore.hydrateSingleChatPeerFromFriendList(convId, pid);
-    }
-
-    conversationStore.setCurrentConversation(convId);
-    await showMessageStore.loadMessages(convId);
-    conversationStore.markAsRead(convId);
-    return true;
-  } catch (e) {
-    const msg =
-      e?.response?.data?.message || e?.message || "创建会话失败，请稍后重试";
-    toast.error(msg);
-    return false;
-  }
+  return true;
 };
 
 const onUserSearchSendMessage = async (user) => {
@@ -558,30 +518,20 @@ const handleGroupCreated = async (convId) => {
     return;
   }
   convCreateStore.exit(true);
-  try {
-    await conversationStore.refreshConversationById(id);
-    if (!conversationStore.getConversationById(id)) {
-      const loadResult = await appBootstrapStore.loadOne(
-        "conversations",
-        getAuthUserIdOr(0)
-      );
-      if (!loadResult.success) {
-        throw new Error(loadResult.message || "加载会话失败");
-      }
-    }
-    if (!conversationStore.getConversationById(id)) {
-      toast.error("群聊已创建，但拉取会话详情失败，请稍后在列表中打开");
-      return;
-    }
-    conversationStore.setCurrentConversation(id);
-    await showMessageStore.loadMessages(id);
-    conversationStore.markAsRead(id);
-    currentListView.value = "chat";
-    currentMainView.value = null;
-    selectedFriend.value = null;
-  } catch (e) {
-    toast.error(e?.message || "打开群聊失败，请稍后重试");
+  const result = await convCreateStore.openExistingConversation({
+    convId: id,
+    currentUserId: getAuthUserIdOr(0),
+    loadMessages: (cid) => showMessageStore.loadMessages(cid),
+    loadConversationsBootstrap: (userId) =>
+      appBootstrapStore.loadOne("conversations", userId),
+  });
+  if (!result.ok) {
+    toast.error(result.message || "打开群聊失败，请稍后重试");
+    return;
   }
+  currentListView.value = "chat";
+  currentMainView.value = null;
+  selectedFriend.value = null;
 };
 
 const enterEditMode = () => {
@@ -654,7 +604,7 @@ const handleAvatarError = () => {
 };
 
 const loadUserData = () => {
-  const userStr = sessionStorage.getItem("user");
+  const userStr = authStore.user ? JSON.stringify(authStore.user) : null;
   const userState = buildHomeUserStateFromSession({
     sessionUserRaw: userStr,
     baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:8081",

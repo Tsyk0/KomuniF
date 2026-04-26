@@ -15,6 +15,7 @@ import {
   mergeDisplayMessages,
   normalizeDisplayMessageSenderFlag,
   resolveMessageSenderDisplayName,
+  searchMessagesNormalized,
   sortDisplayMessagesBySendTime,
   type MessageNameResolveContext,
 } from "@/normalize/message";
@@ -409,6 +410,15 @@ export const useShowMessageStore = defineStore("message", () => {
     }
   };
 
+  /**
+   * 按会话搜索消息（远端）。
+   * 使用场景：ChatSearchPanel 通过 store 统一触发消息搜索，避免组件直连 normalize。
+   */
+  const searchMessages = (
+    params: { keyword: string; convId: number; page: number; pageSize: number },
+    config?: { signal?: AbortSignal }
+  ) => searchMessagesNormalized(params, config);
+
   return {
     messages,
     loading,
@@ -423,6 +433,7 @@ export const useShowMessageStore = defineStore("message", () => {
     loadMessagesAroundAnchor,
     loadOlderMessagesBeforeBoundary,
     loadNewerMessagesAfterBoundary,
+    searchMessages,
     addMessage,
     addMessages,
     replaceTempMessage,
