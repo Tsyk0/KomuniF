@@ -194,10 +194,10 @@
 import { ref, reactive, onMounted, watch } from "vue";
 import { useUserStore } from "@/store/user/user";
 import toast from "@/commons/utils/toast"; // 导入独立的toast服务
+import { compressImageToBase64, validateImageFile } from "@/commons/utils/image";
 import {
   buildProfileFormData,
   buildUserProfileUpdatePayload,
-  compressImageToBase64,
   mapAvatarUploadError,
   mapUserProfileSaveError,
   shouldResetProfileForm,
@@ -297,15 +297,9 @@ export default {
     // 处理头像上传
     const handleAvatarUpload = async (event) => {
       const file = event.target.files[0];
-      if (!file) return;
-
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error("图片大小不能超过2MB");
-        return;
-      }
-
-      if (!file.type.startsWith("image/")) {
-        toast.error("请选择图片文件");
+      const validation = validateImageFile(file, { maxSizeBytes: 2 * 1024 * 1024 });
+      if (!validation.ok) {
+        if (validation.message) toast.error(validation.message);
         return;
       }
 

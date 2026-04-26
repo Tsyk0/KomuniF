@@ -14,13 +14,11 @@
  * - validateFriendRemarkInputs：校验好友备注与分组长度。
  * - buildFriendRemarkUpdatePayload：生成好友备注更新 payload。
  * - buildConversationUpdatePayload：生成会话资料更新 payload。
- * - compressImageToBase64：压缩图片并转为 base64（仅保留为通用工具，不用于会话头像上传）。
  * - loadFriendInfoFlow：加载好友资料并返回统一结果。
  * - loadConversationInfoFlow：加载会话资料并返回统一结果。
  * - refreshConversationAfterUpdateFlow：更新后刷新会话详情。
  * - applyFriendRemarkFlow：执行好友备注保存流程。
- * - applyConversationAvatarFlow：执行会话头像更新流程。
- * - applyConversationInfoFlow：执行会话资料保存流程。
+ * - submitConversationInfoFlow：执行会话资料提交流程。
  */
 
 import type { ConversationEntity, ConversationMemberDTO } from "@/types/dto/conversation-member";
@@ -91,6 +89,61 @@ export function hasFriendEditableChanges(
   );
 }
 
+export function syncMyMemberNameFields(input: {
+  memberNickname?: string | null;
+  privateDisplayName?: string | null;
+}): { memberNickname: string; privateDisplayName: string } {
+  return {
+    memberNickname: input.memberNickname || "",
+    privateDisplayName: input.privateDisplayName || "",
+  };
+}
+
+export function hasMyMemberNameChanges(
+  editableMemberNickname: string,
+  editablePrivateDisplayName: string,
+  originalMemberNickname: string,
+  originalPrivateDisplayName: string
+): boolean {
+  return (
+    editableMemberNickname !== originalMemberNickname ||
+    editablePrivateDisplayName !== originalPrivateDisplayName
+  );
+}
+
+export function validateMyMemberNameInputs(
+  editableMemberNickname: string,
+  editablePrivateDisplayName: string,
+  maxLen = 50
+): string | null {
+  const memberNickname = editableMemberNickname.trim();
+  const privateDisplayName = editablePrivateDisplayName.trim();
+  if (memberNickname.length > maxLen) {
+    return `成员昵称最多 ${maxLen} 个字符`;
+  }
+  if (privateDisplayName.length > maxLen) {
+    return `私有显示名最多 ${maxLen} 个字符`;
+  }
+  return null;
+}
+
+export function buildMyMemberNameUpdatePayload(input: {
+  oldMemberNickname: string;
+  oldPrivateDisplayName: string;
+  newMemberNickname: string;
+  newPrivateDisplayName: string;
+}): { memberNickname?: string; privateDisplayName?: string } | null {
+  const memberNickname = input.newMemberNickname.trim();
+  const privateDisplayName = input.newPrivateDisplayName.trim();
+  const sameMemberNickname = memberNickname === input.oldMemberNickname;
+  const samePrivateDisplayName = privateDisplayName === input.oldPrivateDisplayName;
+  if (sameMemberNickname && samePrivateDisplayName) return null;
+  const payload: { memberNickname?: string; privateDisplayName?: string } = {};
+  if (!sameMemberNickname) payload.memberNickname = memberNickname;
+  if (!samePrivateDisplayName) payload.privateDisplayName = privateDisplayName;
+  return payload;
+}
+
 export function validateFriendRemarkInputs(
   remark: string,
   group: string,
@@ -139,43 +192,6 @@ export function buildConversationUpdatePayload(input: {
     payload.convDescription = input.editableDescription.trim();
   }
   return Object.keys(payload).length === 0 ? null : payload;
-}
-
-export function compressImageToBase64(
-  file: File,
-  maxWidth = 400,
-  maxHeight = 400,
-  quality = 0.7
-): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width *= ratio;
-          height *= ratio;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          reject(new Error("Failed to get Canvas context"));
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.onerror = reject;
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 /** 加载好友资料并返回统一结果。 */
@@ -293,44 +309,66 @@ export async function applyFriendRemarkFlow(input: {
   }
 }
 
-/** 执行会话头像更新流程。 */
-export async function applyConversationAvatarFlow(input: {
-  file: File | null | undefined;
-  convId: number;
-  updateConversation: (
+/** 执行当前用户在会话内的成员昵称/私有显示名更新流程。 */
+export async function applyMyMemberNamesFlow(input: {
+  convId: number | null | undefined;
+  oldMemberNickname: string;
+  oldPrivateDisplayName: string;
+  editableMemberNickname: string;
+  editablePrivateDisplayName: string;
+  validateInputs: (memberNickname: string, privateDisplayName: string) => string | null;
+  updateMemberNames: (
     convId: number,
-    payload?: Partial<ConversationEntity>,
-    convAvatarFile?: File
+    payload: { memberNickname?: string; privateDisplayName?: string }
   ) => Promise<void>;
-  refreshAfterUpdate: (successMessage: string) => Promise<void>;
+  refreshConversationById: (convId: number) => Promise<void>;
+  refreshConversationMembers: (convId: number, force: boolean) => Promise<void>;
+  reloadConversationInfo: () => Promise<void>;
 }): Promise<{ ok: boolean; message: string | null }> {
-  const file = input.file;
-  if (!file) return { ok: false, message: null };
-  if (file.size > 2 * 1024 * 1024) {
-    return { ok: false, message: "Image size cannot exceed 2MB" };
-  }
-  if (!file.type.startsWith("image/")) {
-    return { ok: false, message: "Please select an image file" };
-  }
+  if (!input.convId) return { ok: false, message: null };
+  const validationError = input.validateInputs(
+    input.editableMemberNickname,
+    input.editablePrivateDisplayName
+  );
+  if (validationError) return { ok: false, message: validationError };
+  const payload = buildMyMemberNameUpdatePayload({
+    oldMemberNickname: input.oldMemberNickname,
+    oldPrivateDisplayName: input.oldPrivateDisplayName,
+    newMemberNickname: input.editableMemberNickname,
+    newPrivateDisplayName: input.editablePrivateDisplayName,
+  });
+  if (!payload) return { ok: true, message: null };
   try {
-    await input.updateConversation(input.convId, {}, file);
-    await input.refreshAfterUpdate("Avatar updated");
-    return { ok: true, message: null };
-  } catch (e: unknown) {
-    const rawMessage =
-      e instanceof Error ? e.message : typeof e === "string" ? e : "Avatar upload failed, please retry";
-    return { ok: false, message: rawMessage || "Avatar upload failed, please retry" };
+    await input.updateMemberNames(input.convId, payload);
+    await input.refreshConversationById(input.convId);
+    await input.refreshConversationMembers(input.convId, true);
+    await input.reloadConversationInfo();
+    return { ok: true, message: "修改成功" };
+  } catch (e: any) {
+    const message = e?.message || "";
+    if (
+      /未授权|unauthorized|forbidden|不是该会话成员|401|403/i.test(message)
+    ) {
+      return { ok: false, message: "您不是该会话成员，无法修改成员信息" };
+    }
+    if (/500|internal/i.test(message)) {
+      return { ok: false, message: "修改失败，请稍后重试" };
+    }
+    return {
+      ok: false,
+      message: message || "修改失败，请稍后重试",
+    };
   }
 }
 
-/** 执行会话资料保存流程。 */
-export async function applyConversationInfoFlow(input: {
+/** 执行会话资料提交流程（由 store/normalize 负责实际持久化）。 */
+export async function submitConversationInfoFlow(input: {
   conversation: ConversationEntity | null;
   canEditConversation: boolean;
   editableName: string;
   editableDescription: string;
   avatarFile?: File | null;
-  updateConversation: (
+  persistConversationInfo: (
     convId: number,
     payload?: Partial<ConversationEntity>,
     convAvatarFile?: File
@@ -351,7 +389,7 @@ export async function applyConversationInfoFlow(input: {
   const avatarFile = input.avatarFile ?? undefined;
   if (!payload && !avatarFile) return { ok: true, message: null };
   try {
-    await input.updateConversation(
+    await input.persistConversationInfo(
       input.conversation.convId,
       payload || {},
       avatarFile

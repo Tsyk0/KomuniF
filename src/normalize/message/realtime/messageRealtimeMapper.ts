@@ -45,9 +45,11 @@ export function mapRealtimeIncomingToDisplayMessage(
     (m) => Number(m.userId) === senderId
   );
   const senderName =
-    (member?.memberNickname || "").trim() ||
-    (member?.userNickname || "").trim() ||
-    `用户${senderId}`;
+    senderId === context.currentUserId
+      ? "我"
+      : (member?.memberNickname || "").trim() ||
+        (member?.userNickname || "").trim() ||
+        `用户${senderId}`;
   const senderAvatar =
     senderId === context.currentUserId
       ? context.currentUserAvatar || member?.userAvatar || null

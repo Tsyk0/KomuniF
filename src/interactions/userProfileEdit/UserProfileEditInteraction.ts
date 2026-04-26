@@ -6,7 +6,6 @@
  * 方法目录（方法：功能）
  * - formatDateForInput：将日期转成 input[type=date] 可用格式。
  * - buildProfileFormData：由用户资料生成可编辑表单对象。
- * - compressImageToBase64：压缩图片并输出 base64。
  * - validateUserProfileForm：校验昵称/手机/邮箱等输入。
  * - buildUserProfileUpdatePayload：生成提交给 store 的更新 payload。
  * - mapUserProfileSaveError：统一保存失败文案。
@@ -33,43 +32,6 @@ export function buildProfileFormData(userData: any) {
     userPhone: userData.userPhone || "",
     userEmail: userData.userEmail || "",
   };
-}
-
-export function compressImageToBase64(
-  file: File,
-  maxWidth = 1024,
-  maxHeight = 1024,
-  quality = 0.94
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width *= ratio;
-          height *= ratio;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          reject(new Error("canvas unavailable"));
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.onerror = reject;
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 export function validateUserProfileForm(formData: any): string | null {

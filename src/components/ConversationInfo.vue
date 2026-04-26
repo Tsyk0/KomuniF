@@ -304,18 +304,27 @@
           <div class="settings-row">
             <div class="settings-label">My Group Nickname</div>
             <div class="settings-value">
-              <span v-if="myDisplayName">
-                {{ myDisplayName }}
-              </span>
-              <span v-else class="settings-placeholder">
-                Not set. Default name will be used.
-              </span>
+              <input
+                v-model="editableMemberNickname"
+                class="field-input"
+                type="text"
+                maxlength="50"
+                placeholder="Enter member nickname"
+                :disabled="!canEditMyMemberNames || isApplying"
+              />
             </div>
           </div>
-          <div class="settings-row disabled-row">
-            <div class="settings-label">Mute Notifications</div>
+          <div class="settings-row">
+            <div class="settings-label">My Private Display Name</div>
             <div class="settings-value">
-              <span class="settings-badge disabled-badge">Not Available</span>
+              <input
+                v-model="editablePrivateDisplayName"
+                class="field-input"
+                type="text"
+                maxlength="50"
+                placeholder="Enter private display name"
+                :disabled="!canEditMyMemberNames || isApplying"
+              />
             </div>
           </div>
         </div>
@@ -325,23 +334,26 @@
     <div
       v-if="
         (isFriendMode && hasFriendPendingChanges) ||
-        (!isFriendMode && canEditConversation)
+        (!isFriendMode && (canEditConversation || canEditMyMemberNames))
       "
       class="info-actions-float"
       :class="{
         visible:
           (isFriendMode && hasFriendPendingChanges) ||
-          (!isFriendMode && hasPendingChanges),
+          (!isFriendMode &&
+            (hasPendingChanges || hasMemberNamePendingChanges)),
       }"
     >
       <button
         class="info-action-btn apply"
+        :disabled="isApplying"
         @click="isFriendMode ? handleFriendApply() : handleApply()"
       >
-        Apply
+        {{ isApplying ? "Applying..." : "Apply" }}
       </button>
       <button
         class="info-action-btn cancel"
+        :disabled="isApplying"
         @click="isFriendMode ? handleFriendCancel() : handleCancel()"
       >
         Cancel
@@ -367,6 +379,11 @@ import { useFriendStore } from "@/store/friend/showFriend";
 import { useConvStore } from "@/store/conv/conv";
 import { useConversationInfoStore } from "@/store/conversationInfo/conversationInfo";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import {
+  createImagePreviewUrl,
+  revokeImagePreviewUrl,
+  validateImageFile,
+} from "@/commons/utils/image";
 import { useAppBootstrapStore } from "@/store/app/bootstrap";
 import type {
   ConversationEntity,
@@ -374,19 +391,24 @@ import type {
 } from "@/types/dto/conversation-member";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import type { FriendProfileDTO } from "@/types/dto/friend";
+import { updateConversationMemberNamesNormalized } from "@/normalize/conversation";
 import {
-  applyConversationInfoFlow,
+  submitConversationInfoFlow,
+  applyMyMemberNamesFlow,
   applyFriendRemarkFlow,
   hasConversationEditableChanges,
   hasFriendEditableChanges,
+  hasMyMemberNameChanges,
   loadConversationInfoFlow,
   loadFriendInfoFlow,
   refreshConversationAfterUpdateFlow,
   resolveConversationStatusText,
   resolveFriendGenderText,
   resolveMemberDisplayName,
+  syncMyMemberNameFields,
   syncConversationEditableFields,
   syncFriendEditableFields,
+  validateMyMemberNameInputs,
   validateFriendRemarkInputs,
 } from "@/interactions/conversationInfo/ConversationInfoInteraction";
 
@@ -506,11 +528,22 @@ const displayMembers = computed(() =>
   })
 );
 
-const myDisplayName = computed(() => {
+const currentConversationSummary = computed(() => {
+  if (!props.convId) return null;
+  const fromMap = conversationStore.getConversationById(props.convId);
+  if (fromMap) return fromMap;
+  const cur = conversationStore.currentConversation;
+  return cur?.convId === props.convId ? cur : null;
+});
+
+const currentMemberNickname = computed(() => {
   if (!currentUserId.value) return "";
   const me = members.value.find((m) => m.userId === currentUserId.value);
-  if (!me) return "";
-  return resolveDisplayName(me);
+  return me?.memberNickname || "";
+});
+
+const currentPrivateDisplayName = computed(() => {
+  return currentConversationSummary.value?.privateDisplayName || "";
 });
 
 const editableName = ref("");
@@ -523,6 +556,28 @@ const stagedAvatarPreviewUrl = ref("");
 
 const editableRemark = ref("");
 const editableGroup = ref("");
+const editableMemberNickname = ref("");
+const editablePrivateDisplayName = ref("");
+const isApplying = ref(false);
+
+const updateConversationMemberNamesSafely = async (
+  convId: number,
+  payload: { memberNickname?: string; privateDisplayName?: string }
+) => {
+  const storeMethod = (
+    conversationInfoStore as unknown as {
+      updateConversationMemberNames?: (
+        convId: number,
+        payload: { memberNickname?: string; privateDisplayName?: string }
+      ) => Promise<void>;
+    }
+  ).updateConversationMemberNames;
+  if (typeof storeMethod === "function") {
+    await storeMethod(convId, payload);
+    return;
+  }
+  await updateConversationMemberNamesNormalized(convId, payload);
+};
 
 const syncEditableFromConversation = () => {
   const fields = syncConversationEditableFields(conversation.value);
@@ -534,6 +589,15 @@ const syncEditableFromFriend = () => {
   const fields = syncFriendEditableFields(friendInfo.value);
   editableRemark.value = fields.remark;
   editableGroup.value = fields.group;
+};
+
+const syncEditableFromMemberSettings = () => {
+  const fields = syncMyMemberNameFields({
+    memberNickname: currentMemberNickname.value,
+    privateDisplayName: currentPrivateDisplayName.value,
+  });
+  editableMemberNickname.value = fields.memberNickname;
+  editablePrivateDisplayName.value = fields.privateDisplayName;
 };
 
 const hasPendingChanges = computed(() => {
@@ -553,8 +617,24 @@ const hasFriendPendingChanges = computed(() => {
   );
 });
 
+const hasMemberNamePendingChanges = computed(() => {
+  return hasMyMemberNameChanges(
+    editableMemberNickname.value,
+    editablePrivateDisplayName.value,
+    currentMemberNickname.value,
+    currentPrivateDisplayName.value
+  );
+});
+
+const canEditMyMemberNames = computed(() => {
+  if (!currentUserId.value) return false;
+  return members.value.some((m) => m.userId === currentUserId.value);
+});
+
 const anyPendingChanges = computed(() =>
-  isFriendMode.value ? hasFriendPendingChanges.value : hasPendingChanges.value
+  isFriendMode.value
+    ? hasFriendPendingChanges.value
+    : hasPendingChanges.value || hasMemberNamePendingChanges.value
 );
 
 watch(anyPendingChanges, (pending) => {
@@ -623,6 +703,7 @@ const loadConversationInfo = async () => {
     members.value = result.members as ConversationMemberDTO[];
     error.value = result.error;
     syncEditableFromConversation();
+    syncEditableFromMemberSettings();
   } finally {
     loading.value = false;
   }
@@ -642,9 +723,7 @@ const handleAvatarClick = () => {
  * 使用场景：重新选图、点击 Cancel、组件卸载，避免预览 URL 泄漏。
  */
 const clearStagedAvatar = () => {
-  if (stagedAvatarPreviewUrl.value) {
-    URL.revokeObjectURL(stagedAvatarPreviewUrl.value);
-  }
+  revokeImagePreviewUrl(stagedAvatarPreviewUrl.value);
   stagedAvatarPreviewUrl.value = "";
   stagedAvatarFile.value = null;
 };
@@ -669,23 +748,15 @@ const handleAvatarChange = async (event: Event) => {
   if (!conversation.value || !canEditConversation.value) return;
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
-  if (!file) {
-    input.value = "";
-    return;
-  }
-  if (file.size > 2 * 1024 * 1024) {
-    toast.error("Image size cannot exceed 2MB");
-    input.value = "";
-    return;
-  }
-  if (!file.type.startsWith("image/")) {
-    toast.error("Please select an image file");
+  const validation = validateImageFile(file, { maxSizeBytes: 2 * 1024 * 1024 });
+  if (!validation.ok) {
+    if (validation.message) toast.error(validation.message);
     input.value = "";
     return;
   }
   clearStagedAvatar();
-  stagedAvatarFile.value = file;
-  stagedAvatarPreviewUrl.value = URL.createObjectURL(file);
+  stagedAvatarFile.value = file || null;
+  stagedAvatarPreviewUrl.value = createImagePreviewUrl(file as File);
   input.value = "";
 };
 
@@ -694,55 +765,91 @@ const handleAvatarChange = async (event: Event) => {
  * 使用场景：用户点击 Apply 后统一提交，保证一次请求完成复合编辑。
  */
 const handleApply = async () => {
-  const result = await applyConversationInfoFlow({
-    conversation: conversation.value,
-    canEditConversation: canEditConversation.value,
-    editableName: editableName.value,
-    editableDescription: editableDescription.value,
-    avatarFile: stagedAvatarFile.value,
-    updateConversation: (convId, payload, convAvatarFile) =>
-      conversationInfoStore.updateConversation(convId, payload, convAvatarFile),
-    setConversationName: (name) => {
-      if (conversation.value) conversation.value.convName = name ?? "";
-    },
-    setConversationDescription: (description) => {
-      if (conversation.value) conversation.value.convDescription = description ?? "";
-    },
-    syncEditableFromConversation,
-    refreshAfterUpdate: (successMessage) => fetchConversationDetails(successMessage),
-  });
-  if (!result.ok && result.message) {
-    toast.error(result.message);
-    return;
-  }
-  clearStagedAvatar();
-  const cid = Number(conversation.value?.convId || 0);
-  if (cid > 0) {
-    await conversationStore.refreshConversationById(cid);
-    const updated = conversationStore.getConversationById(cid);
-    if (updated && conversation.value) {
-      const patch = updated as ConversationSummaryDTO & {
-        convDescription?: string | null;
-        enableReadReceipt?: boolean;
-      };
-      conversation.value.convName = patch.convName ?? conversation.value.convName;
-      conversation.value.convAvatar = patch.convAvatar ?? conversation.value.convAvatar;
-      if (patch.convDescription !== undefined) {
-        conversation.value.convDescription = patch.convDescription;
+  if (isApplying.value) return;
+  isApplying.value = true;
+  try {
+    if (canEditConversation.value && hasPendingChanges.value) {
+      const result = await submitConversationInfoFlow({
+        conversation: conversation.value,
+        canEditConversation: canEditConversation.value,
+        editableName: editableName.value,
+        editableDescription: editableDescription.value,
+        avatarFile: stagedAvatarFile.value,
+        persistConversationInfo: (convId, payload, convAvatarFile) =>
+          conversationInfoStore.persistConversationInfo(convId, payload, convAvatarFile),
+        setConversationName: (name) => {
+          if (conversation.value) conversation.value.convName = name ?? "";
+        },
+        setConversationDescription: (description) => {
+          if (conversation.value) conversation.value.convDescription = description ?? "";
+        },
+        syncEditableFromConversation,
+        refreshAfterUpdate: (successMessage) => fetchConversationDetails(successMessage),
+      });
+      if (!result.ok && result.message) {
+        toast.error(result.message);
+        return;
       }
-      if (patch.enableReadReceipt !== undefined) {
-        conversation.value.enableReadReceipt = patch.enableReadReceipt;
-      }
-      if (patch.convType !== undefined) {
-        conversation.value.convType = patch.convType;
+      clearStagedAvatar();
+      const cid = Number(conversation.value?.convId || 0);
+      if (cid > 0) {
+        await conversationStore.refreshConversationById(cid);
+        const updated = conversationStore.getConversationById(cid);
+        if (updated && conversation.value) {
+          const patch = updated as ConversationSummaryDTO & {
+            convDescription?: string | null;
+            enableReadReceipt?: boolean;
+          };
+          conversation.value.convName = patch.convName ?? conversation.value.convName;
+          conversation.value.convAvatar = patch.convAvatar ?? conversation.value.convAvatar;
+          if (patch.convDescription !== undefined) {
+            conversation.value.convDescription = patch.convDescription;
+          }
+          if (patch.enableReadReceipt !== undefined) {
+            conversation.value.enableReadReceipt = patch.enableReadReceipt;
+          }
+          if (patch.convType !== undefined) {
+            conversation.value.convType = patch.convType;
+          }
+        }
       }
     }
+
+    if (hasMemberNamePendingChanges.value) {
+      const result = await applyMyMemberNamesFlow({
+        convId: props.convId,
+        oldMemberNickname: currentMemberNickname.value,
+        oldPrivateDisplayName: currentPrivateDisplayName.value,
+        editableMemberNickname: editableMemberNickname.value,
+        editablePrivateDisplayName: editablePrivateDisplayName.value,
+        validateInputs: (memberNickname, privateDisplayName) =>
+          validateMyMemberNameInputs(memberNickname, privateDisplayName),
+        updateMemberNames: (convId, payload) =>
+          updateConversationMemberNamesSafely(convId, payload),
+        refreshConversationById: (convId) =>
+          conversationStore.refreshConversationById(convId),
+        refreshConversationMembers: (convId, force) =>
+          conversationStore.loadCompressedCM(convId, force),
+        reloadConversationInfo: () => loadConversationInfo(),
+      });
+      if (!result.ok && result.message) {
+        toast.error(result.message);
+        return;
+      }
+      if (result.message) {
+        toast.success(result.message);
+      }
+      syncEditableFromMemberSettings();
+    }
+  } finally {
+    isApplying.value = false;
   }
 };
 
 const handleCancel = () => {
   syncEditableFromConversation();
   clearStagedAvatar();
+  syncEditableFromMemberSettings();
 };
 
 onMounted(() => {
@@ -770,6 +877,15 @@ watch(
       conversation.value = null;
       members.value = [];
       friendInfo.value = null;
+    }
+  }
+);
+
+watch(
+  () => [currentMemberNickname.value, currentPrivateDisplayName.value] as const,
+  () => {
+    if (!hasMemberNamePendingChanges.value) {
+      syncEditableFromMemberSettings();
     }
   }
 );

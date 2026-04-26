@@ -3,6 +3,11 @@ import service from "../../service";
 import type { ConversationEntity } from "@/types/dto/conversation-member";
 import type { BaseResponse } from "@/types/dto/base";
 
+export interface UpdateConversationMemberNamesPayload {
+  memberNickname?: string;
+  privateDisplayName?: string;
+}
+
 /**
  * 更新会话信息（统一 multipart 协议）
  * 对应后端接口：PATCH /conversations/{convId}
@@ -35,8 +40,25 @@ export function updateConversationInfoApi(
   });
 }
 
+/**
+ * 更新当前登录用户在会话内的成员昵称与私有显示名
+ * 对应后端接口：PATCH /conversations/{convId}/members/me/names
+ * Content-Type: application/json
+ */
+export function updateConversationMemberNamesApi(
+  convId: number,
+  payload: UpdateConversationMemberNamesPayload
+): Promise<BaseResponse<string>> {
+  return service({
+    url: `/conversations/${convId}/members/me/names`,
+    method: "patch",
+    data: payload,
+  });
+}
+
 export const manageConversationApi = {
   updateConversationInfo: updateConversationInfoApi,
+  updateConversationMemberNames: updateConversationMemberNamesApi,
 };
 
 export default manageConversationApi;

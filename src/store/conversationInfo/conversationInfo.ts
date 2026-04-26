@@ -5,9 +5,11 @@ import { loadFriendInfoNormalized } from "@/normalize/friend";
 import { useConvStore } from "@/store/conv/conv";
 import {
   loadConversationInfoNormalized,
-  updateConversationInfoNormalized,
+  persistConversationInfoNormalized,
+  updateConversationMemberNamesNormalized,
   updateFriendRemarkNormalized,
   type ConversationInfoDetail,
+  type UpdateConversationMemberNamesPayload,
   type UpdateFriendRemarkPayload,
 } from "@/normalize/conversation";
 
@@ -32,12 +34,12 @@ export const useConversationInfoStore = defineStore("conversationInfo", {
      * 更新会话信息（支持文本字段与可选头像文件）并同步 conv store。
      * 使用场景：ConversationInfo 点击 Apply 后，先调用后端接口，再把可确定字段即时回写到会话列表与当前会话。
      */
-    async updateConversation(
+    async persistConversationInfo(
       convId: number,
       payload: Partial<ConversationEntity> = {},
       convAvatarFile?: File
     ) {
-      await updateConversationInfoNormalized(convId, payload, convAvatarFile);
+      await persistConversationInfoNormalized(convId, payload, convAvatarFile);
       const convStore = useConvStore();
       /**
        * 本地摘要补丁：只放会话列表模型中已有/可兼容的字段，
@@ -58,6 +60,14 @@ export const useConversationInfoStore = defineStore("conversationInfo", {
       if (Object.keys(patch).length > 0) {
         convStore.patchConversationLocal(convId, patch);
       }
+    },
+
+    /** 更新当前用户在当前会话的昵称与私有显示名。 */
+    async updateConversationMemberNames(
+      convId: number,
+      payload: UpdateConversationMemberNamesPayload
+    ) {
+      await updateConversationMemberNamesNormalized(convId, payload);
     },
   },
 });

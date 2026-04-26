@@ -7,6 +7,11 @@ export type UpdateFriendRemarkPayload = {
   friendGroup?: string | null;
 };
 
+export type UpdateConversationMemberNamesPayload = {
+  memberNickname?: string;
+  privateDisplayName?: string;
+};
+
 /** 更新好友备注与分组（单聊语义）。 */
 export async function updateFriendRemarkNormalized(
   friendId: number,
@@ -18,8 +23,8 @@ export async function updateFriendRemarkNormalized(
   }
 }
 
-/** 更新会话属性（统一 multipart，可选头像文件）。 */
-export async function updateConversationInfoNormalized(
+/** 持久化会话属性（统一 multipart，可选头像文件）。 */
+export async function persistConversationInfoNormalized(
   convId: number,
   payload: Partial<ConversationEntity>,
   convAvatarFile?: File
@@ -31,5 +36,19 @@ export async function updateConversationInfoNormalized(
   );
   if (response.code !== 200) {
     throw new Error(response.message || "Failed to update conversation info");
+  }
+}
+
+/** 更新当前用户在会话内的 memberNickname / privateDisplayName。 */
+export async function updateConversationMemberNamesNormalized(
+  convId: number,
+  payload: UpdateConversationMemberNamesPayload
+): Promise<void> {
+  const response = await manageConversationApi.updateConversationMemberNames(
+    convId,
+    payload
+  );
+  if (response.code !== 200) {
+    throw new Error(response.message || "Failed to update member names");
   }
 }

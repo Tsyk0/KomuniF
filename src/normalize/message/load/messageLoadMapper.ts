@@ -72,6 +72,13 @@ export function resolveMessageSenderDisplayName(
   memberNickname?: string | null,
   convId?: number
 ): string {
+  if (
+    context.currentUserId != null &&
+    Number(senderId) === Number(context.currentUserId)
+  ) {
+    return "我";
+  }
+
   const friend = context.friends.find(
     (item) => Number(item.friendId) === Number(senderId)
   );
@@ -96,13 +103,6 @@ export function resolveMessageSenderDisplayName(
       defaultName ||
       "User"
     );
-  }
-
-  if (
-    context.currentUserId != null &&
-    Number(senderId) === Number(context.currentUserId)
-  ) {
-    return normalizeText(context.currentUserNickname) || "User";
   }
 
   return (

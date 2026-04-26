@@ -28,11 +28,7 @@ export function buildTempTextMessage(
   const me = input.conversationMembers?.find(
     (m) => Number(m.userId) === input.currentUserId
   );
-  const senderName =
-    (me?.memberNickname || "").trim() ||
-    (me?.userNickname || "").trim() ||
-    (input.currentUserNickname || "").trim() ||
-    "我";
+  const senderName = "我";
 
   return {
     messageId: now,
