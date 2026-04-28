@@ -45,9 +45,9 @@
 .homeview .nav-menu-item {
   width: 48px;
   height: 48px;
-  background: none;
+  background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -62,7 +62,7 @@
 }
 
 .homeview .nav-menu-item.active {
-  background: rgba(102, 126, 234, 0.18);
+  background: #e5e7eb;
 }
 
 .homeview .nav-notification-badge {
@@ -84,17 +84,16 @@
 }
 
 .homeview .nav-menu-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: #e5e7eb;
+}
+
+.homeview .nav-menu-item:active {
+  background: #d1d5db;
 }
 
 .homeview .menu-icon {
   font-size: 24px;
   line-height: 1;
-}
-
-/* 退出按钮特殊样式 */
-.homeview .nav-menu-item.logout-btn:hover {
-  background: rgba(244, 67, 54, 0.1);
 }
 
 /* ========== 中间会话列表区域 ========== */
@@ -211,7 +210,6 @@
 }
 
 .homeview .sidebar-header .user-profile::after {
-  content: "✏️";
   position: absolute;
   right: 10px;
   top: 50%;
@@ -617,20 +615,6 @@
   color: #999;
   margin-right: 8px;
   flex-shrink: 0;
-}
-
-.homeview .search-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 14px;
-  color: #333;
-  font-family: inherit;
-}
-
-.homeview .search-input::placeholder {
-  color: #999;
 }
 
 .homeview .clear-search {

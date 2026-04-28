@@ -39,7 +39,7 @@ export async function submitNotificationHandleActionNormalized(payload: {
   handleAction: RequestHandleAction;
   rahFeedback?: string;
 }): Promise<{ message: string; data: RequestHandle | null | undefined }> {
-  const resp = await notificationApi.handleNotification(payload);
+  const resp = await notificationApi.submitRequestHandle(payload);
   if (resp.code !== 200) {
     throw new Error(resp.message || "操作失败");
   }

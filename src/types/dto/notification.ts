@@ -22,7 +22,17 @@ export interface SendFriendRequestResult {
   handlerId: number;
 }
 
-/** POST /notifications/handle */
+export interface CreateGroupJoinRequestPayload {
+  title?: string;
+  content?: string;
+}
+
+export interface CreateGroupJoinRequestResult {
+  rahId: number;
+  convId: number;
+}
+
+/** POST /request-handles/handle */
 export type RequestHandleAction =
   | "accept"
   | "reject"
@@ -42,6 +52,7 @@ export interface RequestHandle {
   status: "pending" | "accepted" | "rejected" | "banned" | string;
   requester: number;
   handler: number;
+  convId?: number | null;
   rahTitle: string | null;
   rahContent: string | null;
   rahFeedback: string | null;

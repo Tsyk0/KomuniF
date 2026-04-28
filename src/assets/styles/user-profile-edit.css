@@ -28,6 +28,57 @@
   white-space: nowrap;
 }
 
+.user-profile-edit .profile-back-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  gap: 0;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  box-shadow: none;
+}
+
+.user-profile-edit .profile-back-btn:hover {
+  background: rgba(107, 114, 128, 0.12);
+  border: none;
+  color: #6b7280;
+  transform: none;
+  box-shadow: none;
+}
+
+.user-profile-edit .profile-back-btn:active {
+  background: rgba(107, 114, 128, 0.2);
+  border: none;
+  color: #6b7280;
+  transform: none;
+  box-shadow: none;
+}
+
+html.night-mode .user-profile-edit .profile-back-btn {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+html.night-mode .user-profile-edit .profile-back-btn:hover {
+  background: rgba(156, 163, 175, 0.16);
+  border: none;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+html.night-mode .user-profile-edit .profile-back-btn:active {
+  background: rgba(156, 163, 175, 0.24);
+  border: none;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
 .user-profile-edit .edit-content {
   flex: 1;
   display: flex;
@@ -185,111 +236,215 @@
 
 /* 恢复默认字体设置 */
 .user-profile-edit .form-group label {
-  display: block;
-  margin-bottom: 10px;
-  color: #374151;
-  line-height: 1.2;
-}
-
-/* 输入框使用默认字体设置 - 移除背景色 */
-.user-profile-edit input,
-.user-profile-edit textarea,
-.user-profile-edit .el-input,
-.user-profile-edit .el-textarea,
-.user-profile-edit input[type="date"] {
-  padding: 14px 16px;
-  height: auto;
-  min-height: 48px;
-  line-height: 1.5;
-  box-sizing: border-box;
-  background: #eaf2fd !important;
-  border: 1px solid #cfdbea;
-  border-radius: 10px;
-  color: #333 !important; /* 确保文本颜色 */
-}
-
-/* 特别针对输入框聚焦状态 */
-/* 集中管理 focus 和 hover 状态 */
-.user-profile-edit input:focus,
-.user-profile-edit input:hover,
-.user-profile-edit textarea:focus,
-.user-profile-edit textarea:hover,
-.user-profile-edit .el-input:focus,
-.user-profile-edit .el-input:hover,
-.user-profile-edit .el-textarea:focus,
-.user-profile-edit .el-textarea:hover,
-.user-profile-edit input[type="date"]:focus,
-.user-profile-edit input[type="date"]:hover,
-/* 原有的全局 hover 样式 */
-.el-input:hover,
-.el-textarea:hover {
-  outline: none;
-  border-color: #76a9e8;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
-  background-color: #dceafe;
-}
-/* 特别针对 textarea */
-.user-profile-edit .el-textarea {
-  width: 100%;
-  padding: 14px 16px;
-  border: 1px solid #cfdbea;
-  border-radius: 10px;
-  resize: vertical;
-  font-family: inherit;
-  box-sizing: border-box;
-  min-height: 120px;
-  line-height: 1.5;
-  background: #eaf2fd !important;
-  color: #333 !important;
-}
-
-/* 性别选项 */
-.user-profile-edit .gender-options {
-  display: flex;
-  gap: 20px;
-}
-
-.user-profile-edit .gender-option {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  user-select: none;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-  min-width: 120px;
+  justify-content: flex-end;
+  margin-bottom: 0;
   min-height: 48px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  border: 1px solid #cfdaea;
-  box-sizing: border-box;
-  background: #e8f1fe;
+  color: #374151;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+  padding-top: 0;
 }
 
-.user-profile-edit .gender-option:hover {
-  background: #dceafe;
-  color: #007aff;
-  border-color: #8ab6ee;
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.14);
+.user-profile-edit .form-group {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  column-gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
-.user-profile-edit .gender-option.active {
-  background: rgba(0, 122, 255, 0.1);
-  color: #007aff;
-  border-color: #007aff;
+.user-profile-edit .form-group:last-child {
+  margin-bottom: 0;
 }
 
-.user-profile-edit .gender-icon {
-  font-size: 20px;
+.user-profile-edit .form-group-signature {
+  align-items: start;
 }
+
+.user-profile-edit .form-group-signature label {
+  align-items: flex-start;
+  padding-top: 14px;
+}
+
+.user-profile-edit .form-group-signature .el-textarea {
+  margin-left: 12px;
+  margin-right: 2px;
+}
+
+.user-profile-edit .form-group .char-count {
+  grid-column: 2;
+}
+
+.user-profile-edit .form-group .el-input,
+.user-profile-edit .form-group .el-date-editor.el-input,
+.user-profile-edit .form-group .el-textarea,
+.user-profile-edit .form-group .gender-radio-group {
+  width: min(540px, 100%);
+  border: none !important;
+}
+
+/* 强制覆盖日期选择器的所有高度相关样式 */
+.user-profile-edit .el-date-editor.el-input {
+  --el-input-height: 48px !important;
+}
+
+.user-profile-edit .el-date-editor .el-input__wrapper {
+  min-height: 48px !important;
+  height: 48px !important;
+}
+
+.user-profile-edit .el-date-editor .el-input__inner {
+  height: 48px !important;
+  line-height: 48px !important;
+}
+
+/* Element Plus 输入框：外层（布局、宽度、边距） */
+.user-profile-edit .el-input,
+.user-profile-edit .el-date-editor.el-input {
+  width: 100%;
+  margin: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.user-profile-edit .el-input:hover,
+.user-profile-edit .el-input:focus,
+.user-profile-edit .el-input:active,
+.user-profile-edit .el-input.is-focus {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Element Plus 输入框：中间层（边框、背景、圆角、阴影） */
+.user-profile-edit .el-input__wrapper {
+  min-height: 48px;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  background: rgba(107, 114, 128, 0.2) !important;
+}
+
+.user-profile-edit .el-input__wrapper:hover,
+.user-profile-edit .el-input__wrapper.is-focus,
+.user-profile-edit .el-input__wrapper:focus-within {
+  border: none !important;
+  box-shadow: none !important;
+  background: rgba(107, 114, 128, 0.25) !important;
+}
+
+/* Element Plus 输入框：内层（文字、光标、padding） */
+.user-profile-edit .el-input__inner {
+  padding: 0 2px;
+  color: #333 !important;
+  line-height: 1.5;
+  caret-color: #333;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.user-profile-edit .el-input__inner:hover,
+.user-profile-edit .el-input__inner:focus,
+.user-profile-edit .el-input__inner:active,
+.user-profile-edit .el-input__inner:focus-visible {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.user-profile-edit .el-input__inner::placeholder {
+  color: #6b7280;
+}
+
+/* Element Plus 文本域：保持分层，背景仍在 inner 上 */
+.user-profile-edit .el-textarea {
+  width: 100%;
+  margin: 0;
+}
+
+.user-profile-edit .el-textarea__inner {
+  min-height: 120px;
+  padding: 14px 16px;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  background: rgba(107, 114, 128, 0.2) !important;
+  color: #333 !important;
+  line-height: 1.5;
+  caret-color: #333;
+}
+
+.user-profile-edit .el-textarea__inner:hover,
+.user-profile-edit .el-textarea__inner:focus {
+  border: none !important;
+  box-shadow: none !important;
+  background: rgba(107, 114, 128, 0.25) !important;
+}
+
+/* 性别选项（Element Plus radio-button） */
+.user-profile-edit .gender-radio-group {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  margin-left: 12px;
+  margin-right: 2px;
+}
+
+.user-profile-edit .gender-radio-group .el-radio-button__inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  border-radius: 999px !important;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  background: rgba(107, 114, 128, 0.2);
+  border: none !important;
+  box-shadow: none !important;
+  color: #374151;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.user-profile-edit .gender-radio-group .el-radio-button__inner:hover {
+  background: rgba(107, 114, 128, 0.25);
+  border: none !important;
+}
+
+.user-profile-edit .gender-radio-group .el-radio-button.is-active .el-radio-button__inner {
+  background: #a855f7 !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.user-profile-edit .gender-lucide-icon {
+  margin-right: 0;
+}
+
+.user-profile-edit .gender-radio-group .el-radio-button .el-radio-button__original-radio {
+  display: none;
+  border: none !important;
+}
+
+.user-profile-edit .gender-radio-group .el-radio-button .el-radio-button__inner {
+  font-size: 0;
+  border: none !important;
+}
+
 
 /* 提示文字 */
 .user-profile-edit .char-count {
-  text-align: right;
+  text-align: left;
   color: #999;
   margin-top: 8px;
   font-size: 14px;
@@ -312,74 +467,97 @@
 
 /* 按钮样式 */
 .user-profile-edit .save-btn {
-  background: linear-gradient(135deg, #60b0ff, #4c81b6);
-  padding: 8px 16px;
+  background: transparent;
+  padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-width: 100px;
+  gap: 0;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   min-height: 44px;
   transition: all 0.2s ease;
   font-size: 16px;
-  color: white;
+  color: #6b7280;
   position: relative;
   overflow: hidden;
   text-align: center;
   user-select: none;
   box-sizing: border-box;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
 }
 
 .user-profile-edit .save-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #3399ff, #0077e6);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(51, 153, 255, 0.3);
+  background: rgba(107, 114, 128, 0.12);
+  transform: none;
+  box-shadow: none;
+  color: #166534;
+}
+
+.user-profile-edit .save-btn:active:not(:disabled) {
+  background: rgba(107, 114, 128, 0.2);
+  box-shadow: none;
+  color: #14532d;
 }
 
 .user-profile-edit .save-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
   transform: none !important;
+  box-shadow: none;
 }
 
 /* 取消/重置按钮 */
 .user-profile-edit .cancel-btn {
-  padding: 14px 28px;
+  padding: 0;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-width: 140px;
+  gap: 0;
+  width: 48px;
+  min-width: 48px;
   min-height: 48px;
+  height: 48px;
   transition: all 0.3s;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border:none;
   color: #333333;
-  border: 1px solid #e0e0e0;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.8);
+  background: transparent;
 }
 
 .user-profile-edit .cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.9);
-  color: #ff3b30;
-  border: 1px solid #ff3b30;
-  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
+  background: rgba(107, 114, 128, 0.12);
+  color: #333333;
+  border: none;
+  box-shadow: none;
 }
 
 .user-profile-edit .cancel-btn:active {
+  background: rgba(107, 114, 128, 0.2);
+  border: none;
   transform: translateY(0);
 }
 
 .user-profile-edit .btn-icon {
-  font-size: 18px;
+  transition: color 0.2s ease;
+}
+
+.user-profile-edit .cancel-btn:hover .btn-icon {
+  border: none;
+  color: #c2410c;
+}
+
+.user-profile-edit .cancel-btn:active .btn-icon {
+  border: none;
+  color: #9a3412;
 }

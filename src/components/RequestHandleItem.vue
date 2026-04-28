@@ -4,14 +4,14 @@
     <div class="sys-notif-item__inner">
       <div class="sys-notif-item__meta">
         <span class="sys-notif-item__badge">请求</span>
-        <span class="sys-notif-item__badge">{{ rah.type || "unknown" }}</span>
+        <span class="sys-notif-item__badge">{{ requestTypeLabel }}</span>
       </div>
       <div class="sys-notif-item__title-row">
-        <span class="sys-notif-item__title">{{ rah.rahTitle || "请求待处理" }}</span>
+        <span class="sys-notif-item__title">{{ displayTitle }}</span>
       </div>
-      <p v-if="rah.rahContent" class="sys-notif-item__body">{{ rah.rahContent }}</p>
+      <p v-if="displayContent" class="sys-notif-item__body">{{ displayContent }}</p>
       <p class="sys-notif-item__status">
-        状态：{{ rah.status }} · requester={{ rah.requester }} · handler={{ rah.handler }}
+        状态：{{ statusLabel }} · requester={{ rah.requester }} · handler={{ rah.handler }}
       </p>
       <p class="sys-notif-item__time">{{ formatNotificationTime(rah.createTime) }}</p>
       <div v-if="showActions" class="sys-notif-external-actions sys-notif-external-actions--open">
@@ -41,6 +41,33 @@ const showActions = computed(
     String(props.rah.status || "").toLowerCase() === "pending" &&
     Number(props.rah.handler || 0) === Number(props.currentUserId || 0)
 );
+
+const requestTypeLabel = computed(() => {
+  if (String(props.rah.type || "") === "conv_join") return "入群申请";
+  if (String(props.rah.type || "") === "friend_add") return "好友申请";
+  return props.rah.type || "unknown";
+});
+
+const displayTitle = computed(() => {
+  if (props.rah.rahTitle) return props.rah.rahTitle;
+  if (String(props.rah.type || "") === "conv_join") return "入群申请待处理";
+  return "请求待处理";
+});
+
+const displayContent = computed(() => {
+  if (props.rah.rahContent) return props.rah.rahContent;
+  if (String(props.rah.type || "") === "conv_join") return "有用户申请加入群聊，等待审批。";
+  return "";
+});
+
+const statusLabel = computed(() => {
+  const status = String(props.rah.status || "").toLowerCase();
+  if (status === "pending") return "待处理";
+  if (status === "accepted") return "已通过";
+  if (status === "rejected") return "已拒绝";
+  if (status === "banned") return "已拉黑";
+  return props.rah.status || "-";
+});
 
 function formatNotificationTime(value: unknown): string {
   if (value == null || value === "") return "-";

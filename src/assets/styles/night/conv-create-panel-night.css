@@ -95,7 +95,7 @@ html.night-mode .conv-create-check {
 }
 
 html.night-mode .conv-create-row-avatar {
-  background: linear-gradient(145deg, #334155, #1e293b);
+  background: linear-gradient(145deg, #3f3f46, #2f2f2f);
   border-color: rgba(30, 41, 59, 0.9);
   outline-color: #475569;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
@@ -172,12 +172,19 @@ html.night-mode .conv-create-toolbar-title {
 }
 
 html.night-mode .conv-create-submit-btn {
-  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.45);
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(30, 41, 59, 0.72);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.28);
 }
 
 html.night-mode .conv-create-submit-btn:hover:not(:disabled) {
-  box-shadow: 0 6px 22px rgba(96, 165, 250, 0.35);
+  background: rgba(51, 65, 85, 0.78);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+html.night-mode .conv-create-reset-btn {
+  background: rgba(15, 23, 42, 0.66);
 }
 
 html.night-mode .conv-add-friend-placeholder {

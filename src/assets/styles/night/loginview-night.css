@@ -46,7 +46,7 @@ html.night-mode .loginview .login-card {
   height: 80vh;
   width: 100%;
   max-width: 420px;
-  background: #1e293b;
+  background: #2f2f2f;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -163,7 +163,7 @@ html.night-mode .loginview .forgot-password-placeholder {
   align-items: center;
   justify-content: center;
   min-height: 300px;
-  background: #1e293b;
+  background: #2f2f2f;
 }
 
 html.night-mode .loginview .forgot-password-placeholder h3 {
@@ -222,7 +222,7 @@ html.night-mode .loginview .footer {
   border-top: 1px solid #334155;
   text-align: center;
   flex-shrink: 0;
-  background: #1e293b;
+  background: #2f2f2f;
 }
 
 html.night-mode .loginview .footer p {

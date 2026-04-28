@@ -50,7 +50,7 @@ html.night-mode .user-profile-edit .avatar-section {
   overflow-y: auto;
   height: 100%;
   box-sizing: border-box;
-  background: #0f172a;
+  background: #1f1f1f;
 }
 
 html.night-mode .user-profile-edit .avatar-display {
@@ -163,7 +163,7 @@ html.night-mode .user-profile-edit .form-content {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  background: #111827;
+  background: #232323;
 }
 
 html.night-mode .user-profile-edit .form-section::before {
@@ -186,113 +186,210 @@ html.night-mode .user-profile-edit .form-section::before {
 }
 
 html.night-mode .user-profile-edit .form-group label {
-  display: block;
-  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 0;
+  min-height: 48px;
   color: #ffffff;
   line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+  padding-top: 0;
 }
 
-html.night-mode .user-profile-edit input,
-html.night-mode .user-profile-edit textarea,
+html.night-mode .user-profile-edit .form-group {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  column-gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+html.night-mode .user-profile-edit .form-group:last-child {
+  margin-bottom: 0;
+}
+
+html.night-mode .user-profile-edit .form-group-birthday {
+  margin-bottom: 26px;
+}
+
+html.night-mode .user-profile-edit .form-group-signature {
+  align-items: start;
+}
+
+html.night-mode .user-profile-edit .form-group-signature label {
+  align-items: flex-start;
+  padding-top: 14px;
+}
+
+html.night-mode .user-profile-edit .form-group-signature .el-textarea {
+  margin-left: 12px;
+  margin-right: 2px;
+}
+
+html.night-mode .user-profile-edit .form-group .char-count {
+  grid-column: 2;
+}
+
+html.night-mode .user-profile-edit .form-group .el-input,
+html.night-mode .user-profile-edit .form-group .el-date-editor.el-input,
+html.night-mode .user-profile-edit .form-group .el-textarea,
+html.night-mode .user-profile-edit .form-group .gender-radio-group {
+  width: min(540px, 100%);
+  border: none !important;
+}
+
+/* 夜间 Element Plus 输入框：外层（布局、宽度、边距） */
 html.night-mode .user-profile-edit .el-input,
-html.night-mode .user-profile-edit .el-textarea,
-html.night-mode .user-profile-edit input[type="date"] {
-  padding: 14px 16px;
-  height: auto;
-  min-height: 48px;
-  line-height: 1.5;
-  box-sizing: border-box;
-  background: #1e293b !important;
-  border: 1px solid #475569;
-  border-radius: 10px;
-  color: #ffffff !important;
+html.night-mode .user-profile-edit .el-date-editor.el-input {
+  width: 100%;
+  margin: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-html.night-mode .user-profile-edit input::placeholder,
-html.night-mode .user-profile-edit textarea::placeholder,
-html.night-mode .user-profile-edit .el-input::placeholder,
-html.night-mode .user-profile-edit .el-textarea::placeholder {
+html.night-mode .user-profile-edit .el-input:hover,
+html.night-mode .user-profile-edit .el-input:focus,
+html.night-mode .user-profile-edit .el-input:active,
+html.night-mode .user-profile-edit .el-input.is-focus {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 夜间 Element Plus 输入框：中间层（边框、背景、圆角、阴影） */
+html.night-mode .user-profile-edit .el-input__wrapper {
+  min-height: 48px;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  background: rgba(156, 163, 175, 0.2) !important;
+}
+
+html.night-mode .user-profile-edit .el-input__wrapper:hover,
+html.night-mode .user-profile-edit .el-input__wrapper.is-focus,
+html.night-mode .user-profile-edit .el-input__wrapper:focus-within {
+  border: none !important;
+  box-shadow: none !important;
+  background: rgba(156, 163, 175, 0.25) !important;
+}
+
+/* 夜间 Element Plus 输入框：内层（文字、光标、padding） */
+html.night-mode .user-profile-edit .el-input__inner {
+  padding: 0 2px;
+  color: #ffffff !important;
+  line-height: 1.5;
+  caret-color: #ffffff;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html.night-mode .user-profile-edit .el-input__inner:hover,
+html.night-mode .user-profile-edit .el-input__inner:focus,
+html.night-mode .user-profile-edit .el-input__inner:active,
+html.night-mode .user-profile-edit .el-input__inner:focus-visible {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html.night-mode .user-profile-edit .el-input__inner::placeholder {
   color: #9ca3af;
   opacity: 1;
 }
 
-html.night-mode .user-profile-edit input:focus,
-html.night-mode .user-profile-edit input:hover,
-html.night-mode .user-profile-edit textarea:focus,
-html.night-mode .user-profile-edit textarea:hover,
-html.night-mode .user-profile-edit .el-input:focus,
-html.night-mode .user-profile-edit .el-input:hover,
-html.night-mode .user-profile-edit .el-textarea:focus,
-html.night-mode .user-profile-edit .el-textarea:hover,
-html.night-mode .user-profile-edit input[type="date"]:focus,
-html.night-mode .user-profile-edit input[type="date"]:hover {
-  outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
-  background: #172235 !important;
-}
-
+/* 夜间 Element Plus 文本域：保持分层，背景仍在 inner 上 */
 html.night-mode .user-profile-edit .el-textarea {
   width: 100%;
-  padding: 14px 16px;
-  border: 1px solid rgba(75, 85, 99, 0.8);
-  border-radius: 8px;
-  resize: vertical;
-  font-family: inherit;
-  box-sizing: border-box;
-  min-height: 120px;
-  line-height: 1.5;
-  background: #1e293b !important;
-  color: #ffffff !important;
+  margin: 0;
 }
 
-html.night-mode .gender-options {
+html.night-mode .user-profile-edit .el-textarea__inner {
+  min-height: 120px;
+  padding: 14px 16px;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  background: rgba(156, 163, 175, 0.2) !important;
+  color: #ffffff !important;
+  line-height: 1.5;
+  caret-color: #ffffff;
+}
+
+html.night-mode .user-profile-edit .el-textarea__inner:hover,
+html.night-mode .user-profile-edit .el-textarea__inner:focus {
+  border: none !important;
+  box-shadow: none !important;
+  background: rgba(156, 163, 175, 0.25) !important;
+}
+
+html.night-mode .user-profile-edit .gender-radio-group {
   display: flex;
   gap: 20px;
+  width: 100%;
+  margin-left: 12px;
+  margin-right: 2px;
 }
 
-html.night-mode .user-profile-edit .gender-option {
-  display: flex;
+html.night-mode .user-profile-edit .gender-radio-group .el-radio-button__inner {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  user-select: none;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-  min-width: 120px;
-  min-height: 48px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  color: #ffffff;
-  border: 1px solid #475569;
-  box-sizing: border-box;
-  background: #1e293b;
+  gap: 0;
+  padding: 0;
+  border-radius: 999px !important;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  background: rgba(156, 163, 175, 0.2);
+  border: none !important;
+  box-shadow: none !important;
+  color: #e5e7eb;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-html.night-mode .user-profile-edit .gender-option:hover {
-  background: #172235;
-  color: #ffffff;
-  border-color: #60a5fa;
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.26);
+html.night-mode .user-profile-edit .gender-radio-group .el-radio-button__inner:hover {
+  background: rgba(156, 163, 175, 0.25);
+  border: none !important;
 }
 
-html.night-mode .user-profile-edit .gender-option.active {
-  background: rgba(96, 165, 250, 0.2);
-  color: #ffffff;
-  border-color: #60a5fa;
+html.night-mode
+  .user-profile-edit
+  .gender-radio-group
+  .el-radio-button.is-active
+  .el-radio-button__inner {
+  background: #a855f7 !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-html.night-mode .user-profile-edit .gender-icon {
-  font-size: 20px;
-  color: #ffffff;
+html.night-mode .user-profile-edit .gender-lucide-icon {
+  margin-right: 0;
 }
+
+html.night-mode
+  .user-profile-edit
+  .gender-radio-group
+  .el-radio-button
+  .el-radio-button__original-radio {
+  display: none;
+}
+
+html.night-mode .user-profile-edit .gender-radio-group .el-radio-button .el-radio-button__inner {
+  font-size: 0;
+  border: none !important;
+}
+
 
 html.night-mode .user-profile-edit .char-count {
-  text-align: right;
+  text-align: left;
   font-size: 14px;
   color: #ffffff;
   margin-top: 8px;
@@ -300,17 +397,19 @@ html.night-mode .user-profile-edit .char-count {
 }
 
 html.night-mode .user-profile-edit .save-btn {
-  background: linear-gradient(135deg, #4b91d8, #124e89);
-  padding: 8px 16px;
+  background: transparent;
+  padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  color: #ffffff;
-  min-width: 100px;
+  gap: 0;
+  color: #166534;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   min-height: 44px;
   transition: all 0.2s ease;
   font-size: 16px;
@@ -320,22 +419,31 @@ html.night-mode .user-profile-edit .save-btn {
   user-select: none;
   box-sizing: border-box;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
+  color: #9ca3af;
 }
 
 html.night-mode .user-profile-edit .save-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  background: rgba(156, 163, 175, 0.16);
+  color: #166534;
+  transform: none;
+  box-shadow: none;
+}
+
+html.night-mode .user-profile-edit .save-btn:active:not(:disabled) {
+  background: rgba(156, 163, 175, 0.24);
+  color: #14532d;
+  transform: none;
+  box-shadow: none;
 }
 
 html.night-mode .user-profile-edit .save-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
-  background: #6b7280;
-  color: #ffffff;
+  background: transparent;
+  color: #6b7280;
   transform: none !important;
+  box-shadow: none;
 }
 
 html.night-mode .user-profile-edit .action-buttons {
@@ -352,31 +460,32 @@ html.night-mode .user-profile-edit .action-buttons {
 }
 
 html.night-mode .user-profile-edit .cancel-btn {
-  padding: 14px 28px;
+  padding: 0;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-width: 140px;
+  gap: 0;
+  width: 48px;
+  min-width: 48px;
   min-height: 48px;
+  height: 48px;
   transition: all 0.3s;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  border: 1px solid #656565;
+  border: none;
   color: #ffffff;
   box-sizing: border-box;
-  background: rgba(47, 47, 47, 0.7);
+  background: transparent;
 }
 
 html.night-mode .user-profile-edit .cancel-btn:hover {
-  background: rgba(60, 60, 60, 0.7);
-  color: #ff3b30;
-  border: 1px solid #f87171;
-  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.2);
+  background: rgba(156, 163, 175, 0.16);
+  color: #ffffff;
+  border: none;
+  box-shadow: none;
 }
 
 html.night-mode .user-profile-edit .cancel-btn:hover .btn-icon {
@@ -384,11 +493,22 @@ html.night-mode .user-profile-edit .cancel-btn:hover .btn-icon {
 }
 
 html.night-mode .user-profile-edit .cancel-btn:active {
+  background: rgba(156, 163, 175, 0.24);
+  border: none;
   transform: translateY(0);
 }
 
 html.night-mode .user-profile-edit .btn-icon {
   font-size: 18px;
-  color: #ffffff;
   transition: color 0.3s ease;
+}
+
+html.night-mode .user-profile-edit .cancel-btn:hover .btn-icon {
+  color: #c2410c;
+  border: none;
+}
+
+html.night-mode .user-profile-edit .cancel-btn:active .btn-icon {
+  color: #9a3412;
+  border: none;
 }

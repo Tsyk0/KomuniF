@@ -5,7 +5,7 @@ import {
 } from "@/normalize/conversation";
 import { useConvStore } from "@/store/conv/conv";
 
-export type ConvCreatePanel = "group" | "add-friend";
+export type ConvCreatePanel = "group" | "add-friend" | "search-conv";
 
 /**
  * 新建群聊流程：侧栏勾选好友 + 主区域填群名并创建。

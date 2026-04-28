@@ -12,7 +12,9 @@
     <div class="sys-notif-scroll__inner">
       <div class="sys-notif-pagination">
         <button type="button" class="sys-notif-load-more" :class="{ active: activeTab === 'system' }" @click="activeTab = 'system'">系统通知</button>
-        <button type="button" class="sys-notif-load-more" :class="{ active: activeTab === 'request' }" @click="activeTab = 'request'">待处理请求</button>
+        <button type="button" class="sys-notif-load-more" :class="{ active: activeTab === 'request' }" @click="activeTab = 'request'">
+          待处理请求<span v-if="requestItems.length > 0">（{{ requestItems.length }}）</span>
+        </button>
       </div>
 
       <ul v-if="activeTab === 'system'" class="sys-notif-list">

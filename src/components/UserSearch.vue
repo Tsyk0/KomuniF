@@ -9,9 +9,9 @@
       <button
         type="button"
         class="conv-create-tool-btn conv-create-tool-btn--accent"
-        @click="convCreateStore.setPanel('group')"
+        @click="convCreateStore.setPanel('search-conv')"
       >
-        新建群聊
+        找群入群
       </button>
     </header>
 
@@ -22,9 +22,7 @@
         @click="onLeftPaneClick"
       >
         <div class="user-search-field" @click.stop>
-          <label class="conv-create-label" for="user-search-input"
-            >搜索用户</label
-          >
+          <label class="conv-create-label" for="user-search-input">搜索用户</label>
           <input
             id="user-search-input"
             v-model="keywordInput"
@@ -94,11 +92,7 @@
         </div>
       </div>
 
-      <div
-        class="user-search-detail"
-        :class="{ 'is-open': selectedUser != null }"
-        :aria-hidden="selectedUser == null"
-      >
+      <div class="user-search-detail" :aria-hidden="false">
         <div class="user-search-detail-inner">
           <template v-if="selectedUser">
             <div class="user-search-detail-hero">
@@ -176,6 +170,12 @@
               >
                 发送消息
               </button>
+            </div>
+          </template>
+          <template v-else>
+            <div class="user-search-detail-hero">
+              <h4 class="user-search-detail-name">用户详情</h4>
+              <p class="user-search-detail-meta">从左侧选择一位用户后，这里会显示详细信息。</p>
             </div>
           </template>
         </div>
@@ -434,10 +434,31 @@ onUnmounted(() => {
 .user-search-left.is-compact {
   flex: 1 1 50%;
   max-width: 50%;
+  min-width: 300px;
 }
 
 .user-search-field {
   flex-shrink: 0;
+}
+
+.user-search-mode-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.user-search-mode-btn {
+  border: 1px solid var(--cc-border-strong);
+  background: var(--cc-surface);
+  color: var(--cc-text-sub);
+  border-radius: 999px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.user-search-mode-btn.active {
+  color: var(--cc-accent);
+  border-color: var(--cc-accent);
 }
 
 .user-search-input {
@@ -474,6 +495,29 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.user-search-group-item {
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.user-search-group-item.selected {
+  border-color: var(--cc-accent);
+  background: var(--cc-accent-soft);
+}
+
+.user-search-group-item-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.user-search-group-item-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--cc-text-sub);
 }
 
 .user-search-banner {
@@ -521,20 +565,12 @@ onUnmounted(() => {
 }
 
 .user-search-detail {
-  flex: 0 0 0;
-  min-width: 0;
+  flex: 0 0 50%;
+  min-width: 300px;
   overflow: hidden;
-  border-left: 1px solid transparent;
-  transition: flex-basis 0.28s ease, min-width 0.28s ease,
-    border-color 0.28s ease;
+  border-left: 1px solid var(--cc-border);
   background: var(--cc-surface);
   box-shadow: -6px 0 24px rgba(15, 23, 42, 0.06);
-}
-
-.user-search-detail.is-open {
-  flex: 0 0 50%;
-  min-width: 0;
-  border-left-color: var(--cc-border);
 }
 
 .user-search-detail-inner {
@@ -544,13 +580,7 @@ onUnmounted(() => {
   flex-direction: column;
   padding: 20px 18px 18px;
   box-sizing: border-box;
-  transform: translateX(100%);
-  transition: transform 0.28s ease;
   overflow-y: auto;
-}
-
-.user-search-detail.is-open .user-search-detail-inner {
-  transform: translateX(0);
 }
 
 .user-search-detail-hero {

@@ -3,8 +3,14 @@
   <!-- 在根元素上添加 user-profile-edit 类名 -->
   <div class="user-profile-edit user-profile-edit-container">
     <div class="edit-header">
-      <button class="back-btn" @click="$emit('back')" v-ripple>
-        <span>←</span> 返回
+      <button
+        class="back-btn profile-back-btn"
+        @click="$emit('back')"
+        v-ripple
+        type="button"
+        aria-label="返回"
+      >
+        <ArrowLeft :size="20" :stroke-width="2.2" />
       </button>
       <h2>编辑个人资料</h2>
       <button
@@ -12,8 +18,15 @@
         @click="saveProfile"
         :disabled="saving"
         v-ripple="{ color: 'rgba(0, 119, 230, 0.3)', duration: 600 }"
+        type="button"
+        aria-label="保存"
+        title="保存"
       >
-        {{ saving ? "保存中..." : "保存" }}
+        <done-all
+          theme="outline"
+          size="24"
+          :fill="saving ? '#9ca3af' : 'currentColor'"
+        />
       </button>
     </div>
 
@@ -51,13 +64,11 @@
         <!-- 新增表单内容容器 -->
         <div class="form-content">
           <div class="form-group">
-            <label for="userNickname">昵称 *</label>
-            <input
+            <label for="userNickname">昵称</label>
+            <el-input
               id="userNickname"
               v-model="formData.userNickname"
-              type="text"
               placeholder="请输入昵称"
-              class="el-input"
               maxlength="20"
               @keyup.enter="saveProfile"
             />
@@ -66,85 +77,70 @@
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group form-group-gender">
             <label for="userGender">性别</label>
-            <div class="gender-options">
-              <label
-                class="gender-option"
-                :class="{ active: formData.userGender === 0 }"
+            <el-radio-group v-model="formData.userGender" class="gender-radio-group">
+              <el-radio-button
+                :value="0"
+                :label="0"
+                class="gender-option-unknown"
+                title="未知"
               >
-                <input
-                  type="radio"
-                  v-model="formData.userGender"
-                  :value="0"
-                  style="display: none"
-                />
-                <span class="gender-icon">⚪</span>
-                <span>未知</span>
-              </label>
-              <label
-                class="gender-option"
-                :class="{ active: formData.userGender === 1 }"
+                <User :size="14" class="gender-lucide-icon" /> 未知
+              </el-radio-button>
+              <el-radio-button
+                :value="1"
+                :label="1"
+                class="gender-option-male"
+                title="男"
               >
-                <input
-                  type="radio"
-                  v-model="formData.userGender"
-                  :value="1"
-                  style="display: none"
-                />
-                <span class="gender-icon">♂️</span>
-                <span>男</span>
-              </label>
-              <label
-                class="gender-option"
-                :class="{ active: formData.userGender === 2 }"
+                <Mars :size="14" class="gender-lucide-icon" /> 男
+              </el-radio-button>
+              <el-radio-button
+                :value="2"
+                :label="2"
+                class="gender-option-female"
+                title="女"
               >
-                <input
-                  type="radio"
-                  v-model="formData.userGender"
-                  :value="2"
-                  style="display: none"
-                />
-                <span class="gender-icon">♀️</span>
-                <span>女</span>
-              </label>
-            </div>
+                <Venus :size="14" class="gender-lucide-icon" /> 女
+              </el-radio-button>
+            </el-radio-group>
           </div>
 
-          <div class="form-group">
+          <div class="form-group form-group-birthday">
             <label for="userBirthday">生日</label>
-            <input
+            <el-date-picker
               id="userBirthday"
               v-model="formData.userBirthday"
               type="date"
-              class="el-input"
+              value-format="YYYY-MM-DD"
+              format="YYYY-MM-DD"
+              placeholder="请选择生日"
             />
           </div>
 
           <div class="form-group">
             <label for="userLocation">所在地</label>
-            <input
+            <el-input
               id="userLocation"
               v-model="formData.userLocation"
-              type="text"
               placeholder="请输入所在地"
-              class="el-input"
               maxlength="50"
               @keyup.enter="saveProfile"
             />
           </div>
 
-          <div class="form-group">
+          <div class="form-group form-group-signature">
             <label for="userSignature">个性签名</label>
-            <textarea
+            <el-input
               id="userSignature"
               v-model="formData.userSignature"
+              type="textarea"
               placeholder="介绍一下自己吧～"
-              class="el-textarea"
               rows="3"
               maxlength="100"
               @keyup.enter="saveProfile"
-            ></textarea>
+            />
             <div class="char-count">
               {{ formData.userSignature?.length || 0 }}/100
             </div>
@@ -152,12 +148,10 @@
 
           <div class="form-group">
             <label for="userPhone">手机号</label>
-            <input
+            <el-input
               id="userPhone"
               v-model="formData.userPhone"
-              type="tel"
               placeholder="请输入手机号"
-              class="el-input"
               maxlength="11"
               @keyup.enter="saveProfile"
             />
@@ -165,12 +159,10 @@
 
           <div class="form-group">
             <label for="userEmail">邮箱</label>
-            <input
+            <el-input
               id="userEmail"
               v-model="formData.userEmail"
-              type="email"
               placeholder="请输入邮箱"
-              class="el-input"
               maxlength="50"
               @keyup.enter="saveProfile"
             />
@@ -181,9 +173,15 @@
 
     <!-- 操作按钮 -->
     <div class="action-buttons">
-      <button class="cancel-btn" @click="resetForm" v-ripple>
-        <span class="btn-icon">↺</span>
-        重置
+      <button
+        class="cancel-btn"
+        @click="resetForm"
+        v-ripple
+        type="button"
+        aria-label="重置"
+        title="重置"
+      >
+        <RotateCcw class="btn-icon" :size="18" :stroke-width="2.2" />
       </button>
     </div>
   </div>
@@ -192,9 +190,14 @@
 
 <script>
 import { ref, reactive, onMounted, watch } from "vue";
+import { DoneAll } from "@icon-park/vue-next";
+import { ArrowLeft, Mars, RotateCcw, User, Venus } from "lucide-vue-next";
 import { useUserStore } from "@/store/user/user";
 import toast from "@/commons/utils/toast"; // 导入独立的toast服务
-import { compressImageToBase64, validateImageFile } from "@/commons/utils/image";
+import {
+  compressImageToBase64,
+  validateImageFile,
+} from "@/commons/utils/image";
 import {
   buildProfileFormData,
   buildUserProfileUpdatePayload,
@@ -206,6 +209,14 @@ import {
 
 export default {
   name: "UserProfileEdit",
+  components: {
+    DoneAll,
+    ArrowLeft,
+    User,
+    Mars,
+    Venus,
+    RotateCcw,
+  },
   props: {
     userData: {
       type: Object,
@@ -297,7 +308,9 @@ export default {
     // 处理头像上传
     const handleAvatarUpload = async (event) => {
       const file = event.target.files[0];
-      const validation = validateImageFile(file, { maxSizeBytes: 2 * 1024 * 1024 });
+      const validation = validateImageFile(file, {
+        maxSizeBytes: 2 * 1024 * 1024,
+      });
       if (!validation.ok) {
         if (validation.message) toast.error(validation.message);
         return;
@@ -305,7 +318,12 @@ export default {
 
       try {
         saving.value = true;
-        const compressedBase64 = await compressImageToBase64(file, 400, 400, 0.7);
+        const compressedBase64 = await compressImageToBase64(
+          file,
+          400,
+          400,
+          0.7
+        );
         formData.userAvatar = compressedBase64;
         toast.success("头像上传成功");
       } catch (error) {
@@ -345,5 +363,6 @@ export default {
 /* 使用外部样式 */
 @import "@/assets/styles/base.css";
 @import "@/assets/styles/user-profile-edit.css";
+@import "@/assets/styles/night/user-profile-edit-night.css";
 /* 移除toast.css的导入，因为使用独立的toast服务 */
 </style>

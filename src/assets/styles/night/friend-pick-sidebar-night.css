@@ -10,7 +10,7 @@ html.night-mode .friend-pick-sidebar {
 }
 
 html.night-mode .friend-pick-avatar {
-  background: linear-gradient(145deg, #334155, #1e293b);
+  background: linear-gradient(145deg, #3f3f46, #2f2f2f);
   border-color: rgba(30, 41, 59, 0.9);
   outline-color: #475569;
 }

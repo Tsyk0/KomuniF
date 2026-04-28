@@ -71,15 +71,16 @@
               v-if="canVoiceVideoCall"
               class="header-action"
               @click="handleCall"
+              v-ripple
               title="音视频通话（单聊）"
             >
-              <BaseIcon class="action-icon" name="phone" />
+              <Video class="action-icon" :size="18" :stroke-width="2.2" />
             </button>
-            <button class="header-action" @click="handleSearch" title="搜索">
-              <BaseIcon class="action-icon" name="search" />
+            <button class="header-action" @click="handleSearch" v-ripple title="搜索">
+              <Search class="action-icon" :size="18" :stroke-width="2.2" />
             </button>
-            <button class="header-action" @click="handleMenu" title="更多">
-              <BaseIcon class="action-icon" name="more-vertical" />
+            <button class="header-action" @click="handleMenu" v-ripple title="更多">
+              <CircleEllipsis class="action-icon" :size="18" :stroke-width="2.2" />
             </button>
           </div>
         </div>
@@ -218,6 +219,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
+import { CircleEllipsis, Search, Video } from "lucide-vue-next";
 import { useShowMessageStore } from "@/store/message/showMessage";
 import { useUserStore } from "@/store/user/user";
 import { useConvStore } from "@/store/conv/conv";

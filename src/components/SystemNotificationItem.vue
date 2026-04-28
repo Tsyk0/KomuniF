@@ -46,12 +46,20 @@ const titleText = computed(() => {
   if (props.notification.notificationTitle?.trim()) {
     return props.notification.notificationTitle.trim();
   }
+  if (props.notification.type === "conv_join") {
+    return modeLabel.value === "确认" ? "入群申请已提交/已处理" : "入群申请处理结果";
+  }
   return notificationDefaultTitle(props.notification.type);
 });
 
 const bodyText = computed(() => {
   if (props.notification.notificationContent?.trim()) {
     return props.notification.notificationContent.trim();
+  }
+  if (props.notification.type === "conv_join") {
+    return modeLabel.value === "确认"
+      ? "你的入群申请已进入处理流程。"
+      : "入群申请有新的处理结果，请查看详情。";
   }
   return " ";
 });

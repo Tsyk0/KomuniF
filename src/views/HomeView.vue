@@ -15,7 +15,7 @@
                 currentMainView !== 'notifications',
             }"
           >
-            <span class="menu-icon">&#x1F4AC;</span>
+            <MessageCircle class="menu-icon" :size="20" :stroke-width="2" />
           </button>
 
           <button
@@ -30,7 +30,7 @@
                 currentMainView !== 'notifications',
             }"
           >
-            <span class="menu-icon">&#x1F465;</span>
+            <UsersRound class="menu-icon" :size="20" :stroke-width="2" />
           </button>
 
           <button
@@ -40,7 +40,7 @@
             title="系统通知"
             :class="{ active: currentMainView === 'notifications' }"
           >
-            <span class="menu-icon">&#x1F514;</span>
+            <Bell class="menu-icon" :size="20" :stroke-width="2" />
             <span
               v-if="notificationUnreadCount > 0"
               class="nav-notification-badge"
@@ -59,7 +59,7 @@
             title="发起会话"
             :class="{ active: convCreateStore.active }"
           >
-            <span class="menu-icon">&#x2795;</span>
+            <Plus class="menu-icon" :size="20" :stroke-width="2.2" />
           </button>
         </div>
 
@@ -70,7 +70,13 @@
             v-ripple
             :title="themeTitle"
           >
-            <span class="menu-icon">{{ themeIcon }}</span>
+            <Sun
+              v-if="!themeStore.isDarkMode"
+              class="menu-icon"
+              :size="20"
+              :stroke-width="2"
+            />
+            <Moon v-else class="menu-icon" :size="20" :stroke-width="2" />
           </button>
           <button
             class="nav-menu-item"
@@ -78,7 +84,7 @@
             v-ripple
             title="更多设置与帮助"
           >
-            <span class="menu-icon">&#x2699;&#xFE0F;</span>
+            <Settings class="menu-icon" :size="20" :stroke-width="2" />
           </button>
           <button
             class="nav-menu-item logout-btn"
@@ -86,7 +92,7 @@
             v-ripple
             title="退出登录"
           >
-            <span class="menu-icon">&#x1F6AA;</span>
+            <LogOut class="menu-icon" :size="20" :stroke-width="2" />
           </button>
         </div>
       </div>
@@ -193,19 +199,10 @@
 
         <NotificationCenter v-else-if="currentMainView === 'notifications'" />
 
-        <ConvCreatePanel
-          v-else-if="
-            convCreateStore.active && convCreateStore.panel === 'group'
-          "
+        <PlusPanel
+          v-else-if="convCreateStore.active"
           @exit="exitConvCreate"
           @created="handleGroupCreated"
-        />
-
-        <UserSearch
-          v-else-if="
-            convCreateStore.active && convCreateStore.panel === 'add-friend'
-          "
-          @exit="exitConvCreate"
           @send-message="onUserSearchSendMessage"
         />
 
@@ -230,6 +227,16 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive, watch } from "vue";
+import {
+  Bell,
+  LogOut,
+  MessageCircle,
+  Moon,
+  Plus,
+  Settings,
+  Sun,
+  UsersRound,
+} from "lucide-vue-next";
 import { useRouter } from "vue-router";
 import { useThemeStore } from "@/store/theme/theme";
 import { useUserStore } from "@/store/user/user";
@@ -246,8 +253,7 @@ import ChatContainer from "@/components/ChatContainer.vue";
 import ConversationList from "@/components/ConversationList.vue";
 import FriendInfo from "@/components/FriendInfo.vue";
 import FriendList from "@/components/FriendList.vue";
-import ConvCreatePanel from "@/components/ConvCreatePanel.vue";
-import UserSearch from "@/components/UserSearch.vue";
+import PlusPanel from "@/components/PlusPanel.vue";
 import FriendPickSidebar from "@/components/FriendPickSidebar.vue";
 import NotificationCenter from "@/components/NotificationCenter.vue";
 import SearchBar from "@/components/SearchBar.vue";
@@ -387,9 +393,6 @@ const editForm = reactive({
   userEmail: "",
 });
 
-const themeIcon = computed(() =>
-  themeStore.isDarkMode ? "\u{1F31E}" : "\u{1F319}"
-);
 const themeTitle = computed(() =>
   themeStore.isDarkMode ? "切换到日间模式" : "切换到夜间模式"
 );
@@ -671,6 +674,7 @@ const handleEditSuccess = (message) => {
 const startNewChat = () => {
   const from = currentListView.value === "friends" ? "friends" : "chat";
   convCreateStore.enter(from, false);
+  convCreateStore.setPanel("group");
   currentMainView.value = null;
   selectedFriend.value = null;
   conversationStore.clearCurrentConversation();

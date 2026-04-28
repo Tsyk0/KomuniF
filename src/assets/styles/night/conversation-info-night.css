@@ -398,12 +398,12 @@ html.night-mode .info-action-btn.apply:hover {
 }
 
 html.night-mode .info-action-btn.cancel {
-  background: #111827;
+  background: #232323;
   color: #e5e7eb;
 }
 
 html.night-mode .info-action-btn.cancel:hover {
-  background: #020617;
+  background: #1a1a1a;
   transform: translateY(-1px);
   box-shadow: 0 3px 10px rgba(15, 23, 42, 0.8);
 }

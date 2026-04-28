@@ -101,7 +101,9 @@ async function submit() {
   }
   const name = convName.value.trim();
 
-  const memberUserIds = normalizeSelectedMemberIds(convCreateStore.selectedFriendIds);
+  const memberUserIds = normalizeSelectedMemberIds(
+    convCreateStore.selectedFriendIds
+  );
   if (memberUserIds.length < 1) {
     toast.error("成员 ID 无效");
     return;

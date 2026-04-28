@@ -145,12 +145,30 @@
 }
 
 .header-action {
-  background: none;
+  background: transparent;
   border: none;
-  font-size: 20px;
   cursor: pointer;
-  padding: 4px;
-  color: #007aff;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.header-action:hover {
+  background: rgba(107, 114, 128, 0.12);
+}
+
+.header-action:active {
+  background: rgba(107, 114, 128, 0.2);
+}
+
+.header-action .action-icon {
+  display: block;
 }
 
 .header-center {

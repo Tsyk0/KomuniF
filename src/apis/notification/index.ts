@@ -2,6 +2,8 @@
 import service from "@/apis/service";
 import type {
   ApiResponse,
+  CreateGroupJoinRequestPayload,
+  CreateGroupJoinRequestResult,
   NotificationCursorDTO,
   NotificationRecentItemDTO,
   NotificationUnreadSummaryDTO,
@@ -109,12 +111,30 @@ export async function sendFriendRequest(
 }
 
 /**
- * 处理通知（通过 / 拒绝 / 拉黑）
- * POST /notifications/handle
- * Body（JSON）：{ "notificationId": <该条通知ID>, "handleAction": "accept" | "reject" | "block" }
- * 请求头由 axios 拦截器统一附加 Authorization: Bearer <access_token>
+ * 发起入群申请
+ * POST /request-handles/{convId}/join-requests
  */
-export async function handleNotificationApi(
+export async function createGroupJoinRequestApi(
+  convId: number,
+  payload?: CreateGroupJoinRequestPayload
+): Promise<ApiResponse<CreateGroupJoinRequestResult>> {
+  const id = Math.floor(Number(convId));
+  if (!Number.isFinite(id) || id <= 0) {
+    throw new Error("无效的会话 ID");
+  }
+  return service({
+    url: `/request-handles/${id}/join-requests`,
+    method: "post",
+    headers: { "Content-Type": "application/json" },
+    data: payload,
+  });
+}
+
+/**
+ * 处理请求（通过/拒绝/忽略/免打扰/拉黑）
+ * POST /request-handles/handle
+ */
+export async function submitRequestHandleApi(
   payload: RequestHandlePayload
 ): Promise<ApiResponse<RequestHandle>> {
   const body: RequestHandlePayload = {
@@ -123,7 +143,7 @@ export async function handleNotificationApi(
     rahFeedback: payload.rahFeedback,
   };
   return service({
-    url: "/notifications/handle",
+    url: "/request-handles/handle",
     method: "post",
     headers: { "Content-Type": "application/json" },
     data: body,
@@ -136,8 +156,11 @@ export const notificationApi = {
   getNotificationCursor,
   updateNotificationCursor,
   getNotificationUnreadSummary,
+  createGroupJoinRequest: createGroupJoinRequestApi,
   sendFriendRequest,
-  handleNotification: handleNotificationApi,
+  submitRequestHandle: submitRequestHandleApi,
+  // 兼容旧调用名，统一走新标准入口
+  handleNotification: submitRequestHandleApi,
 };
 
 export default notificationApi;

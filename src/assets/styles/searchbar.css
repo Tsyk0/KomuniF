@@ -1,75 +1,105 @@
-/* SearchBar 组件样式 - 白天模式 */
-.search-bar-container {
-  padding: 10px 16px;
-  background-color: transparent;
+/* 1. 移除 el-input 外层的所有可能边框/阴影（日间） */
+.searchbar-el-input.el-input,
+.searchbar-el-input.el-input:hover,
+.searchbar-el-input.el-input:focus,
+.searchbar-el-input.el-input:active,
+.searchbar-el-input.el-input.is-focus {
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+  background: transparent !important;
+  padding-bottom: 0 !important;
+}
+
+/* 2. 确保 wrapper 层也没有边框阴影（日间） */
+.searchbar-el-input .el-input__wrapper {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 3. 移除 wrapper 的伪元素边框 */
+.searchbar-el-input .el-input__wrapper::before,
+.searchbar-el-input .el-input__wrapper::after {
+  display: none !important;
+  content: none !important;
+}
+
+.searchbar-el-input {
   width: 100%;
-  box-sizing: border-box;
   margin-top: 10px;
 }
 
-.search-bar-wrapper {
-  display: flex;
-  align-items: center;
-  background-color: #f0f2f5;
-  border-radius: 20px;
-  padding: 8px 12px;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(0, 0, 0, 0.05); /* 改为半透明边框，增加区分度 */
+.searchbar-el-input .el-input__wrapper {
+  padding: 8px 12px !important;
+  border-radius: 999px !important;
+  background: rgba(107, 114, 128, 0.2) !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  transition: background-color 0.2s ease !important;
 }
 
-.search-bar-wrapper:hover {
-  border-color: #007aff;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
+.searchbar-el-input .el-input__wrapper:hover,
+.searchbar-el-input .el-input__wrapper.is-focus,
+.searchbar-el-input .el-input__wrapper:focus-within,
+.searchbar-el-input:active .el-input__wrapper {
+  border: 0 !important;
+  outline: 0 !important;
+  background: rgba(107, 114, 128, 0.25) !important;
+  box-shadow: none !important;
 }
 
-.search-bar-wrapper:focus-within {
-  background-color: #dbdbdb;
-  border-color: #007aff;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
-}
-
-.search-icon {
-  font-size: 16px;
-  color: #8e8e93;
-  margin-right: 8px;
-  opacity: 0.8;
-}
-
-.search-input {
-  flex: 1;
-  border: none;
-  background: none;
-  outline: none;
+.searchbar-el-input .el-input__inner {
+  border: 0 !important;
+  outline: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  color: #333333 !important;
   font-size: 14px;
-  color: #333;
-  padding: 0;
-  width: 100%;
+  line-height: 1.4;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.search-input::placeholder {
+.searchbar-el-input .el-input__inner:hover,
+.searchbar-el-input .el-input__inner:focus,
+.searchbar-el-input .el-input__inner:active,
+.searchbar-el-input .el-input__inner:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.searchbar-el-input .el-input__inner::placeholder {
   color: #a1a1a6;
 }
 
-.clear-search-btn {
-  background: none;
+.search-action-btn {
+  background: transparent;
   border: none;
-  padding: 4px;
+  padding: 0;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #8e8e93;
   border-radius: 50%;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease, color 0.2s ease;
   margin-left: 4px;
 }
 
-.clear-search-btn:hover {
+.search-action-btn:hover {
   background-color: rgba(0, 0, 0, 0.05);
   color: #666;
 }
 
-.clear-icon {
-  font-size: 16px;
-  line-height: 1;
+.search-action-icon {
+  display: block;
 }

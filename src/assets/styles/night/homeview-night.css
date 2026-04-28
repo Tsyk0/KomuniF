@@ -46,9 +46,9 @@ html.night-mode .homeview .nav-bottom-menu {
 html.night-mode .homeview .nav-menu-item {
   width: 48px;
   height: 48px;
-  background: rgba(51, 65, 85, 0.5);
+  background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -57,7 +57,6 @@ html.night-mode .homeview .nav-menu-item {
   position: relative;
   overflow: hidden;
   color: #cbd5e1;
-  border: 1px solid #475569;
 }
 
 html.night-mode .homeview .nav-menu-item--notif {
@@ -65,8 +64,7 @@ html.night-mode .homeview .nav-menu-item--notif {
 }
 
 html.night-mode .homeview .nav-menu-item.active {
-  background: rgba(96, 165, 250, 0.22);
-  border-color: #60a5fa;
+  background: rgba(156, 163, 175, 0.16);
 }
 
 html.night-mode .homeview .nav-notification-badge {
@@ -75,19 +73,16 @@ html.night-mode .homeview .nav-notification-badge {
 }
 
 html.night-mode .homeview .nav-menu-item:hover {
-  background: rgba(96, 165, 250, 0.2);
-  border-color: #60a5fa;
+  background: rgba(156, 163, 175, 0.16);
+}
+
+html.night-mode .homeview .nav-menu-item:active {
+  background: rgba(156, 163, 175, 0.24);
 }
 
 html.night-mode .homeview .menu-icon {
   font-size: 24px;
   line-height: 1;
-}
-
-/* 退出按钮特殊样式 */
-html.night-mode .homeview .nav-menu-item.logout-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
 }
 
 /* ========== 中间会话列表区域 ========== */
@@ -158,7 +153,6 @@ html.night-mode .homeview .sidebar-header .user-profile:active {
 }
 
 html.night-mode .homeview .sidebar-header .user-profile::after {
-  content: "✏️";
   position: absolute;
   right: 10px;
   top: 50%;
@@ -294,19 +288,19 @@ html.night-mode .homeview .chat-main-area::before {
   bottom: 0;
   pointer-events: none;
   z-index: 0;
-  
+
   /* 使用渐变色作为背景，结合 mask-image 显示纹理 */
   /* 调整：将渐变半径从 50% 扩大到 85%，消除中心暗区 */
-  /* 
+  /*
    * [亮度控制指南]
    * 1. 颜色浓度：修改 rgba 中的最后一个数字 (当前 0.5)，范围 0-1
    * 2. 整体亮度：修改下方的 opacity 属性 (当前 0.9)，范围 0-1
    */
-  background: radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.2) 0%, transparent 85%), 
-              radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.2) 0%, transparent 85%), 
-              radial-gradient(circle at 0% 100%, rgba(236, 72, 153, 0.3) 0%, transparent 85%), 
+  background: radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.2) 0%, transparent 85%),
+              radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.2) 0%, transparent 85%),
+              radial-gradient(circle at 0% 100%, rgba(236, 72, 153, 0.3) 0%, transparent 85%),
               radial-gradient(circle at 100% 100%, rgba(234, 179, 8, 0.3) 0%, transparent 85%);
-              
+
   -webkit-mask-image: url('../../background/pattern_02-600x600.png');
   mask-image: url('../../background/pattern_02-600x600.png');
   -webkit-mask-repeat: repeat;
@@ -316,7 +310,7 @@ html.night-mode .homeview .chat-main-area::before {
 
 /* 夜间：编辑个人信息时使用纯色背景，并隐藏蒙版纹理 */
 html.night-mode .homeview .chat-main-area.is-profile-editing {
-  background: #111827;
+  background: #232323;
 }
 
 html.night-mode .homeview .chat-main-area.is-profile-editing::before {
@@ -584,20 +578,6 @@ html.night-mode .homeview .search-icon {
   color: #94a3b8;
   margin-right: 8px;
   flex-shrink: 0;
-}
-
-html.night-mode .homeview .search-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 14px;
-  color: #e2e8f0;
-  font-family: inherit;
-}
-
-html.night-mode .homeview .search-input::placeholder {
-  color: #94a3b8;
 }
 
 html.night-mode .homeview .clear-search {
