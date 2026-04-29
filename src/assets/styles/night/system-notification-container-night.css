@@ -13,14 +13,34 @@ html.night-mode .sys-notif-container {
 }
 
 html.night-mode .sys-notif-header {
-  background: rgba(15, 23, 42, 0.92);
-  border-bottom-color: #334155;
+  border-bottom-color: rgba(240, 240, 240, 0.16);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
 html.night-mode .sys-notif-header__title {
   color: var(--sn-text);
+}
+
+html.night-mode .sys-notif-header__back-btn {
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+html.night-mode .sys-notif-header__back-btn:hover {
+  background: rgba(156, 163, 175, 0.16);
+  border: none;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+html.night-mode .sys-notif-header__back-btn:active {
+  background: rgba(156, 163, 175, 0.24);
+  border: none;
+  color: #9ca3af;
+  box-shadow: none;
 }
 
 html.night-mode .sys-notif-header__subtitle {

@@ -14,20 +14,58 @@
 }
 
 .more-options .more-options-header {
-  padding: 20px;
-  border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+  padding: 20px 30px;
+  border-bottom: 1px solid rgba(240, 240, 240, 0.8);
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   flex-shrink: 0;
+  min-height: 70px;
+  box-sizing: border-box;
   width: 100%;
+  position: relative;
 }
 
 .more-options .more-options-header h2 {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #374151;
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.more-options .more-options-header .back-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  gap: 0;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  box-shadow: none;
+}
+
+.more-options .more-options-header .back-btn:hover {
+  background: rgba(107, 114, 128, 0.12);
+  border: none;
+  color: #6b7280;
+  transform: none;
+  box-shadow: none;
+}
+
+.more-options .more-options-header .back-btn:active {
+  background: rgba(107, 114, 128, 0.2);
+  border: none;
+  color: #6b7280;
+  transform: none;
+  box-shadow: none;
 }
 
 .more-options .more-options-content {

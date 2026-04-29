@@ -2,8 +2,15 @@
 <template>
   <div class="change-password-container">
     <div class="change-password-header">
-      <button class="back-btn" @click="handleBack" v-ripple>
-        <span>←</span> 返回
+      <button
+        class="back-btn"
+        @click="handleBack"
+        v-ripple
+        type="button"
+        aria-label="返回"
+        title="返回"
+      >
+        <ArrowLeft :size="22" :stroke-width="2.2" />
       </button>
       <h2>修改密码</h2>
     </div>
@@ -77,8 +84,12 @@
         @click="handleSubmit"
         :disabled="loading || !isFormValid"
         v-ripple
+        type="button"
+        aria-label="提交修改密码"
+        title="提交修改密码"
       >
-        {{ loading ? "处理中..." : "修改密码" }}
+        <LoaderCircle v-if="loading" :size="20" :stroke-width="2.2" class="submit-loading-icon" />
+        <Check v-else :size="20" :stroke-width="2.2" />
       </button>
     </div>
   </div>
@@ -86,6 +97,7 @@
 
 <script>
 import { ref, reactive, computed } from "vue";
+import { ArrowLeft, Check, LoaderCircle } from "lucide-vue-next";
 import { useUserStore } from "@/store/user/user";
 import toast from "@/commons/utils/toast";
 import {
@@ -97,6 +109,11 @@ import {
 
 export default {
   name: "ChangePassword",
+  components: {
+    ArrowLeft,
+    Check,
+    LoaderCircle,
+  },
   props: {
     userNickname: {
       type: String,

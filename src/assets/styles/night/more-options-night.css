@@ -15,20 +15,56 @@ html.night-mode .more-options.more-options-container {
 }
 
 html.night-mode .more-options .more-options-header {
-  padding: 20px;
-  border-bottom: 1px solid rgba(55, 65, 81, 0.8);
+  padding: 20px 30px;
+  border-bottom: 1px solid rgba(240, 240, 240, 0.16);
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   flex-shrink: 0;
+  min-height: 70px;
+  box-sizing: border-box;
   width: 100%;
+  position: relative;
 }
 
 html.night-mode .more-options .more-options-header h2 {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: #d1d5db;
+  white-space: nowrap;
+  text-align: center;
+}
+
+html.night-mode .more-options .more-options-header .back-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  gap: 0;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+html.night-mode .more-options .more-options-header .back-btn:hover {
+  background: rgba(156, 163, 175, 0.16);
+  border: none;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+html.night-mode .more-options .more-options-header .back-btn:active {
+  background: rgba(156, 163, 175, 0.24);
+  border: none;
+  color: #9ca3af;
+  box-shadow: none;
 }
 
 html.night-mode .more-options .more-options-content {

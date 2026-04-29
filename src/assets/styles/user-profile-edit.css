@@ -496,13 +496,13 @@ html.night-mode .user-profile-edit .profile-back-btn:active {
   background: rgba(107, 114, 128, 0.12);
   transform: none;
   box-shadow: none;
-  color: #166534;
+  color: #1fc75f;
 }
 
 .user-profile-edit .save-btn:active:not(:disabled) {
   background: rgba(107, 114, 128, 0.2);
   box-shadow: none;
-  color: #14532d;
+  color: #1fc75f;
 }
 
 .user-profile-edit .save-btn:disabled {
@@ -554,10 +554,10 @@ html.night-mode .user-profile-edit .profile-back-btn:active {
 
 .user-profile-edit .cancel-btn:hover .btn-icon {
   border: none;
-  color: #c2410c;
+  color: #ff5d1d;
 }
 
 .user-profile-edit .cancel-btn:active .btn-icon {
   border: none;
-  color: #9a3412;
+  color: #ff5d1d;
 }

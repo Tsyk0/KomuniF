@@ -5,41 +5,66 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  /* background-color: white; */
 }
 
 .friend-detail-header {
   display: flex;
   align-items: center;
-  padding: 16px;
+  justify-content: flex-start;
+  padding: 20px 30px;
+  border-bottom: 1px solid rgba(240, 240, 240, 0.8);
+  flex-shrink: 0;
+  min-height: 70px;
+  box-sizing: border-box;
+  position: relative;
   background: white;
-  border-bottom: 1px solid #e0e0e0;
 }
 
 .friend-detail-header .back-button {
-  background: none;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  gap: 0;
   border: none;
-  cursor: pointer;
-  padding: 8px;
-  margin-right: 12px;
-  color: #007aff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: transparent;
+  color: #6b7280;
+  box-shadow: none;
 }
 
 .friend-detail-header .back-icon {
-  font-size: 18px;
-  display: block;
-  line-height: 1;
+  display: inline-flex;
+}
+
+.friend-detail-header .back-button:hover{
+  background: rgba(107, 114, 128, 0.12);
+  border: none;
+  color: #6b7280;
+  transform: none;
+  box-shadow: none;
+}
+
+.friend-detail-header .back-button:active{
+  background: rgba(107, 114, 128, 0.2);
+  border: none;
+  color: #6b7280;
+  transform: none;
+  box-shadow: none;
 }
 
 .friend-detail-header .friend-detail-title {
-  font-size: 20px;
-  font-weight: 600;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  font-weight: 700;
   color: #333;
   margin: 0;
-  margin-left: 12px;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .friend-detail-content {
@@ -154,50 +179,51 @@
 }
 
 .action-btn {
-  flex: 1;
+  width: 40px;
+  height: 32px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: 0;
+  padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .action-btn.primary {
-  background-color: #007aff;
-  color: white;
+  background-color: transparent;
+  color: #334155;
 }
 
 .action-btn.primary:hover {
-  background-color: #0056b3;
+  background-color: rgba(107, 114, 128, 0.22);
+  color: #ffffff;
 }
 
 .action-btn.secondary {
-  background-color: white;
-  color: #333;
-  border: 1px solid #e0e0e0;
+  background-color: transparent;
+  color: #ef4444;
+  border: none;
 }
 
 .action-btn.secondary:hover {
-  background-color: #f5f5f5;
+  background-color: rgba(107, 114, 128, 0.22);
 }
 
 .friend-actions .action-btn.secondary:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transform: none;
+  box-shadow: none;
 }
 
 .friend-actions .action-icon {
-  font-size: 20px;
-}
-
-.friend-actions .action-text {
-  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 头像图片 */
@@ -225,16 +251,20 @@
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 /* 删除好友按钮 */
 .action-btn.danger {
-  border-color: #ff3b30;
   color: #ff3b30;
 }
 
 .action-btn.danger:hover {
-  background-color: rgba(255, 59, 48, 0.08);
+  background-color: rgba(107, 114, 128, 0.22);
+  color: #ff6b62;
 }
 
 /* 无好友选中状态 */

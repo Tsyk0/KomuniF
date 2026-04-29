@@ -3,8 +3,15 @@
   <!-- 在根元素上添加 more-options 类名 -->
   <div class="more-options more-options-container">
     <div class="more-options-header">
-      <button class="back-btn" @click="handleBack" v-ripple>
-        <span>←</span> 返回
+      <button
+        class="back-btn"
+        @click="handleBack"
+        v-ripple
+        type="button"
+        aria-label="返回"
+        title="返回"
+      >
+        <ArrowLeft :size="22" :stroke-width="2.2" />
       </button>
       <h2>{{ headerTitle }}</h2>
     </div>
@@ -13,38 +20,62 @@
       <!-- 主菜单 -->
       <div v-if="currentView === 'main'" class="options-list">
         <button class="option-btn" @click="showAccountSecurity" v-ripple>
-          <span class="option-icon">🔒</span>
+          <span class="option-icon">
+            <ShieldUser :size="28" :stroke-width="2.4" />
+          </span>
           <span class="option-text">账号与安全</span>
-          <span class="option-arrow">→</span>
+          <span class="option-arrow">
+            <ChevronRight :size="28" :stroke-width="2.4" />
+          </span>
         </button>
         <button class="option-btn" @click="showPrivacySettings" v-ripple>
-          <span class="option-icon">👁️</span>
+          <span class="option-icon">
+            <HatGlasses :size="28" :stroke-width="2.4" />
+          </span>
           <span class="option-text">隐私设置</span>
-          <span class="option-arrow">→</span>
+          <span class="option-arrow">
+            <ChevronRight :size="28" :stroke-width="2.4" />
+          </span>
         </button>
         <button class="option-btn" @click="showNotificationSettings" v-ripple>
-          <span class="option-icon">🔔</span>
+          <span class="option-icon">
+            <BellDot :size="28" :stroke-width="2.4" />
+          </span>
           <span class="option-text">通知设置</span>
-          <span class="option-arrow">→</span>
+          <span class="option-arrow">
+            <ChevronRight :size="28" :stroke-width="2.4" />
+          </span>
         </button>
       </div>
 
       <!-- 账号安全子菜单 -->
       <div v-else-if="currentView === 'account'" class="options-list">
         <button class="option-btn" @click="showChangePassword" v-ripple>
-          <span class="option-icon">🔑</span>
+          <span class="option-icon">
+            <KeyRound :size="28" :stroke-width="2.4" />
+          </span>
           <span class="option-text">修改密码</span>
-          <span class="option-arrow">→</span>
+          <span class="option-arrow">
+            <ChevronRight :size="28" :stroke-width="2.4" />
+          </span>
         </button>
         <button class="option-btn" @click="showLoginDevices" v-ripple>
-          <span class="option-icon">📱</span>
+          <span class="option-icon">
+            <MonitorSmartphone :size="28" :stroke-width="2.4" />
+          </span>
           <span class="option-text">登录设备管理</span>
-          <span class="option-arrow">→</span>
+          <span class="option-arrow">
+            <ChevronRight :size="28" :stroke-width="2.4" />
+          </span>
         </button>
         <button class="option-btn" @click="showTwoFactorAuth" v-ripple>
-          <span class="option-icon">🔐</span>
+          <span class="option-icon">
+            <BadgeInfo :size="28" :stroke-width="2.4" />
+          </span>
           <span class="option-text">双重验证</span>
-          <span class="option-arrow">→</span>
+          <span class="option-arrow">
+            <ChevronRight :size="28" :stroke-width="2.4" />
+          </span>
         </button>
       </div>
     </div>
@@ -54,9 +85,29 @@
 <!-- script 部分保持不变 -->
 <script>
 import { ref, computed } from "vue";
+import {
+  ArrowLeft,
+  BadgeInfo,
+  BellDot,
+  ChevronRight,
+  HatGlasses,
+  KeyRound,
+  MonitorSmartphone,
+  ShieldUser,
+} from "lucide-vue-next";
 import toast from "@/commons/utils/toast";
 export default {
   name: "MoreOptions",
+  components: {
+    ArrowLeft,
+    ShieldUser,
+    HatGlasses,
+    BellDot,
+    KeyRound,
+    MonitorSmartphone,
+    BadgeInfo,
+    ChevronRight,
+  },
   props: {
     userId: {
       type: String,

@@ -4,7 +4,7 @@
     <!-- 返回按钮和标题 -->
     <div class="friend-detail-header">
       <button class="back-button" @click="handleBack">
-        <span class="back-icon">←</span>
+        <ArrowLeft class="back-icon" :size="22" :stroke-width="2.2" />
       </button>
       <h2 class="friend-detail-title">好友信息</h2>
     </div>
@@ -55,7 +55,10 @@
             <span class="info-value">{{ info.friendNickname }}</span>
           </div>
 
-          <div v-if="info.friendGender !== undefined && info.friendGender !== null" class="info-row">
+          <div
+            v-if="info.friendGender !== undefined && info.friendGender !== null"
+            class="info-row"
+          >
             <span class="info-label">性别：</span>
             <span class="info-value">{{ genderText }}</span>
           </div>
@@ -93,17 +96,27 @@
 
         <!-- 底部操作按钮 -->
         <div class="friend-actions friend-actions-bottom">
-          <button class="action-btn primary" @click="handleStartChat">
+          <button
+            class="action-btn primary"
+            @click="handleStartChat"
+            type="button"
+            title="发起聊天"
+            aria-label="发起聊天"
+          >
             <span class="action-icon">
-              <BaseIcon name="message" />
+              <MessageCircleMore :size="18" :stroke-width="2.2" />
             </span>
-            <span class="action-text">发起聊天</span>
           </button>
-          <button class="action-btn secondary danger" @click="handleDeleteFriend">
+          <button
+            class="action-btn secondary danger"
+            @click="handleDeleteFriend"
+            type="button"
+            title="删除好友"
+            aria-label="删除好友"
+          >
             <span class="action-icon">
-              <BaseIcon name="trash" />
+              <UserX :size="18" :stroke-width="2.2" />
             </span>
-            <span class="action-text">删除好友</span>
           </button>
         </div>
       </div>
@@ -113,6 +126,7 @@
 
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted } from "vue";
+import { ArrowLeft, MessageCircleMore, UserX } from "lucide-vue-next";
 import { useFriendStore } from "@/store/friend/showFriend";
 import type { FriendListItem } from "@/types/dto/friend";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
@@ -160,7 +174,9 @@ const info = computed<FriendInfoViewModel | null>(() => {
 });
 
 const avatarUrl = computed(() =>
-  normalizeAvatarUrl((info.value as any)?.avatar || (info.value as any)?.friendAvatar || "")
+  normalizeAvatarUrl(
+    (info.value as any)?.avatar || (info.value as any)?.friendAvatar || ""
+  )
 );
 
 const displayName = computed(() => {

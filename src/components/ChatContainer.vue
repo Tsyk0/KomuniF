@@ -76,11 +76,25 @@
             >
               <Video class="action-icon" :size="18" :stroke-width="2.2" />
             </button>
-            <button class="header-action" @click="handleSearch" v-ripple title="搜索">
+            <button
+              class="header-action"
+              @click="handleSearch"
+              v-ripple
+              title="搜索"
+            >
               <Search class="action-icon" :size="18" :stroke-width="2.2" />
             </button>
-            <button class="header-action" @click="handleMenu" v-ripple title="更多">
-              <CircleEllipsis class="action-icon" :size="18" :stroke-width="2.2" />
+            <button
+              class="header-action"
+              @click="handleMenu"
+              v-ripple
+              title="更多"
+            >
+              <CircleEllipsis
+                class="action-icon"
+                :size="18"
+                :stroke-width="2.2"
+              />
             </button>
           </div>
         </div>
@@ -140,49 +154,59 @@
 
         <!-- 发送消息区域 -->
         <div class="message-input-container">
-          <div class="input-wrapper">
-            <!-- 左侧功能按钮 -->
-            <div class="input-left-actions">
-              <button class="action-button attachment-button" title="附件">
-                <BaseIcon class="action-icon" name="attachment" />
+          <div class="composer-row">
+            <div class="input-wrapper" ref="attachmentMenuRef">
+              <button class="action-button emoji-button" title="表情" type="button">
+                <Smile :size="22" :stroke-width="2.2" />
               </button>
-              <button class="action-button emoji-button" title="表情">
-                <BaseIcon class="action-icon" name="emoji" />
-              </button>
-            </div>
 
-            <!-- 消息输入框 -->
-            <div class="message-input-wrapper">
-              <textarea
-                ref="messageInputRef"
-                v-model="messageText"
-                class="message-input"
-                placeholder="输入消息..."
-                rows="1"
-                @keydown.enter.prevent="handleEnterKey"
-                @input="handleInputResize"
-              ></textarea>
-            </div>
+              <!-- 消息输入框 -->
+              <div class="message-input-wrapper">
+                <el-input
+                  v-model="messageText"
+                  class="message-input-el"
+                  placeholder="输入消息..."
+                  @keydown.enter.exact.prevent="handleEnterKey"
+                />
+              </div>
 
-            <!-- 右侧发送按钮 -->
-            <div class="input-right-actions">
-              <button
-                class="action-button send-button"
-                :class="{ disabled: !canSend }"
-                :disabled="!canSend || isSending"
-                @click="sendMessage"
-                title="发送"
-              >
-                <span class="send-icon" v-if="!isSending">
-                  <BaseIcon name="send" />
-                </span>
-                <span class="loading-icon" v-if="isSending">
-                  <span class="loading-spinner small"></span>
-                </span>
-              </button>
+              <div class="attachment-menu-wrap">
+                <button
+                  class="action-button attachment-button"
+                  title="附件"
+                  @click.stop="toggleAttachmentMenu"
+                  type="button"
+                >
+                  <Paperclip :size="22" :stroke-width="2.2" />
+                </button>
+                <div v-if="showAttachmentMenu" class="attachment-menu">
+                  <button
+                    class="attachment-menu-item"
+                    type="button"
+                    @click="handleAttachmentOption('image')"
+                  >
+                    <Image :size="18" :stroke-width="2.2" />
+                    <span>图片</span>
+                  </button>
+                  <button
+                    class="attachment-menu-item"
+                    type="button"
+                    @click="handleAttachmentOption('file')"
+                  >
+                    <File :size="18" :stroke-width="2.2" />
+                    <span>文件</span>
+                  </button>
+                </div>
+              </div>
             </div>
+            <button
+              class="action-button mic-button"
+              title="语音"
+              type="button"
+            >
+              <Mic :size="26" :stroke-width="2.2" />
+            </button>
           </div>
-
         </div>
       </div>
 
@@ -219,6 +243,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
+import { File, Image, Mic, Paperclip, Smile } from "lucide-vue-next";
 import { CircleEllipsis, Search, Video } from "lucide-vue-next";
 import { useShowMessageStore } from "@/store/message/showMessage";
 import { useUserStore } from "@/store/user/user";
@@ -229,8 +254,6 @@ import ChatSearchPanel from "./ChatSearchPanel.vue";
 import ConversationInfo from "./ConversationInfo.vue";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import {
-  resetMessageComposerView,
-  resizeMessageComposer,
   loadConversationMessagesAndSyncRealtime,
   runScrollPaginationStateMachine,
   scrollContainerToBottom,
@@ -312,7 +335,8 @@ const canVoiceVideoCall = computed(
 
 // 响应式数据
 const messagesContainer = ref<HTMLElement | null>(null);
-const messageInputRef = ref<HTMLTextAreaElement | null>(null);
+const attachmentMenuRef = ref<HTMLElement | null>(null);
+const showAttachmentMenu = ref(false);
 const messageText = ref("");
 const isSending = ref(false);
 const isSearchOpen = ref(false);
@@ -499,8 +523,8 @@ const setupWebSocketEventListeners = () => {
         typeof d === "string"
           ? d
           : d && typeof d.message === "string"
-            ? d.message
-            : "WebSocket连接错误";
+          ? d.message
+          : "WebSocket连接错误";
       connectionError.value = msg;
     },
   });
@@ -574,7 +598,7 @@ const sendMessage = async () => {
     showMessageStore.addMessage(tempMessage);
 
     // 3. 清空输入框
-    resetMessageComposerView((value) => (messageText.value = value), messageInputRef.value);
+    messageText.value = "";
 
     // 4. 滚动到底部
     scrollToBottom();
@@ -629,7 +653,8 @@ const loadMessages = async () => {
       }
     },
     currentUserId: authStore.user?.userId,
-    connectWebSocket: (userId, convId) => websocketStore.connect(userId, convId),
+    connectWebSocket: (userId, convId) =>
+      websocketStore.connect(userId, convId),
     subscribeConversation: (convId) => websocketStore.sendSubscribe(convId),
   });
 };
@@ -644,13 +669,21 @@ const handleEnterKey = (event: KeyboardEvent) => {
   }
 };
 
-/**
- * 输入框自适应高度
- */
-const handleInputResize = () => {
-  nextTick(() => {
-    resizeMessageComposer(messageInputRef.value);
-  });
+const toggleAttachmentMenu = () => {
+  showAttachmentMenu.value = !showAttachmentMenu.value;
+};
+
+const handleAttachmentOption = (type: "image" | "file") => {
+  showAttachmentMenu.value = false;
+  console.log(`选择附件类型: ${type}`);
+};
+
+const handleDocumentClick = (event: MouseEvent) => {
+  if (!showAttachmentMenu.value) return;
+  const target = event.target as Node | null;
+  if (!target) return;
+  if (attachmentMenuRef.value?.contains(target)) return;
+  showAttachmentMenu.value = false;
 };
 
 /**
@@ -785,7 +818,8 @@ const scheduleMessagesScrollPagination = () => {
       paginationInFlight: paginationInFlight.value,
       edgeCooldownUntil: edgePaginationCooldownUntil.value,
       setPaginationInFlight: (value) => (paginationInFlight.value = value),
-      setEdgeCooldownUntil: (value) => (edgePaginationCooldownUntil.value = value),
+      setEdgeCooldownUntil: (value) =>
+        (edgePaginationCooldownUntil.value = value),
       edgeCooldownMs: EDGE_PAGINATION_COOLDOWN_MS,
       showMessageState: {
         loading: showMessageStore.loading,
@@ -796,8 +830,10 @@ const scheduleMessagesScrollPagination = () => {
         hasMoreHistory: showMessageStore.hasMoreHistory,
         anchorNewerPaginateLoading: showMessageStore.anchorNewerPaginateLoading,
       },
-      getOldestMessageId: () => showMessageStore.getOldestMessage()?.messageId ?? null,
-      getLatestMessageId: () => showMessageStore.getLatestMessage()?.messageId ?? null,
+      getOldestMessageId: () =>
+        showMessageStore.getOldestMessage()?.messageId ?? null,
+      getLatestMessageId: () =>
+        showMessageStore.getLatestMessage()?.messageId ?? null,
       loadOlderAnchor: (boundaryMessageId) =>
         showMessageStore.loadOlderMessagesBeforeBoundary(boundaryMessageId),
       loadHistory: (convId, boundaryMessageId) =>
@@ -886,10 +922,12 @@ onMounted(() => {
   if (props.convId) {
     loadMessages();
   }
+  window.addEventListener("click", handleDocumentClick);
 });
 
 onUnmounted(() => {
   console.log("ChatContainer unmounted");
+  window.removeEventListener("click", handleDocumentClick);
   if (messagesScrollRafId != null) {
     cancelAnimationFrame(messagesScrollRafId);
     messagesScrollRafId = null;

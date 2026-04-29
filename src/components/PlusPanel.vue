@@ -113,14 +113,17 @@ function switchPanel(panel: ConvCreatePanelType) {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 0;
-  padding: 0;
-  min-height: 48px;
-  border-bottom: 1px solid var(--cc-border);
+  padding: 0 30px;
+  min-height: 70px;
+  border-bottom: 1px solid rgba(240, 240, 240, 0.8);
   background: transparent;
+  box-sizing: border-box;
+  align-items: stretch;
 }
 
 .plus-panel-tab {
-  height: 48px;
+  height: auto;
+  min-height: 50px;
   font-size: 15px;
   font-weight: 600;
   border: 1px solid transparent;
@@ -145,7 +148,7 @@ function switchPanel(panel: ConvCreatePanelType) {
 
 html.night-mode .plus-panel-tabs {
   background: transparent;
-  border-bottom-color: rgba(148, 163, 184, 0.24);
+  border-bottom-color: rgba(240, 240, 240, 0.16);
 }
 
 html.night-mode .plus-panel-tab {

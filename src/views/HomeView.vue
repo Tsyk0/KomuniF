@@ -197,7 +197,10 @@
           @delete-friend="handleDeleteFriend"
         />
 
-        <NotificationCenter v-else-if="currentMainView === 'notifications'" />
+        <NotificationCenter
+          v-else-if="currentMainView === 'notifications'"
+          @back="backToMainMenu"
+        />
 
         <PlusPanel
           v-else-if="convCreateStore.active"

@@ -10,7 +10,7 @@
         type="button"
         aria-label="返回"
       >
-        <ArrowLeft :size="20" :stroke-width="2.2" />
+        <ArrowLeft :size="22" :stroke-width="2.2" />
       </button>
       <h2>编辑个人资料</h2>
       <button
@@ -22,11 +22,7 @@
         aria-label="保存"
         title="保存"
       >
-        <done-all
-          theme="outline"
-          size="24"
-          :fill="saving ? '#9ca3af' : 'currentColor'"
-        />
+        <ListChecks :size="22" :stroke-width="2.2" />
       </button>
     </div>
 
@@ -79,7 +75,10 @@
 
           <div class="form-group form-group-gender">
             <label for="userGender">性别</label>
-            <el-radio-group v-model="formData.userGender" class="gender-radio-group">
+            <el-radio-group
+              v-model="formData.userGender"
+              class="gender-radio-group"
+            >
               <el-radio-button
                 :value="0"
                 :label="0"
@@ -181,7 +180,7 @@
         aria-label="重置"
         title="重置"
       >
-        <RotateCcw class="btn-icon" :size="18" :stroke-width="2.2" />
+        <RotateCcw class="btn-icon" :size="22" :stroke-width="2.2" />
       </button>
     </div>
   </div>
@@ -190,8 +189,14 @@
 
 <script>
 import { ref, reactive, onMounted, watch } from "vue";
-import { DoneAll } from "@icon-park/vue-next";
-import { ArrowLeft, Mars, RotateCcw, User, Venus } from "lucide-vue-next";
+import {
+  ArrowLeft,
+  ListChecks,
+  Mars,
+  RotateCcw,
+  User,
+  Venus,
+} from "lucide-vue-next";
 import { useUserStore } from "@/store/user/user";
 import toast from "@/commons/utils/toast"; // 导入独立的toast服务
 import {
@@ -210,8 +215,8 @@ import {
 export default {
   name: "UserProfileEdit",
   components: {
-    DoneAll,
     ArrowLeft,
+    ListChecks,
     User,
     Mars,
     Venus,

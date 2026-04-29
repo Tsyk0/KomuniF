@@ -203,16 +203,13 @@ html.night-mode .user-profile-edit .form-group {
   grid-template-columns: 110px minmax(0, 1fr);
   column-gap: 16px;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 html.night-mode .user-profile-edit .form-group:last-child {
   margin-bottom: 0;
 }
 
-html.night-mode .user-profile-edit .form-group-birthday {
-  margin-bottom: 26px;
-}
 
 html.night-mode .user-profile-edit .form-group-signature {
   align-items: start;
@@ -425,14 +422,14 @@ html.night-mode .user-profile-edit .save-btn {
 
 html.night-mode .user-profile-edit .save-btn:hover:not(:disabled) {
   background: rgba(156, 163, 175, 0.16);
-  color: #166534;
+  color: #1fc75f;
   transform: none;
   box-shadow: none;
 }
 
 html.night-mode .user-profile-edit .save-btn:active:not(:disabled) {
   background: rgba(156, 163, 175, 0.24);
-  color: #14532d;
+  color: #1fc75f;
   transform: none;
   box-shadow: none;
 }
@@ -504,11 +501,11 @@ html.night-mode .user-profile-edit .btn-icon {
 }
 
 html.night-mode .user-profile-edit .cancel-btn:hover .btn-icon {
-  color: #c2410c;
+  color: #ff5d1d;
   border: none;
 }
 
 html.night-mode .user-profile-edit .cancel-btn:active .btn-icon {
-  color: #9a3412;
+  color: #ff5d1d;
   border: none;
 }
