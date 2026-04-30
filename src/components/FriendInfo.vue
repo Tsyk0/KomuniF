@@ -104,7 +104,7 @@
             aria-label="发起聊天"
           >
             <span class="action-icon">
-              <MessageCircleMore :size="18" :stroke-width="2.2" />
+              <MessageCircleMore :size="22" :stroke-width="2.2" />
             </span>
           </button>
           <button
@@ -115,7 +115,7 @@
             aria-label="删除好友"
           >
             <span class="action-icon">
-              <UserX :size="18" :stroke-width="2.2" />
+              <UserX :size="22" :stroke-width="2.2" />
             </span>
           </button>
         </div>

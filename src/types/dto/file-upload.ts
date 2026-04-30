@@ -8,9 +8,10 @@ export interface FileUploadInitRequest {
 }
 
 export interface FileUploadInitResponseData {
-  uploadId: string;
+  uploadId: string | null;
   instantUpload: boolean;
-  fileId?: string;
+  fileId: string | null;
+  uploadedIndexes: number[];
 }
 
 export interface FileUploadProgressResponseData {
@@ -24,7 +25,4 @@ export interface FileUploadCompleteRequest {
   fileHash: string;
 }
 
-export interface FileUploadCompleteResponseData {
-  uploadId?: string;
-  fileId?: string;
-}
+export type FileUploadCompleteResponseData = string;

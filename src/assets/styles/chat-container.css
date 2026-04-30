@@ -20,6 +20,7 @@
   flex: 1;
   min-width: 0;
   transition: width 0.25s ease;
+  position: relative;
 }
 
 .chat-conversation-info-wrapper {
@@ -171,95 +172,11 @@
   display: block;
 }
 
-.header-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  min-width: 0;
-}
-
-.websocket-status {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-  gap: 6px;
-  transition: all 0.3s ease;
-  max-width: 200px;
-  overflow: hidden;
-  white-space: nowrap;
-  cursor: default;
-  user-select: none;
-}
-
-.websocket-status.connected {
-  background-color: rgba(76, 175, 80, 0.12);
-  color: #2e7d32;
-  border: 1px solid rgba(76, 175, 80, 0.2);
-}
-
-.websocket-status.connecting {
-  background-color: rgba(255, 193, 7, 0.12);
-  color: #ff8f00;
-  border: 1px solid rgba(255, 193, 7, 0.2);
-  animation: pulse 1.5s infinite;
-}
-
-.websocket-status.disconnected {
-  background-color: rgba(244, 67, 54, 0.12);
-  color: #c62828;
-  border: 1px solid rgba(244, 67, 54, 0.2);
-}
-
-.status-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.connected .status-icon {
-  background-color: #4caf50;
-  color: white;
-  border-radius: 50%;
-}
-
-.connecting .status-icon {
-  color: #ff8f00;
-}
-
-.disconnected .status-icon {
-  color: #f44336;
-}
-
-.status-text {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.error-text {
-  flex-shrink: 0;
-  opacity: 0.8;
-  font-size: 11px;
-  font-weight: normal;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* 消息列表区域 */
 .messages-container {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 16px 16px 132px;
   position: relative;
   background-color: transparent;
 }
@@ -650,14 +567,17 @@
 
 /* 发送消息容器 */
 .message-input-container {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 12px;
+  z-index: 8;
   /* background-color: #ffffff; */
   background:transparent !important;
   /* padding: 16px 20px; */
   min-height: 60px;
   width: min(66.666%, calc(100% - 24px));
-  margin: 0 12px 12px;
-  align-self: center;
+  margin: 0;
   border-radius: 20px;
   box-sizing: border-box;
 }

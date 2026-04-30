@@ -15,7 +15,7 @@
                 currentMainView !== 'notifications',
             }"
           >
-            <MessageCircle class="menu-icon" :size="20" :stroke-width="2" />
+            <MessageCircle class="menu-icon" :size="22" :stroke-width="2.2" />
           </button>
 
           <button
@@ -30,7 +30,7 @@
                 currentMainView !== 'notifications',
             }"
           >
-            <UsersRound class="menu-icon" :size="20" :stroke-width="2" />
+            <UsersRound class="menu-icon" :size="22" :stroke-width="2.2" />
           </button>
 
           <button
@@ -40,7 +40,7 @@
             title="系统通知"
             :class="{ active: currentMainView === 'notifications' }"
           >
-            <Bell class="menu-icon" :size="20" :stroke-width="2" />
+            <Bell class="menu-icon" :size="22" :stroke-width="2.2" />
             <span
               v-if="notificationUnreadCount > 0"
               class="nav-notification-badge"
@@ -59,7 +59,7 @@
             title="发起会话"
             :class="{ active: convCreateStore.active }"
           >
-            <Plus class="menu-icon" :size="20" :stroke-width="2.2" />
+            <Plus class="menu-icon" :size="22" :stroke-width="2.2" />
           </button>
         </div>
 
@@ -73,10 +73,10 @@
             <Sun
               v-if="!themeStore.isDarkMode"
               class="menu-icon"
-              :size="20"
-              :stroke-width="2"
+              :size="22"
+              :stroke-width="2.2"
             />
-            <Moon v-else class="menu-icon" :size="20" :stroke-width="2" />
+            <Moon v-else class="menu-icon" :size="22" :stroke-width="2.2" />
           </button>
           <button
             class="nav-menu-item"
@@ -84,7 +84,7 @@
             v-ripple
             title="更多设置与帮助"
           >
-            <Settings class="menu-icon" :size="20" :stroke-width="2" />
+            <Settings class="menu-icon" :size="22" :stroke-width="2.2" />
           </button>
           <button
             class="nav-menu-item logout-btn"
@@ -92,7 +92,7 @@
             v-ripple
             title="退出登录"
           >
-            <LogOut class="menu-icon" :size="20" :stroke-width="2" />
+            <LogOut class="menu-icon" :size="22" :stroke-width="2.2" />
           </button>
         </div>
       </div>

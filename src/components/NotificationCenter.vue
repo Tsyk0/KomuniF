@@ -24,7 +24,7 @@
           aria-label="刷新"
           title="刷新"
         >
-          <RefreshCcw :size="18" :stroke-width="2.2" />
+          <RefreshCcw :size="22" :stroke-width="2.2" />
         </button>
       </div>
     </header>

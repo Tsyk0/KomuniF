@@ -39,33 +39,6 @@
             </div>
           </div>
 
-          <!-- WebSocket状态显示 - 新增部分 -->
-          <div class="header-center" v-if="shouldShowWebSocketStatus">
-            <div class="websocket-status" :class="websocketStatus">
-              <span class="status-icon">
-                <span v-if="websocketStatus === 'connected'">✓</span>
-                <span v-if="websocketStatus === 'connecting'">⟳</span>
-                <span v-if="websocketStatus === 'disconnected'">⚠</span>
-              </span>
-              <span class="status-text">
-                <span v-if="websocketStatus === 'connected'">实时连接</span>
-                <span v-if="websocketStatus === 'connecting'">连接中...</span>
-                <span v-if="websocketStatus === 'disconnected'">离线</span>
-              </span>
-              <span
-                v-if="connectionError"
-                class="error-text"
-                :title="connectionError"
-              >
-                ({{
-                  connectionError.length > 10
-                    ? connectionError.substring(0, 10) + "..."
-                    : connectionError
-                }})
-              </span>
-            </div>
-          </div>
-
           <div class="header-right">
             <button
               v-if="canVoiceVideoCall"
@@ -74,7 +47,7 @@
               v-ripple
               title="音视频通话（单聊）"
             >
-              <Video class="action-icon" :size="18" :stroke-width="2.2" />
+              <Video class="action-icon" :size="22" :stroke-width="2.2" />
             </button>
             <button
               class="header-action"
@@ -82,7 +55,7 @@
               v-ripple
               title="搜索"
             >
-              <Search class="action-icon" :size="18" :stroke-width="2.2" />
+              <Search class="action-icon" :size="22" :stroke-width="2.2" />
             </button>
             <button
               class="header-action"
@@ -92,10 +65,16 @@
             >
               <CircleEllipsis
                 class="action-icon"
-                :size="18"
+                :size="22"
                 :stroke-width="2.2"
               />
             </button>
+          </div>
+          <div v-if="uploadState.visible" class="header-upload-progress-line">
+            <div
+              class="header-upload-progress-inner"
+              :style="{ width: `${uploadState.progress}%` }"
+            ></div>
           </div>
         </div>
 
@@ -189,7 +168,7 @@
                     type="button"
                     @click="handleAttachmentOption('image')"
                   >
-                    <ImageIcon :size="18" :stroke-width="2.2" />
+                    <ImageIcon :size="22" :stroke-width="2.2" />
                     <span>图片</span>
                   </button>
                   <button
@@ -197,7 +176,7 @@
                     type="button"
                     @click="handleAttachmentOption('file')"
                   >
-                    <FileIcon :size="18" :stroke-width="2.2" />
+                    <FileIcon :size="22" :stroke-width="2.2" />
                     <span>文件</span>
                   </button>
                 </div>
@@ -212,21 +191,9 @@
               </div>
             </div>
             <button class="action-button mic-button" title="语音" type="button">
-              <Mic :size="26" :stroke-width="2.2" />
+              <Mic :size="22" :stroke-width="2.2" />
             </button>
           </div>
-        </div>
-        <div v-if="uploadState.visible" class="upload-progress-panel">
-          <div class="upload-progress-title">
-            正在上传：{{ uploadState.fileName }}
-          </div>
-          <div class="upload-progress-bar">
-            <div
-              class="upload-progress-inner"
-              :style="{ width: `${uploadState.progress}%` }"
-            ></div>
-          </div>
-          <div class="upload-progress-text">{{ uploadState.progress }}%</div>
         </div>
       </div>
 
@@ -254,7 +221,7 @@
     <!-- 未选择会话状态 -->
     <div v-else class="no-conversation">
       <div class="placeholder-icon">
-        <BaseIcon name="message" :size="40" />
+        <MessageCircleDashed :size="22" :stroke-width="2.2" />
       </div>
       <p class="placeholder-text">选择一个会话以开始聊天</p>
     </div>
@@ -285,12 +252,14 @@ import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
 import {
   File as FileIcon,
   Image as ImageIcon,
+  MessageCircleDashed,
   Mic,
   Paperclip,
   Smile,
 } from "lucide-vue-next";
 import { CircleEllipsis, Search, Video } from "lucide-vue-next";
 import { useShowMessageStore } from "@/store/message/showMessage";
+import { useSendMessageStore } from "@/store/message/sendMessage";
 import { useFileUploadStore } from "@/store/message/fileUpload";
 import { useImagePreviewStore } from "@/store/message/imagePreview";
 import { useUserStore } from "@/store/user/user";
@@ -311,17 +280,13 @@ import {
   stopInfoPanelResizeFlow,
   bindWindowWebSocketListeners,
 } from "@/interactions/chatContainer/ChatContainerInteraction";
-import {
-  handleRealtimeIncomingMessage,
-  buildTempFileMessage,
-  buildTempTextMessage,
-} from "@/normalize/message";
+import { handleRealtimeIncomingMessage } from "@/normalize/message";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
-import BaseIcon from "./BaseIcon.vue";
 
 // Store
 const showMessageStore = useShowMessageStore();
+const sendMessageStore = useSendMessageStore();
 const fileUploadStore = useFileUploadStore();
 const imagePreviewStore = useImagePreviewStore();
 const authStore = useUserStore();
@@ -476,10 +441,6 @@ let infoPanelAnimationFrameId: number | null = null;
 const INFO_PANEL_WIDTH_KEY = "komunif_chat_info_width";
 
 // WebSocket相关状态
-const websocketStatus = computed(() => {
-  if (isWebSocketConnecting.value) return "connecting";
-  return websocketStore.isConnected ? "connected" : "disconnected";
-});
 const connectionError = ref<string | null>(null);
 const webSocketListenersInitialized = ref(false);
 
@@ -516,14 +477,6 @@ const chatStatusText = computed(() => {
     return `${count}人在线`;
   }
   return "";
-});
-
-const shouldShowWebSocketStatus = computed(() => {
-  return (
-    websocketStatus.value !== "connected" ||
-    connectionError.value !== null ||
-    websocketStore.connectionError !== null
-  );
 });
 
 const handleAvatarError = (event: Event) => {
@@ -665,26 +618,28 @@ const sendMessage = async () => {
   try {
     console.log("发送消息:", { convId: props.convId, content });
 
-    // 1. 创建临时消息（构建逻辑下沉到 normalize）
-    tempMessage = buildTempTextMessage({
-      convId: props.convId,
-      currentUserId: currentUser.userId,
-      currentUserNickname: currentUser.userNickname || null,
-      currentUserAvatar: currentUser.userAvatar || null,
-      content,
-      conversationMembers: conversationStore.compressedCMMap.get(props.convId),
-    });
-
-    // 2. 添加到Store
-    showMessageStore.addMessage(tempMessage);
-
-    // 3. 清空输入框
-    messageText.value = "";
-
-    // 4. 滚动到底部
+    // 1. 本地即时回显（文本与附件统一走 appendLocalMessageEcho）
+    tempMessage = sendMessageStore.appendLocalMessageEcho(
+      {
+        convId: props.convId,
+        currentUserId: currentUser.userId,
+        currentUserNickname: currentUser.userNickname || null,
+        currentUserAvatar: currentUser.userAvatar || null,
+        conversationMembers: conversationStore.compressedCMMap.get(
+          props.convId
+        ),
+      },
+      {
+        kind: "text",
+        content,
+      }
+    );
     scrollToBottom();
 
-    // 5. MVP 阶段仅保留 WebSocket 发送，不做 HTTP 降级。
+    // 2. 清空输入框
+    messageText.value = "";
+
+    // 3. MVP 阶段仅保留 WebSocket 发送，不做 HTTP 降级。
     if (!websocketStore.isConnected) {
       console.log("WebSocket未连接，尝试连接...");
       await initWebSocket();
@@ -793,18 +748,23 @@ const sendFileMessage = async (params: {
     mimeType: params.mimeType,
   };
   const messageContent = JSON.stringify(messagePayload);
-  const tempMessage = buildTempFileMessage({
-    convId: props.convId,
-    currentUserId: authStore.user.userId,
-    currentUserAvatar: authStore.user.userAvatar || null,
-    messageType: params.messageType,
-    messageContent,
-    fileId: params.fileId,
-    fileName: params.fileName,
-    fileSize: params.fileSize,
-    mimeType: params.mimeType,
-  });
-  showMessageStore.addMessage(tempMessage);
+  const tempMessage = sendMessageStore.appendLocalMessageEcho(
+    {
+      convId: props.convId,
+      currentUserId: authStore.user.userId,
+      currentUserNickname: authStore.user.userNickname || null,
+      currentUserAvatar: authStore.user.userAvatar || null,
+      conversationMembers: conversationStore.compressedCMMap.get(props.convId),
+    },
+    {
+      kind: "file",
+      messageType: params.messageType,
+      fileId: params.fileId,
+      fileName: params.fileName,
+      fileSize: params.fileSize,
+      mimeType: params.mimeType,
+    }
+  );
   scrollToBottom();
 
   if (!websocketStore.isConnected) {
@@ -819,6 +779,38 @@ const sendFileMessage = async (params: {
     showMessageStore.updateMessageStatus(tempMessage.messageId, 4);
     throw new Error("附件消息发送失败");
   }
+};
+
+/**
+ * 仅做本地附件消息回显（不触发 WS 发送）。
+ * 作用场景：秒传命中时，后端已持久化并广播给他人，但当前端需要立即看到自己的消息。
+ */
+const appendLocalFileMessageEcho = (params: {
+  messageType: "image" | "file" | "video";
+  fileId: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+}) => {
+  if (!props.convId || !authStore.user?.userId) return;
+  sendMessageStore.appendLocalMessageEcho(
+    {
+      convId: props.convId,
+      currentUserId: authStore.user.userId,
+      currentUserNickname: authStore.user.userNickname || null,
+      currentUserAvatar: authStore.user.userAvatar || null,
+      conversationMembers: conversationStore.compressedCMMap.get(props.convId),
+    },
+    {
+      kind: "file",
+      messageType: params.messageType,
+      fileId: params.fileId,
+      fileName: params.fileName,
+      fileSize: params.fileSize,
+      mimeType: params.mimeType,
+    }
+  );
+  scrollToBottom();
 };
 
 /**
@@ -843,6 +835,17 @@ const handleFilePicked = async (event: Event) => {
       convId: props.convId,
       mimeType: pickedFile.type || "application/octet-stream",
     });
+    if (uploadResult.instantUpload) {
+      // 秒传命中时，后端已写消息并推送给其他端；当前端本端做即时回显但不重复发送。
+      appendLocalFileMessageEcho({
+        messageType,
+        fileId: uploadResult.fileId,
+        fileName: pickedFile.name,
+        fileSize: pickedFile.size,
+        mimeType: pickedFile.type || "application/octet-stream",
+      });
+      return;
+    }
     await sendFileMessage({
       messageType,
       fileId: uploadResult.fileId,
@@ -1223,37 +1226,28 @@ onUnmounted(() => {
   display: none;
 }
 
-.upload-progress-panel {
-  margin: 0 16px 12px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: #f6f8fa;
+.chat-header {
+  position: relative;
 }
 
-.upload-progress-title {
-  font-size: 12px;
-  color: #333;
-  margin-bottom: 6px;
+.header-upload-progress-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: transparent;
+  pointer-events: none;
 }
 
-.upload-progress-bar {
-  height: 6px;
-  border-radius: 999px;
-  background: #e4e7ed;
-  overflow: hidden;
-}
-
-.upload-progress-inner {
+.header-upload-progress-inner {
   height: 100%;
   background: #409eff;
   transition: width 0.2s ease;
 }
 
-.upload-progress-text {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #606266;
-  text-align: right;
+html.night-mode .header-upload-progress-inner {
+  background: #a855f7;
 }
 
 .image-preview-overlay {

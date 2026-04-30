@@ -9,13 +9,27 @@ import type {
 } from "@/types/dto/file-upload";
 
 /**
+ * 统一解包上传接口响应，兼容：
+ * 1) Axios 原始响应：response.data.data
+ * 2) 已被拦截器解包后的 ApiResponse：response.data
+ */
+const unwrapApiResponseData = <T>(response: any): T => {
+  if (response?.data?.data !== undefined) return response.data.data as T;
+  if (response?.data !== undefined && response?.code !== undefined)
+    return response.data as T;
+  return response as T;
+};
+
+/**
  * 初始化分片上传任务。
  * 作用场景：告知后端文件元信息，拿到 uploadId 或秒传结果。
  */
 export function initFileUploadApi(data: FileUploadInitRequest) {
   return service
     .post<BaseResponse<FileUploadInitResponseData>>("/MIO/file/upload/init", data)
-    .then((response) => response.data.data) as Promise<FileUploadInitResponseData>;
+    .then((response) =>
+      unwrapApiResponseData<FileUploadInitResponseData>(response)
+    ) as Promise<FileUploadInitResponseData>;
 }
 
 /**
@@ -43,7 +57,9 @@ export function getFileUploadProgressApi(uploadId: string) {
     .get<BaseResponse<FileUploadProgressResponseData>>("/MIO/file/upload/progress", {
       params: { uploadId },
     })
-    .then((response) => response.data.data) as Promise<FileUploadProgressResponseData>;
+    .then((response) =>
+      unwrapApiResponseData<FileUploadProgressResponseData>(response)
+    ) as Promise<FileUploadProgressResponseData>;
 }
 
 /**
@@ -56,5 +72,7 @@ export function completeFileUploadApi(data: FileUploadCompleteRequest) {
       "/MIO/file/upload/complete",
       data
     )
-    .then((response) => response.data.data) as Promise<FileUploadCompleteResponseData>;
+    .then((response) =>
+      unwrapApiResponseData<FileUploadCompleteResponseData>(response)
+    ) as Promise<FileUploadCompleteResponseData>;
 }

@@ -85,7 +85,7 @@
                 class="gender-option-unknown"
                 title="未知"
               >
-                <User :size="14" class="gender-lucide-icon" /> 未知
+                <User :size="22" :stroke-width="2.2" class="gender-lucide-icon" /> 未知
               </el-radio-button>
               <el-radio-button
                 :value="1"
@@ -93,7 +93,7 @@
                 class="gender-option-male"
                 title="男"
               >
-                <Mars :size="14" class="gender-lucide-icon" /> 男
+                <Mars :size="22" :stroke-width="2.2" class="gender-lucide-icon" /> 男
               </el-radio-button>
               <el-radio-button
                 :value="2"
@@ -101,7 +101,7 @@
                 class="gender-option-female"
                 title="女"
               >
-                <Venus :size="14" class="gender-lucide-icon" /> 女
+                <Venus :size="22" :stroke-width="2.2" class="gender-lucide-icon" /> 女
               </el-radio-button>
             </el-radio-group>
           </div>

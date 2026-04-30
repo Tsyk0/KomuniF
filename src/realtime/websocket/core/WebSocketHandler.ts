@@ -52,7 +52,15 @@ export class WebSocketHandler {
         ws.onerror = () => reject(new Error("WebSocket连接失败"));
       });
 
-      ws.onmessage = (event) => this.handleIncoming(String(event.data));
+      ws.onmessage = (event) => {
+        /**
+         * 功能：打印每一条 WebSocket 下行原始消息。
+         * 场景：联调排查“后端是否已推送、前端是否收到原始帧”。
+         */
+        const rawFrame = String(event.data);
+        console.info("[WebSocket][onmessage][raw]", rawFrame);
+        this.handleIncoming(rawFrame);
+      };
       ws.onclose = (event) => {
         this.stopHeartbeat();
         this.sessionManager.setConnected(false);
@@ -140,6 +148,11 @@ export class WebSocketHandler {
 
   /** 解析下行消息并分发到 typed eventBus + 兼容 window 事件。 */
   private handleIncoming(data: string): void {
+    /**
+     * 功能：打印进入统一分发器的每条消息（含纯文本心跳与 JSON）。
+     * 场景：需要确认“消息已进入 action 分发逻辑”，但尚未确定具体分支时。
+     */
+    console.info("[WebSocket][incoming]", data);
     if (data === "pong") return;
     let message: any;
     try {

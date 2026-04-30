@@ -21,29 +21,29 @@
       <div v-if="currentView === 'main'" class="options-list">
         <button class="option-btn" @click="showAccountSecurity" v-ripple>
           <span class="option-icon">
-            <ShieldUser :size="28" :stroke-width="2.4" />
+            <ShieldUser :size="22" :stroke-width="2.2" />
           </span>
           <span class="option-text">账号与安全</span>
           <span class="option-arrow">
-            <ChevronRight :size="28" :stroke-width="2.4" />
+            <ChevronRight :size="22" :stroke-width="2.2" />
           </span>
         </button>
         <button class="option-btn" @click="showPrivacySettings" v-ripple>
           <span class="option-icon">
-            <HatGlasses :size="28" :stroke-width="2.4" />
+            <HatGlasses :size="22" :stroke-width="2.2" />
           </span>
           <span class="option-text">隐私设置</span>
           <span class="option-arrow">
-            <ChevronRight :size="28" :stroke-width="2.4" />
+            <ChevronRight :size="22" :stroke-width="2.2" />
           </span>
         </button>
         <button class="option-btn" @click="showNotificationSettings" v-ripple>
           <span class="option-icon">
-            <BellDot :size="28" :stroke-width="2.4" />
+            <BellDot :size="22" :stroke-width="2.2" />
           </span>
           <span class="option-text">通知设置</span>
           <span class="option-arrow">
-            <ChevronRight :size="28" :stroke-width="2.4" />
+            <ChevronRight :size="22" :stroke-width="2.2" />
           </span>
         </button>
       </div>
@@ -52,29 +52,29 @@
       <div v-else-if="currentView === 'account'" class="options-list">
         <button class="option-btn" @click="showChangePassword" v-ripple>
           <span class="option-icon">
-            <KeyRound :size="28" :stroke-width="2.4" />
+            <KeyRound :size="22" :stroke-width="2.2" />
           </span>
           <span class="option-text">修改密码</span>
           <span class="option-arrow">
-            <ChevronRight :size="28" :stroke-width="2.4" />
+            <ChevronRight :size="22" :stroke-width="2.2" />
           </span>
         </button>
         <button class="option-btn" @click="showLoginDevices" v-ripple>
           <span class="option-icon">
-            <MonitorSmartphone :size="28" :stroke-width="2.4" />
+            <MonitorSmartphone :size="22" :stroke-width="2.2" />
           </span>
           <span class="option-text">登录设备管理</span>
           <span class="option-arrow">
-            <ChevronRight :size="28" :stroke-width="2.4" />
+            <ChevronRight :size="22" :stroke-width="2.2" />
           </span>
         </button>
         <button class="option-btn" @click="showTwoFactorAuth" v-ripple>
           <span class="option-icon">
-            <BadgeInfo :size="28" :stroke-width="2.4" />
+            <BadgeInfo :size="22" :stroke-width="2.2" />
           </span>
           <span class="option-text">双重验证</span>
           <span class="option-arrow">
-            <ChevronRight :size="28" :stroke-width="2.4" />
+            <ChevronRight :size="22" :stroke-width="2.2" />
           </span>
         </button>
       </div>

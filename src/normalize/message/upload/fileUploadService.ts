@@ -15,6 +15,7 @@ export interface UploadFileByChunksNormalizedParams {
 
 export interface UploadFileByChunksNormalizedResult {
   fileId: string;
+  instantUpload: boolean;
 }
 
 /**
@@ -87,12 +88,15 @@ export async function uploadFileByChunksNormalized(
     mimeType: params.mimeType,
   });
   const initData = initResponse;
-  if (!initData?.uploadId) {
+  if (!initData) {
     throw new Error("上传初始化失败");
   }
   if (initData.instantUpload && initData.fileId) {
     params.onProgress?.(100);
-    return { fileId: initData.fileId };
+    return { fileId: initData.fileId, instantUpload: true };
+  }
+  if (!initData.uploadId) {
+    throw new Error("上传初始化失败");
   }
 
   const uploadId = initData.uploadId;
@@ -141,10 +145,11 @@ export async function uploadFileByChunksNormalized(
     uploadId,
     fileHash: params.fileHash,
   });
-  const finalFileId = completeResponse.fileId || initData.fileId;
+  const finalFileId = completeResponse || initData.fileId;
+
   if (!finalFileId) {
     throw new Error("上传完成但未返回 fileId");
   }
   params.onProgress?.(100);
-  return { fileId: finalFileId };
+  return { fileId: finalFileId, instantUpload: false };
 }

@@ -88,8 +88,8 @@
         aria-label="提交修改密码"
         title="提交修改密码"
       >
-        <LoaderCircle v-if="loading" :size="20" :stroke-width="2.2" class="submit-loading-icon" />
-        <Check v-else :size="20" :stroke-width="2.2" />
+        <LoaderCircle v-if="loading" :size="22" :stroke-width="2.2" class="submit-loading-icon" />
+        <Check v-else :size="22" :stroke-width="2.2" />
       </button>
     </div>
   </div>

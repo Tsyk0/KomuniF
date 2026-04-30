@@ -16,13 +16,13 @@
         <X
           v-if="modelValue"
           class="search-action-icon"
-          :size="16"
+          :size="22"
           :stroke-width="2.2"
         />
         <Search
           v-else
           class="search-action-icon"
-          :size="16"
+          :size="22"
           :stroke-width="2.2"
         />
       </button>
