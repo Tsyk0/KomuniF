@@ -20,6 +20,12 @@ export interface DisplayMessage extends RealMessage {
     senderName?: string;
     senderAvatar?: string | null; // 改为 string | null 以兼容原有数据
     isSentByMe: boolean;
+    fileId?: string | null;
+    fileName?: string | null;
+    fileSize?: number | null;
+    fileMimeType?: string | null;
+    thumbnailUrl?: string | null;
+    downloadUrl?: string | null;
 }
 
 // 消息类型和状态常量

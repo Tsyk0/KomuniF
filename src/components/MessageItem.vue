@@ -26,7 +26,30 @@
           class="message-bubble-flash-layer"
           aria-hidden="true"
         />
-        <div class="message-text">{{ message.messageContent }}</div>
+        <template v-if="isImageMessage">
+          <img
+            class="message-image-thumb"
+            :src="resolvedThumbnailUrl"
+            alt="图片消息"
+            @click="handleOpenImage"
+          />
+        </template>
+        <template v-else-if="isFileLikeMessage">
+          <button
+            class="file-message-card"
+            type="button"
+            @click="handleDownloadFile"
+          >
+            <div class="file-message-icon">{{ fileCardIcon }}</div>
+            <div class="file-message-info">
+              <div class="file-message-name">{{ fileDisplayName }}</div>
+              <div class="file-message-meta">
+                {{ fileDisplaySize }} · {{ fileDisplayMimeType }}
+              </div>
+            </div>
+          </button>
+        </template>
+        <div v-else class="message-text">{{ message.messageContent }}</div>
         <div class="message-time">{{ formatTime(message.sendTime) }}</div>
       </div>
     </div>
@@ -42,7 +65,30 @@
           class="message-bubble-flash-layer"
           aria-hidden="true"
         />
-        <div class="message-text">{{ message.messageContent }}</div>
+        <template v-if="isImageMessage">
+          <img
+            class="message-image-thumb"
+            :src="resolvedThumbnailUrl"
+            alt="图片消息"
+            @click="handleOpenImage"
+          />
+        </template>
+        <template v-else-if="isFileLikeMessage">
+          <button
+            class="file-message-card"
+            type="button"
+            @click="handleDownloadFile"
+          >
+            <div class="file-message-icon">{{ fileCardIcon }}</div>
+            <div class="file-message-info">
+              <div class="file-message-name">{{ fileDisplayName }}</div>
+              <div class="file-message-meta">
+                {{ fileDisplaySize }} · {{ fileDisplayMimeType }}
+              </div>
+            </div>
+          </button>
+        </template>
+        <div v-else class="message-text">{{ message.messageContent }}</div>
         <div class="message-time">{{ formatTime(message.sendTime) }}</div>
       </div>
 
@@ -66,7 +112,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import {
+  buildFileDownloadUrl,
+  buildFileThumbnailUrl,
+} from "@/commons/utils/file-url";
 import { useShowMessageStore } from "@/store/message/showMessage";
+import { useImagePreviewStore } from "@/store/message/imagePreview";
 import { useConvStore } from "@/store/conv/conv";
 import { useUserStore } from "@/store/user/user";
 import { useFriendStore } from "@/store/friend/showFriend";
@@ -82,6 +133,7 @@ interface Props {
 
 const props = defineProps<Props>();
 const showMessageStore = useShowMessageStore();
+const imagePreviewStore = useImagePreviewStore();
 const convStore = useConvStore();
 const authStore = useUserStore();
 const friendStore = useFriendStore();
@@ -119,6 +171,83 @@ const onAvatarError = () => {
 };
 
 const isSentByMe = computed(() => props.message.isSentByMe);
+// 统一解析 image/file/video 的 JSON 消息体，兼容服务端回放和本地临时消息。
+const parsedFilePayload = computed(() => {
+  if (!["image", "file", "video"].includes(props.message.messageType || ""))
+    return null;
+  if (!props.message.messageContent) return null;
+  try {
+    const payload = JSON.parse(props.message.messageContent) as {
+      fileId?: string;
+      fileName?: string;
+      fileSize?: number;
+      mimeType?: string;
+    };
+    return payload;
+  } catch {
+    return null;
+  }
+});
+const isImageMessage = computed(() => props.message.messageType === "image");
+const isFileLikeMessage = computed(
+  () =>
+    props.message.messageType === "file" ||
+    props.message.messageType === "video"
+);
+const resolvedDownloadUrl = computed(() => {
+  const directUrl = props.message.downloadUrl;
+  if (directUrl) return directUrl;
+  const fileId = props.message.fileId || parsedFilePayload.value?.fileId;
+  return fileId ? buildFileDownloadUrl(fileId) : "";
+});
+const resolvedThumbnailUrl = computed(() => {
+  const directUrl = props.message.thumbnailUrl;
+  if (directUrl) return directUrl;
+  const fileId = props.message.fileId || parsedFilePayload.value?.fileId;
+  return fileId ? buildFileThumbnailUrl(fileId) : "";
+});
+const fileDisplayName = computed(
+  () =>
+    props.message.fileName ||
+    parsedFilePayload.value?.fileName ||
+    (props.message.messageType === "video" ? "视频文件" : "附件文件")
+);
+const fileDisplaySize = computed(() => {
+  const rawSize =
+    props.message.fileSize ?? parsedFilePayload.value?.fileSize ?? 0;
+  if (rawSize < 1024) return `${rawSize} B`;
+  if (rawSize < 1024 * 1024) return `${(rawSize / 1024).toFixed(1)} KB`;
+  if (rawSize < 1024 * 1024 * 1024)
+    return `${(rawSize / 1024 / 1024).toFixed(1)} MB`;
+  return `${(rawSize / 1024 / 1024 / 1024).toFixed(1)} GB`;
+});
+const fileDisplayMimeType = computed(
+  () =>
+    props.message.fileMimeType ||
+    parsedFilePayload.value?.mimeType ||
+    (props.message.messageType === "video" ? "video/*" : "file/*")
+);
+const fileCardIcon = computed(() =>
+  props.message.messageType === "video" ? "🎬" : "📄"
+);
+
+/**
+ * 打开图片原图。
+ * 作用场景：图片消息点击缩略图后查看原图。
+ */
+const handleOpenImage = () => {
+  if (!resolvedDownloadUrl.value) return;
+  void imagePreviewStore.openPreviewByDownloadUrl(resolvedDownloadUrl.value);
+};
+
+/**
+ * 下载文件或视频。
+ * 作用场景：file/video 消息点击卡片后触发下载。
+ */
+const handleDownloadFile = () => {
+  if (!resolvedDownloadUrl.value) return;
+  window.open(resolvedDownloadUrl.value, "_blank");
+};
 
 // 依赖好友列表，使修改备注后消息中的对方名称实时更新（优先级：群昵称 > 好友备注 > 用户昵称）
 const displayName = computed(() => {

@@ -14,13 +14,17 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8081',
         changeOrigin: true
       },
       '/ws': {
         target: 'http://localhost:8081',
         ws: true,
         changeOrigin: true
+      },
+      '/MIO': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
       }
     }
   }

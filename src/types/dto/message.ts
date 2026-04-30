@@ -63,6 +63,13 @@ export interface MessageSummaryDTO {
   replyToMessageId?: number | null;
   atUserIds?: number[] | null;
   recallTime?: string | null;
+  // 文件消息扩展字段（后端摘要直出）
+  fileId?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
+  fileMimeType?: string | null;
+  thumbnailUrl?: string | null;
+  downloadUrl?: string | null;
 }
 
 /**

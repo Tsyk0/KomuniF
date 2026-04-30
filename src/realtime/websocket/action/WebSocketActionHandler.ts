@@ -26,6 +26,15 @@ export class WebSocketActionHandler {
     switch (type) {
       case "text":
         return this.sendTextMessage(request.convId, request.messageContent, request.replyToMessageId);
+      case "image":
+      case "file":
+      case "video":
+        return this.sendTypedMessage(
+          request.convId,
+          type,
+          request.messageContent,
+          request.replyToMessageId
+        );
       default:
         return false;
     }
@@ -37,6 +46,27 @@ export class WebSocketActionHandler {
       action: "sendMessage",
       convId,
       messageType: "text",
+      messageContent,
+      replyToMessageId,
+      localMessageId: `local_${Date.now()}`,
+    };
+    return this.sender(payload);
+  }
+
+  /**
+   * 发送非文本消息（image/file/video）。
+   * 作用场景：附件上传完成后，前端把 JSON 消息体推给实时通道。
+   */
+  sendTypedMessage(
+    convId: number,
+    messageType: "image" | "file" | "video",
+    messageContent: string,
+    replyToMessageId?: number
+  ): boolean {
+    const payload: SendMessageWSRequest = {
+      action: "sendMessage",
+      convId,
+      messageType,
       messageContent,
       replyToMessageId,
       localMessageId: `local_${Date.now()}`,

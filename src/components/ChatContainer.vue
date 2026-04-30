@@ -156,7 +156,11 @@
         <div class="message-input-container">
           <div class="composer-row">
             <div class="input-wrapper" ref="attachmentMenuRef">
-              <button class="action-button emoji-button" title="表情" type="button">
+              <button
+                class="action-button emoji-button"
+                title="表情"
+                type="button"
+              >
                 <Smile :size="22" :stroke-width="2.2" />
               </button>
 
@@ -185,7 +189,7 @@
                     type="button"
                     @click="handleAttachmentOption('image')"
                   >
-                    <Image :size="18" :stroke-width="2.2" />
+                    <ImageIcon :size="18" :stroke-width="2.2" />
                     <span>图片</span>
                   </button>
                   <button
@@ -193,20 +197,36 @@
                     type="button"
                     @click="handleAttachmentOption('file')"
                   >
-                    <File :size="18" :stroke-width="2.2" />
+                    <FileIcon :size="18" :stroke-width="2.2" />
                     <span>文件</span>
                   </button>
                 </div>
+                <input
+                  ref="fileInputRef"
+                  class="hidden-file-input"
+                  type="file"
+                  :accept="fileInputAccept"
+                  @change="handleFilePicked"
+                />
+                <!-- type="file"触发文件选择 -->
               </div>
             </div>
-            <button
-              class="action-button mic-button"
-              title="语音"
-              type="button"
-            >
+            <button class="action-button mic-button" title="语音" type="button">
               <Mic :size="26" :stroke-width="2.2" />
             </button>
           </div>
+        </div>
+        <div v-if="uploadState.visible" class="upload-progress-panel">
+          <div class="upload-progress-title">
+            正在上传：{{ uploadState.fileName }}
+          </div>
+          <div class="upload-progress-bar">
+            <div
+              class="upload-progress-inner"
+              :style="{ width: `${uploadState.progress}%` }"
+            ></div>
+          </div>
+          <div class="upload-progress-text">{{ uploadState.progress }}%</div>
         </div>
       </div>
 
@@ -238,14 +258,41 @@
       </div>
       <p class="placeholder-text">选择一个会话以开始聊天</p>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="imagePreviewState.visible"
+        class="image-preview-overlay"
+        @click="closeImagePreview"
+      >
+        <div class="image-preview-stage" @wheel.prevent="handlePreviewWheel">
+          <img
+            class="image-preview-origin"
+            :src="imagePreviewState.imageUrl"
+            alt="原图预览"
+            :style="imagePreviewTransformStyle"
+            @click.stop
+            @mousedown.prevent="handlePreviewMouseDown"
+          />
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
-import { File, Image, Mic, Paperclip, Smile } from "lucide-vue-next";
+import {
+  File as FileIcon,
+  Image as ImageIcon,
+  Mic,
+  Paperclip,
+  Smile,
+} from "lucide-vue-next";
 import { CircleEllipsis, Search, Video } from "lucide-vue-next";
 import { useShowMessageStore } from "@/store/message/showMessage";
+import { useFileUploadStore } from "@/store/message/fileUpload";
+import { useImagePreviewStore } from "@/store/message/imagePreview";
 import { useUserStore } from "@/store/user/user";
 import { useConvStore } from "@/store/conv/conv";
 import { useWebSocketStore } from "@/store/realtime/websocket";
@@ -266,6 +313,7 @@ import {
 } from "@/interactions/chatContainer/ChatContainerInteraction";
 import {
   handleRealtimeIncomingMessage,
+  buildTempFileMessage,
   buildTempTextMessage,
 } from "@/normalize/message";
 import type { DisplayMessage } from "@/entity/message";
@@ -274,6 +322,8 @@ import BaseIcon from "./BaseIcon.vue";
 
 // Store
 const showMessageStore = useShowMessageStore();
+const fileUploadStore = useFileUploadStore();
+const imagePreviewStore = useImagePreviewStore();
 const authStore = useUserStore();
 const websocketStore = useWebSocketStore();
 const conversationStore = useConvStore();
@@ -336,7 +386,38 @@ const canVoiceVideoCall = computed(
 // 响应式数据
 const messagesContainer = ref<HTMLElement | null>(null);
 const attachmentMenuRef = ref<HTMLElement | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
 const showAttachmentMenu = ref(false);
+const selectedAttachmentType = ref<"image" | "file">("file");
+const fileInputAccept = computed(() => {
+  if (selectedAttachmentType.value === "image") return "image/*";
+  return "*/*";
+});
+const uploadState = computed(() => ({
+  visible: fileUploadStore.visible,
+  fileName: fileUploadStore.fileName,
+  progress: fileUploadStore.progress,
+}));
+const imagePreviewState = computed(() => ({
+  visible: imagePreviewStore.visible,
+  imageUrl: imagePreviewStore.imageUrl,
+}));
+/** 原图缩放倍数；用于预览层滚轮缩放 */
+const previewScale = ref(1);
+/** 原图水平偏移(px)；用于拖拽查看大图 */
+const previewOffsetX = ref(0);
+/** 原图垂直偏移(px)；用于拖拽查看大图 */
+const previewOffsetY = ref(0);
+/** 拖拽起始鼠标位置；用于计算每次移动增量 */
+const previewDragStartX = ref(0);
+const previewDragStartY = ref(0);
+/** 拖拽起始图片偏移；用于和鼠标位移叠加 */
+const previewDragOriginOffsetX = ref(0);
+const previewDragOriginOffsetY = ref(0);
+const isPreviewDragging = ref(false);
+const imagePreviewTransformStyle = computed(() => ({
+  transform: `translate(${previewOffsetX.value}px, ${previewOffsetY.value}px) scale(${previewScale.value})`,
+}));
 const messageText = ref("");
 const isSending = ref(false);
 const isSearchOpen = ref(false);
@@ -674,8 +755,107 @@ const toggleAttachmentMenu = () => {
 };
 
 const handleAttachmentOption = (type: "image" | "file") => {
+  selectedAttachmentType.value = type;
   showAttachmentMenu.value = false;
-  console.log(`选择附件类型: ${type}`);
+  fileInputRef.value?.click();
+};
+
+/**
+ * 按文件类型构造消息类型。
+ * 作用场景：统一 image/file/video 业务消息路由。
+ */
+const resolveMessageTypeByFile = (
+  file: File,
+  preferredType: "image" | "file"
+): "image" | "file" | "video" => {
+  if (preferredType === "image") return "image";
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type.startsWith("video/")) return "video";
+  return "file";
+};
+
+/**
+ * 发送附件消息。
+ * 作用场景：上传成功后发送 messageType + JSON messageContent。
+ */
+const sendFileMessage = async (params: {
+  messageType: "image" | "file" | "video";
+  fileId: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+}) => {
+  if (!props.convId || !authStore.user?.userId) return;
+  const messagePayload = {
+    fileId: params.fileId,
+    fileName: params.fileName,
+    fileSize: params.fileSize,
+    mimeType: params.mimeType,
+  };
+  const messageContent = JSON.stringify(messagePayload);
+  const tempMessage = buildTempFileMessage({
+    convId: props.convId,
+    currentUserId: authStore.user.userId,
+    currentUserAvatar: authStore.user.userAvatar || null,
+    messageType: params.messageType,
+    messageContent,
+    fileId: params.fileId,
+    fileName: params.fileName,
+    fileSize: params.fileSize,
+    mimeType: params.mimeType,
+  });
+  showMessageStore.addMessage(tempMessage);
+  scrollToBottom();
+
+  if (!websocketStore.isConnected) {
+    await initWebSocket();
+  }
+  const success = websocketStore.sendMessageByType({
+    convId: props.convId,
+    messageType: params.messageType,
+    messageContent,
+  });
+  if (!success) {
+    showMessageStore.updateMessageStatus(tempMessage.messageId, 4);
+    throw new Error("附件消息发送失败");
+  }
+};
+
+/**
+ * 处理用户选中文件事件。
+ * 作用场景：入口总控，串起 hash、init、分片上传、complete、消息发送。
+ */
+const handleFilePicked = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const pickedFile = input.files?.[0];
+  if (!pickedFile || !props.convId) {
+    if (input) input.value = "";
+    return;
+  }
+
+  try {
+    const messageType = resolveMessageTypeByFile(
+      pickedFile,
+      selectedAttachmentType.value
+    );
+    const uploadResult = await fileUploadStore.uploadFile({
+      file: pickedFile,
+      convId: props.convId,
+      mimeType: pickedFile.type || "application/octet-stream",
+    });
+    await sendFileMessage({
+      messageType,
+      fileId: uploadResult.fileId,
+      fileName: pickedFile.name,
+      fileSize: pickedFile.size,
+      mimeType: pickedFile.type || "application/octet-stream",
+    });
+  } catch (error) {
+    console.error("附件上传失败:", error);
+    connectionError.value = "附件上传失败，请稍后重试";
+  } finally {
+    input.value = "";
+  }
 };
 
 const handleDocumentClick = (event: MouseEvent) => {
@@ -684,6 +864,65 @@ const handleDocumentClick = (event: MouseEvent) => {
   if (!target) return;
   if (attachmentMenuRef.value?.contains(target)) return;
   showAttachmentMenu.value = false;
+};
+
+/**
+ * 关闭原图预览弹层。
+ * 作用场景：用户点击暗化区域时退出查看原图状态。
+ */
+const closeImagePreview = () => {
+  isPreviewDragging.value = false;
+  previewScale.value = 1;
+  previewOffsetX.value = 0;
+  previewOffsetY.value = 0;
+  imagePreviewStore.closePreview();
+};
+
+/**
+ * 处理原图预览滚轮缩放。
+ * 作用场景：用户滚动鼠标滚轮时放大/缩小原图，便于查看细节。
+ */
+const handlePreviewWheel = (event: WheelEvent) => {
+  const delta = event.deltaY < 0 ? 0.12 : -0.12;
+  const nextScale = Math.min(4, Math.max(1, previewScale.value + delta));
+  previewScale.value = Number(nextScale.toFixed(2));
+  if (previewScale.value === 1) {
+    previewOffsetX.value = 0;
+    previewOffsetY.value = 0;
+  }
+};
+
+/**
+ * 开始原图拖拽。
+ * 作用场景：图片被放大后，按住鼠标拖动查看图片其他区域。
+ */
+const handlePreviewMouseDown = (event: MouseEvent) => {
+  if (previewScale.value <= 1) return;
+  isPreviewDragging.value = true;
+  previewDragStartX.value = event.clientX;
+  previewDragStartY.value = event.clientY;
+  previewDragOriginOffsetX.value = previewOffsetX.value;
+  previewDragOriginOffsetY.value = previewOffsetY.value;
+};
+
+/**
+ * 处理原图拖拽移动。
+ * 作用场景：拖拽过程中实时更新图片位移，形成平移查看效果。
+ */
+const handlePreviewMouseMove = (event: MouseEvent) => {
+  if (!isPreviewDragging.value) return;
+  const deltaX = event.clientX - previewDragStartX.value;
+  const deltaY = event.clientY - previewDragStartY.value;
+  previewOffsetX.value = previewDragOriginOffsetX.value + deltaX;
+  previewOffsetY.value = previewDragOriginOffsetY.value + deltaY;
+};
+
+/**
+ * 结束原图拖拽。
+ * 作用场景：用户松开鼠标后停止平移，避免误触继续移动。
+ */
+const handlePreviewMouseUp = () => {
+  isPreviewDragging.value = false;
 };
 
 /**
@@ -923,11 +1162,15 @@ onMounted(() => {
     loadMessages();
   }
   window.addEventListener("click", handleDocumentClick);
+  window.addEventListener("mousemove", handlePreviewMouseMove);
+  window.addEventListener("mouseup", handlePreviewMouseUp);
 });
 
 onUnmounted(() => {
   console.log("ChatContainer unmounted");
   window.removeEventListener("click", handleDocumentClick);
+  window.removeEventListener("mousemove", handlePreviewMouseMove);
+  window.removeEventListener("mouseup", handlePreviewMouseUp);
   if (messagesScrollRafId != null) {
     cancelAnimationFrame(messagesScrollRafId);
     messagesScrollRafId = null;
@@ -938,6 +1181,7 @@ onUnmounted(() => {
   }
   // 组件卸载时只清理监听器，不断开全局连接
   cleanupWebSocketListeners();
+  imagePreviewStore.closePreview();
 });
 </script>
 <style scoped>
@@ -973,5 +1217,78 @@ onUnmounted(() => {
   padding: 40px 16px;
   color: #999;
   font-size: 14px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.upload-progress-panel {
+  margin: 0 16px 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f6f8fa;
+}
+
+.upload-progress-title {
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.upload-progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #e4e7ed;
+  overflow: hidden;
+}
+
+.upload-progress-inner {
+  height: 100%;
+  background: #409eff;
+  transition: width 0.2s ease;
+}
+
+.upload-progress-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #606266;
+  text-align: right;
+}
+
+.image-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  background: rgb(0 0 0 / 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.image-preview-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.image-preview-origin {
+  max-width: min(92vw, 1280px);
+  max-height: 88vh;
+  border-radius: 10px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.4);
+  object-fit: contain;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.05s linear;
+  transform-origin: center center;
+}
+
+.image-preview-origin:active {
+  cursor: grabbing;
 }
 </style>

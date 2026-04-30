@@ -195,6 +195,65 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 }
 
+.message-image-thumb {
+  display: block;
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+  cursor: pointer;
+  object-fit: cover;
+}
+
+.file-message-card {
+  width: 240px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  text-align: left;
+}
+
+.sent .file-message-card {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.file-message-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(64, 158, 255, 0.14);
+  flex-shrink: 0;
+}
+
+.file-message-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.file-message-name {
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-message-meta {
+  margin-top: 2px;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
 /* 发送方消息文本阴影 */
 .sent .message-text {
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);

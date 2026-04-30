@@ -145,6 +145,12 @@ export function mapMessageSummaryToDisplayMessage(
     senderAvatar: message.senderAvatar,
     isSentByMe:
       context.currentUserId != null && Number(message.senderId) === Number(context.currentUserId),
+    fileId: message.fileId ?? null,
+    fileName: message.fileName ?? null,
+    fileSize: message.fileSize ?? null,
+    fileMimeType: message.fileMimeType ?? null,
+    thumbnailUrl: message.thumbnailUrl ?? null,
+    downloadUrl: message.downloadUrl ?? null,
   };
 }
 
