@@ -1,4 +1,5 @@
 import service from "@/apis/service";
+import type { BaseResponse } from "@/types/dto/base";
 import type {
   FileUploadCompleteRequest,
   FileUploadCompleteResponseData,
@@ -12,10 +13,9 @@ import type {
  * 作用场景：告知后端文件元信息，拿到 uploadId 或秒传结果。
  */
 export function initFileUploadApi(data: FileUploadInitRequest) {
-  return service.post<FileUploadInitResponseData>(
-    "/MIO/file/upload/init",
-    data
-  ) as unknown as Promise<FileUploadInitResponseData>;
+  return service
+    .post<BaseResponse<FileUploadInitResponseData>>("/MIO/file/upload/init", data)
+    .then((response) => response.data.data) as Promise<FileUploadInitResponseData>;
 }
 
 /**
@@ -27,9 +27,11 @@ export function uploadChunkApi(uploadId: string, index: number, chunk: Blob) {
   formData.append("uploadId", uploadId);
   formData.append("index", String(index));
   formData.append("file", chunk);
-  return service.post<null>("/MIO/file/upload/chunk", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  }) as unknown as Promise<null>;
+  return service
+    .post<BaseResponse<null>>("/MIO/file/upload/chunk", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then(() => undefined) as Promise<void>;
 }
 
 /**
@@ -37,9 +39,11 @@ export function uploadChunkApi(uploadId: string, index: number, chunk: Blob) {
  * 作用场景：断网重连后同步后端已收分片，继续补传剩余分片。
  */
 export function getFileUploadProgressApi(uploadId: string) {
-  return service.get<FileUploadProgressResponseData>("/MIO/file/upload/progress", {
-    params: { uploadId },
-  }) as unknown as Promise<FileUploadProgressResponseData>;
+  return service
+    .get<BaseResponse<FileUploadProgressResponseData>>("/MIO/file/upload/progress", {
+      params: { uploadId },
+    })
+    .then((response) => response.data.data) as Promise<FileUploadProgressResponseData>;
 }
 
 /**
@@ -47,8 +51,10 @@ export function getFileUploadProgressApi(uploadId: string) {
  * 作用场景：所有 chunk 成功后校验 hash，产出最终 fileId。
  */
 export function completeFileUploadApi(data: FileUploadCompleteRequest) {
-  return service.post<FileUploadCompleteResponseData>(
-    "/MIO/file/upload/complete",
-    data
-  ) as unknown as Promise<FileUploadCompleteResponseData>;
+  return service
+    .post<BaseResponse<FileUploadCompleteResponseData>>(
+      "/MIO/file/upload/complete",
+      data
+    )
+    .then((response) => response.data.data) as Promise<FileUploadCompleteResponseData>;
 }

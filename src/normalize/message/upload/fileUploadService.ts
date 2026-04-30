@@ -86,8 +86,7 @@ export async function uploadFileByChunksNormalized(
     fileHash: params.fileHash,
     mimeType: params.mimeType,
   });
-  console.log("initResponse:", initResponse);
-  const initData = (initResponse as any).data?.data || initResponse;
+  const initData = initResponse;
   if (!initData?.uploadId) {
     throw new Error("上传初始化失败");
   }
