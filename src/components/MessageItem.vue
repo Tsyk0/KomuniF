@@ -34,6 +34,25 @@
             @click="handleOpenImage"
           />
         </template>
+        <template v-else-if="isVideoMessage">
+          <div
+            class="message-video-thumb-wrap"
+            role="button"
+            tabindex="0"
+            @click="handleOpenVideo"
+            @keydown.enter.prevent="handleOpenVideo"
+            @keydown.space.prevent="handleOpenVideo"
+          >
+            <img
+              class="message-video-thumb-img"
+              :src="resolvedVideoPreviewUrl"
+              alt="视频消息"
+            />
+            <span class="message-video-play-overlay" aria-hidden="true">
+              <el-icon class="message-video-play-icon"><VideoPlay /></el-icon>
+            </span>
+          </div>
+        </template>
         <template v-else-if="isFileLikeMessage">
           <button
             class="file-message-card"
@@ -73,6 +92,25 @@
             @click="handleOpenImage"
           />
         </template>
+        <template v-else-if="isVideoMessage">
+          <div
+            class="message-video-thumb-wrap"
+            role="button"
+            tabindex="0"
+            @click="handleOpenVideo"
+            @keydown.enter.prevent="handleOpenVideo"
+            @keydown.space.prevent="handleOpenVideo"
+          >
+            <img
+              class="message-video-thumb-img"
+              :src="resolvedVideoPreviewUrl"
+              alt="视频消息"
+            />
+            <span class="message-video-play-overlay" aria-hidden="true">
+              <el-icon class="message-video-play-icon"><VideoPlay /></el-icon>
+            </span>
+          </div>
+        </template>
         <template v-else-if="isFileLikeMessage">
           <button
             class="file-message-card"
@@ -107,10 +145,42 @@
       </div>
     </div>
   </div>
+
+  <Teleport to="body">
+    <div
+      v-if="videoDialogVisible"
+      ref="videoOverlayRef"
+      class="message-video-overlay"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-label="视频播放"
+      @click.self="closeVideoPlayerOverlay"
+      @keydown.escape.prevent="closeVideoPlayerOverlay"
+    >
+      <button
+        type="button"
+        class="message-video-close-btn"
+        aria-label="关闭"
+        @click.stop="closeVideoPlayerOverlay"
+      >
+        <el-icon :size="22"><Close /></el-icon>
+      </button>
+      <video
+        class="message-video-player"
+        :src="videoDialogSrc || undefined"
+        controls
+        playsinline
+        preload="metadata"
+        @click.stop
+      />
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, nextTick } from "vue";
+import { Close, VideoPlay } from "@element-plus/icons-vue";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import {
   buildFileDownloadUrl,
@@ -182,6 +252,8 @@ const parsedFilePayload = computed(() => {
       fileName?: string;
       fileSize?: number;
       mimeType?: string;
+      /** 视频首帧或封面地址；优先于缩略图接口用于展示 */
+      videoPreviewUrl?: string;
     };
     return payload;
   } catch {
@@ -189,11 +261,9 @@ const parsedFilePayload = computed(() => {
   }
 });
 const isImageMessage = computed(() => props.message.messageType === "image");
-const isFileLikeMessage = computed(
-  () =>
-    props.message.messageType === "file" ||
-    props.message.messageType === "video"
-);
+/** 是否为视频类消息（缩略图 + 弹窗播放，与图片并列） */
+const isVideoMessage = computed(() => props.message.messageType === "video");
+const isFileLikeMessage = computed(() => props.message.messageType === "file");
 const resolvedDownloadUrl = computed(() => {
   const directUrl = props.message.downloadUrl;
   if (directUrl) return directUrl;
@@ -206,11 +276,18 @@ const resolvedThumbnailUrl = computed(() => {
   const fileId = props.message.fileId || parsedFilePayload.value?.fileId;
   return fileId ? buildFileThumbnailUrl(fileId) : "";
 });
+/**
+ * 视频消息列表缩略图地址。
+ * 使用场景：优先展示 message_content.videoPreviewUrl（首帧图），缺省时回退与普通图片相同的缩略图规则。
+ */
+const resolvedVideoPreviewUrl = computed(() => {
+  const raw = parsedFilePayload.value?.videoPreviewUrl;
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  return resolvedThumbnailUrl.value;
+});
 const fileDisplayName = computed(
   () =>
-    props.message.fileName ||
-    parsedFilePayload.value?.fileName ||
-    (props.message.messageType === "video" ? "视频文件" : "附件文件")
+    props.message.fileName || parsedFilePayload.value?.fileName || "附件文件"
 );
 const fileDisplaySize = computed(() => {
   const rawSize =
@@ -223,13 +300,9 @@ const fileDisplaySize = computed(() => {
 });
 const fileDisplayMimeType = computed(
   () =>
-    props.message.fileMimeType ||
-    parsedFilePayload.value?.mimeType ||
-    (props.message.messageType === "video" ? "video/*" : "file/*")
+    props.message.fileMimeType || parsedFilePayload.value?.mimeType || "file/*"
 );
-const fileCardIcon = computed(() =>
-  props.message.messageType === "video" ? "🎬" : "📄"
-);
+const fileCardIcon = computed(() => "📄");
 
 /**
  * 打开图片原图。
@@ -240,9 +313,37 @@ const handleOpenImage = () => {
   void imagePreviewStore.openPreviewByDownloadUrl(resolvedDownloadUrl.value);
 };
 
+/** 全屏遮罩是否显示；与 videoDialogSrc 配合，仅渲染 video 本体（无 el-dialog 白底标题栏） */
+const videoDialogVisible = ref(false);
+/** 遮罩内 video 的 src，指向 /MIO/file/{fileId}/download */
+const videoDialogSrc = ref("");
+const videoOverlayRef = ref<HTMLElement | null>(null);
+
 /**
- * 下载文件或视频。
- * 作用场景：file/video 消息点击卡片后触发下载。
+ * 关闭视频全屏遮罩并清空 src。
+ * 使用场景：点遮罩空白、关闭按钮或 Esc；v-if 卸载 video 节点以释放解码。
+ */
+const closeVideoPlayerOverlay = () => {
+  videoDialogVisible.value = false;
+  videoDialogSrc.value = "";
+};
+
+/**
+ * 打开视频全屏遮罩。
+ * 使用场景：用户点击缩略图后在暗色背景上居中展示原生 video（仅 controls，无外层卡片）。
+ */
+const handleOpenVideo = () => {
+  if (!resolvedDownloadUrl.value) return;
+  videoDialogSrc.value = resolvedDownloadUrl.value;
+  videoDialogVisible.value = true;
+  void nextTick(() => {
+    videoOverlayRef.value?.focus();
+  });
+};
+
+/**
+ * 下载普通附件。
+ * 作用场景：file 类型消息点击卡片后在新窗口打开下载链接。
  */
 const handleDownloadFile = () => {
   if (!resolvedDownloadUrl.value) return;
@@ -305,6 +406,12 @@ const formatTime = (timeStr: string) => {
 }
 
 .message-bubble.message-bubble--flash .message-text {
+  position: relative;
+  z-index: 2;
+}
+
+.message-bubble.message-bubble--flash .message-image-thumb,
+.message-bubble.message-bubble--flash .message-video-thumb-wrap {
   position: relative;
   z-index: 2;
 }

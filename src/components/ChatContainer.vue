@@ -134,7 +134,7 @@
         <!-- 发送消息区域 -->
         <div class="message-input-container">
           <div class="composer-row">
-            <div class="input-wrapper" ref="attachmentMenuRef">
+            <div class="input-wrapper">
               <button
                 class="action-button emoji-button"
                 title="表情"
@@ -153,41 +153,22 @@
                 />
               </div>
 
-              <div class="attachment-menu-wrap">
+              <div class="attachment-trigger-wrap">
                 <button
                   class="action-button attachment-button"
                   title="附件"
-                  @click.stop="toggleAttachmentMenu"
                   type="button"
+                  @click.stop="openFilePicker"
                 >
                   <Paperclip :size="22" :stroke-width="2.2" />
                 </button>
-                <div v-if="showAttachmentMenu" class="attachment-menu">
-                  <button
-                    class="attachment-menu-item"
-                    type="button"
-                    @click="handleAttachmentOption('image')"
-                  >
-                    <ImageIcon :size="22" :stroke-width="2.2" />
-                    <span>图片</span>
-                  </button>
-                  <button
-                    class="attachment-menu-item"
-                    type="button"
-                    @click="handleAttachmentOption('file')"
-                  >
-                    <FileIcon :size="22" :stroke-width="2.2" />
-                    <span>文件</span>
-                  </button>
-                </div>
                 <input
                   ref="fileInputRef"
                   class="hidden-file-input"
                   type="file"
-                  :accept="fileInputAccept"
+                  accept="*/*"
                   @change="handleFilePicked"
                 />
-                <!-- type="file"触发文件选择 -->
               </div>
             </div>
             <button class="action-button mic-button" title="语音" type="button">
@@ -250,8 +231,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
 import {
-  File as FileIcon,
-  Image as ImageIcon,
   MessageCircleDashed,
   Mic,
   Paperclip,
@@ -350,14 +329,7 @@ const canVoiceVideoCall = computed(
 
 // 响应式数据
 const messagesContainer = ref<HTMLElement | null>(null);
-const attachmentMenuRef = ref<HTMLElement | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
-const showAttachmentMenu = ref(false);
-const selectedAttachmentType = ref<"image" | "file">("file");
-const fileInputAccept = computed(() => {
-  if (selectedAttachmentType.value === "image") return "image/*";
-  return "*/*";
-});
 const uploadState = computed(() => ({
   visible: fileUploadStore.visible,
   fileName: fileUploadStore.fileName,
@@ -705,25 +677,19 @@ const handleEnterKey = (event: KeyboardEvent) => {
   }
 };
 
-const toggleAttachmentMenu = () => {
-  showAttachmentMenu.value = !showAttachmentMenu.value;
-};
-
-const handleAttachmentOption = (type: "image" | "file") => {
-  selectedAttachmentType.value = type;
-  showAttachmentMenu.value = false;
+/**
+ * 打开系统文件选择器。
+ * 作用场景：用户点击回形针按钮后直接选取附件（不再经过二级菜单）。
+ */
+const openFilePicker = () => {
   fileInputRef.value?.click();
 };
 
 /**
- * 按文件类型构造消息类型。
- * 作用场景：统一 image/file/video 业务消息路由。
+ * 按文件 MIME 推断消息类型。
+ * 作用场景：上传完成后发送 WS 消息时区分 image / video / 普通文件。
  */
-const resolveMessageTypeByFile = (
-  file: File,
-  preferredType: "image" | "file"
-): "image" | "file" | "video" => {
-  if (preferredType === "image") return "image";
+const resolveMessageTypeByFile = (file: File): "image" | "file" | "video" => {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("video/")) return "video";
   return "file";
@@ -826,10 +792,7 @@ const handleFilePicked = async (event: Event) => {
   }
 
   try {
-    const messageType = resolveMessageTypeByFile(
-      pickedFile,
-      selectedAttachmentType.value
-    );
+    const messageType = resolveMessageTypeByFile(pickedFile);
     const uploadResult = await fileUploadStore.uploadFile({
       file: pickedFile,
       convId: props.convId,
@@ -859,14 +822,6 @@ const handleFilePicked = async (event: Event) => {
   } finally {
     input.value = "";
   }
-};
-
-const handleDocumentClick = (event: MouseEvent) => {
-  if (!showAttachmentMenu.value) return;
-  const target = event.target as Node | null;
-  if (!target) return;
-  if (attachmentMenuRef.value?.contains(target)) return;
-  showAttachmentMenu.value = false;
 };
 
 /**
@@ -1164,14 +1119,12 @@ onMounted(() => {
   if (props.convId) {
     loadMessages();
   }
-  window.addEventListener("click", handleDocumentClick);
   window.addEventListener("mousemove", handlePreviewMouseMove);
   window.addEventListener("mouseup", handlePreviewMouseUp);
 });
 
 onUnmounted(() => {
   console.log("ChatContainer unmounted");
-  window.removeEventListener("click", handleDocumentClick);
   window.removeEventListener("mousemove", handlePreviewMouseMove);
   window.removeEventListener("mouseup", handlePreviewMouseUp);
   if (messagesScrollRafId != null) {

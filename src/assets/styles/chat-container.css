@@ -716,38 +716,9 @@
   opacity: 1 !important;
 }
 
-.message-input-container .attachment-menu-wrap {
-  position: relative;
-}
-
-.message-input-container .attachment-menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 10px);
-  min-width: 140px;
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 8px;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  z-index: 30;
-}
-
-.message-input-container .attachment-menu-item {
-  width: 100%;
-  border: none !important;
-  background: transparent !important;
-  display: flex;
+.message-input-container .attachment-trigger-wrap {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  color: #334155;
-  cursor: pointer;
-}
-
-.message-input-container .attachment-menu-item:hover {
-  background: rgba(107, 114, 128, 0.12);
 }
 
 .message-input-container .message-input-el .el-input__inner::placeholder {

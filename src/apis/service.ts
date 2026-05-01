@@ -15,7 +15,7 @@ axios.defaults.withCredentials = true
 // 创建 axios 实例（配置和原来一样）
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 10000,
+  timeout: 120000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'

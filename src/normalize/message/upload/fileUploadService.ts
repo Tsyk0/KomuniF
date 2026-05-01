@@ -77,7 +77,7 @@ export const calculateFileSha256Normalized = async (file: File): Promise<string>
 export async function uploadFileByChunksNormalized(
   params: UploadFileByChunksNormalizedParams
 ): Promise<UploadFileByChunksNormalizedResult> {
-  const CHUNK_SIZE = 1024 * 1024;
+  const CHUNK_SIZE = 6 * 1024 * 1024;
   const totalChunks = Math.ceil(params.file.size / CHUNK_SIZE);
   const initResponse = await initFileUploadApi({
     convId: params.convId,
