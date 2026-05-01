@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import { getConversationDisplayName } from "@/commons/utils/conversation-display";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import { useUserStore } from "@/store/user/user";
 import { useFriendStore } from "@/store/friend/showFriend";
@@ -64,7 +65,7 @@ const authStore = useUserStore();
 const friendStore = useFriendStore();
 
 const displayName = computed(() => {
-  return props.conversation.convName || "未命名会话";
+  return getConversationDisplayName(props.conversation);
 });
 
 const avatar = computed(() => {

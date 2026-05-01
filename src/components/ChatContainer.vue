@@ -190,8 +190,14 @@
           @mousedown="startInfoPanelResize"
           @touchstart.prevent="startInfoPanelResize"
         ></div>
-        <ConversationInfo
+        <GroupConvInfo
+          v-if="isGroupChat"
           :conv-id="convId"
+          @close="closeGroupInfo"
+          @changes-pending="hasInfoPendingChanges = $event"
+        />
+        <SingleConvInfo
+          v-else-if="singlePeerUserId"
           :friend-id="singlePeerUserId"
           @close="closeGroupInfo"
           @changes-pending="hasInfoPendingChanges = $event"
@@ -230,12 +236,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
-import {
-  MessageCircleDashed,
-  Mic,
-  Paperclip,
-  Smile,
-} from "lucide-vue-next";
+import { MessageCircleDashed, Mic, Paperclip, Smile } from "lucide-vue-next";
 import { CircleEllipsis, Search, Video } from "lucide-vue-next";
 import { useShowMessageStore } from "@/store/message/showMessage";
 import { useSendMessageStore } from "@/store/message/sendMessage";
@@ -246,8 +247,10 @@ import { useConvStore } from "@/store/conv/conv";
 import { useWebSocketStore } from "@/store/realtime/websocket";
 import MessageItem from "./MessageItem.vue";
 import ChatSearchPanel from "./ChatSearchPanel.vue";
-import ConversationInfo from "./ConversationInfo.vue";
+import GroupConvInfo from "./GroupConvInfo.vue";
+import SingleConvInfo from "./SingleConvInfo.vue";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import { getConversationDisplayName } from "@/commons/utils/conversation-display";
 import {
   loadConversationMessagesAndSyncRealtime,
   runScrollPaginationStateMachine,
@@ -301,9 +304,7 @@ const currentConversation = computed(() => {
 });
 
 const conversationDisplayName = computed(() => {
-  const conv = currentConversation.value;
-  if (!conv) return "";
-  return conv.convName || "未命名会话";
+  return getConversationDisplayName(currentConversation.value);
 });
 
 const currentConvTypeOrNull = computed(() => {

@@ -7,6 +7,7 @@ import {
   loadConversationsNormalized,
   loadConversationMembersNormalized,
 } from "@/normalize/conversation";
+import { normalizeConversationSummary } from "@/normalize/conversation/load/convLoadMapper";
 
 export const useConvStore = defineStore("conv", {
   state: () => ({
@@ -84,7 +85,11 @@ export const useConvStore = defineStore("conv", {
     patchConversationLocal(convId: number, patch: Partial<ConversationSummaryDTO>) {
       const current = this.conversationMap.get(convId);
       if (!current) return;
-      const merged = { ...current, ...patch };
+      /**
+       * 本地补丁后再次做会话归一化。
+       * 作用场景：privateDisplayName 变更时，立即重算 convName（显示名）并驱动依赖视图实时更新。
+       */
+      const merged = normalizeConversationSummary({ ...current, ...patch });
       const index = this.conversations.findIndex((item) => item.convId === convId);
       if (index >= 0) {
         this.conversations.splice(index, 1, merged);
@@ -93,6 +98,26 @@ export const useConvStore = defineStore("conv", {
       if (this.currentConversation?.convId === convId) {
         this.currentConversation = merged;
       }
+    },
+
+    /**
+     * 本地补丁更新群成员展示缓存中的昵称字段。
+     * 使用场景：用户在群聊资料中修改“我的本群昵称”后，消息列表等依赖成员缓存的区域立即响应。
+     */
+    patchConversationMemberNicknameLocal(
+      convId: number,
+      userId: number,
+      memberNickname: string | null
+    ) {
+      const currentMembers = this.compressedCMMap.get(convId);
+      if (!currentMembers || currentMembers.length === 0) return;
+      /** 昵称补丁后的新成员数组；用于触发依赖 compressedCMMap 的视图更新。 */
+      const patchedMembers = currentMembers.map((member) =>
+        Number(member.userId) === Number(userId)
+          ? { ...member, memberNickname }
+          : member
+      );
+      this.compressedCMMap.set(convId, patchedMembers);
     },
 
     async loadCompressedCM(convId: number, force = false) {

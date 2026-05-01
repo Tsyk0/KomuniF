@@ -8,8 +8,18 @@ export type UpdateFriendRemarkPayload = {
 };
 
 export type UpdateConversationMemberNamesPayload = {
-  memberNickname?: string;
-  privateDisplayName?: string;
+  memberNickname?: string | null;
+  privateDisplayName?: string | null;
+  /**
+   * 清空群内昵称标记。
+   * 使用场景：仅清空昵称时，不传新值，通过 clear 标记让后端执行清空。
+   */
+  clearMemberNickname?: boolean;
+  /**
+   * 清空群聊备注标记。
+   * 使用场景：仅清空备注时，不传新值，通过 clear 标记让后端执行清空。
+   */
+  clearPrivateDisplayName?: boolean;
 };
 
 /** 更新好友备注与分组（单聊语义）。 */

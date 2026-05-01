@@ -4,8 +4,18 @@ import type { ConversationEntity } from "@/types/dto/conversation-member";
 import type { BaseResponse } from "@/types/dto/base";
 
 export interface UpdateConversationMemberNamesPayload {
-  memberNickname?: string;
-  privateDisplayName?: string;
+  memberNickname?: string | null;
+  privateDisplayName?: string | null;
+  /**
+   * 清空群内昵称标记。
+   * 使用场景：用户将“我的本群昵称”清空时，后端通过该标记识别清空操作。
+   */
+  clearMemberNickname?: boolean;
+  /**
+   * 清空群聊备注标记。
+   * 使用场景：用户将“群聊备注”清空时，后端通过该标记识别清空操作。
+   */
+  clearPrivateDisplayName?: boolean;
 }
 
 /**

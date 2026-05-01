@@ -7,7 +7,7 @@
   >
     <div class="conv-search-result-main">
       <div class="conv-search-result-title">
-        {{ conversation.convName || `群聊#${conversation.convId}` }}
+        {{ displayName }}
       </div>
       <div class="conv-search-result-meta">
         ID {{ conversation.convId }} ·
@@ -18,12 +18,18 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+import { getConversationDisplayName } from "@/commons/utils/conversation-display";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 
-defineProps<{
+const props = defineProps<{
   conversation: ConversationSummaryDTO;
   selected?: boolean;
 }>();
+
+const displayName = computed(() => {
+  return getConversationDisplayName(props.conversation) || `群聊#${props.conversation.convId}`;
+});
 
 const emit = defineEmits<{
   select: [conversation: ConversationSummaryDTO];

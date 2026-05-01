@@ -61,7 +61,7 @@
         <div class="user-search-detail-inner">
           <template v-if="selectedGroup">
             <div class="user-search-detail-hero">
-              <h4 class="user-search-detail-name">{{ selectedGroup.convName || `群聊#${selectedGroup.convId}` }}</h4>
+              <h4 class="user-search-detail-name">{{ selectedGroupDisplayName }}</h4>
               <p class="user-search-detail-meta">
                 <span class="user-search-detail-id">ID {{ selectedGroup.convId }}</span>
                 <span>{{ Number(selectedGroup.currentMemberCount || 0) }}/{{ Number(selectedGroup.maxMemberCount || 0) }}</span>
@@ -100,6 +100,7 @@
 import { computed, onUnmounted, ref } from "vue";
 import { useConvCreateStore } from "@/store/conv/convCreate";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
+import { getConversationDisplayName } from "@/commons/utils/conversation-display";
 import { searchGroupsApi } from "@/apis/user-search";
 import { notificationApi } from "@/apis/notification";
 import toast from "@/commons/utils/toast";
@@ -124,6 +125,12 @@ let debounceTimer: number | null = null;
 const canLoadMore = computed(
   () => !!lastSearchedKeyword.value && !listError.value && groups.value.length < total.value
 );
+const selectedGroupDisplayName = computed(() => {
+  return (
+    getConversationDisplayName(selectedGroup.value) ||
+    `群聊#${selectedGroup.value?.convId || "-"}`
+  );
+});
 
 function scheduleSearch() {
   if (debounceTimer != null) window.clearTimeout(debounceTimer);
