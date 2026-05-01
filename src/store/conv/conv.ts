@@ -120,6 +120,54 @@ export const useConvStore = defineStore("conv", {
       this.compressedCMMap.set(convId, patchedMembers);
     },
 
+    /**
+     * 本地移除指定会话并同步 currentConversation。
+     * 使用场景：退出群聊后，立即从会话列表删除该项并清理相关缓存。
+     */
+    removeConversationLocal(convId: number) {
+      const nextConversations = this.conversations.filter(
+        (conversation) => conversation.convId !== convId
+      );
+      this.conversations = nextConversations;
+      this.conversationMap.delete(convId);
+      this.compressedCMMap.delete(convId);
+      if (this.currentConversation?.convId === convId) {
+        this.currentConversation = null;
+      }
+    },
+
+    /**
+     * 本地移除与指定好友关联的单聊会话。
+     * 使用场景：删除好友后，移除相关单聊会话，避免仍展示已失效的聊天入口。
+     */
+    removeSingleConversationByPeerUserId(friendId: number) {
+      /** 待删除会话 ID 列表；用于一次性清理 map 与成员缓存。 */
+      const deletingConvIds = this.conversations
+        .filter((conversation) => {
+          if (Number(conversation.convType) !== 1) return false;
+          const peerUserId = Number(
+            conversation.peer?.peerUserId || conversation.targetUserId || 0
+          );
+          return peerUserId === Number(friendId);
+        })
+        .map((conversation) => conversation.convId);
+      if (deletingConvIds.length === 0) return;
+
+      this.conversations = this.conversations.filter(
+        (conversation) => !deletingConvIds.includes(conversation.convId)
+      );
+      deletingConvIds.forEach((convId) => {
+        this.conversationMap.delete(convId);
+        this.compressedCMMap.delete(convId);
+      });
+      if (
+        this.currentConversation &&
+        deletingConvIds.includes(this.currentConversation.convId)
+      ) {
+        this.currentConversation = null;
+      }
+    },
+
     async loadCompressedCM(convId: number, force = false) {
       if (!force && this.compressedCMMap.has(convId)) return;
       const members = await loadConversationMembersNormalized(convId);

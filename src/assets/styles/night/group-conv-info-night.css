@@ -1,0 +1,69 @@
+html.night-mode .group-conv-info {
+  background: #18181b;
+}
+
+html.night-mode .group-conv-info__header {
+  border-bottom-color: #3f3f46;
+}
+
+html.night-mode .group-conv-info__title,
+html.night-mode .group-name,
+html.night-mode .group-section-title,
+html.night-mode .settings-label {
+  color: #e4e4e7;
+}
+
+html.night-mode .group-conv-info__edit,
+html.night-mode .group-conv-info__close,
+html.night-mode .group-id,
+html.night-mode .settings-row--status .settings-status,
+html.night-mode .group-conv-info__state {
+  color: #a1a1aa;
+}
+
+html.night-mode .group-conv-info__edit:hover,
+html.night-mode .group-conv-info__close:hover {
+  background: #27272a;
+}
+
+html.night-mode .group-conv-info__state--error {
+  color: #f87171;
+}
+
+html.night-mode .group-section {
+  border-bottom-color: #3f3f46;
+}
+
+html.night-mode .group-textarea,
+html.night-mode .group-input {
+  background: rgba(113, 113, 122, 0.25);
+  color: #f4f4f5;
+}
+
+html.night-mode .group-textarea::placeholder,
+html.night-mode .group-input::placeholder {
+  color: #a1a1aa;
+}
+
+html.night-mode .settings-row + .settings-row {
+  border-top-color: #3f3f46;
+}
+
+html.night-mode .group-action-btn--cancel {
+  background: #3f3f46;
+  color: #e4e4e7;
+}
+
+html.night-mode .group-danger-footer {
+  border-top-color: #3f3f46;
+  background: #18181b;
+}
+
+html.night-mode .group-danger-btn {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+html.night-mode .conv-edit-drawer-mask {
+  background: rgba(0, 0, 0, 0.45);
+}

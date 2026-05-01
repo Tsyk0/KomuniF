@@ -55,6 +55,7 @@
           class="group-textarea"
           rows="3"
           placeholder="请输入群公告摘要"
+          :disabled="!isCurrentUserGroupOwner"
         />
       </section>
 
@@ -115,6 +116,18 @@
       </button>
     </div>
 
+    <div class="group-danger-footer">
+      <button
+        class="group-danger-btn"
+        type="button"
+        :disabled="isLeavingGroup"
+        @click="handleLeaveGroup"
+      >
+        <Trash :size="22" :stroke-width="2.2" />
+        <span>{{ isLeavingGroup ? "退出中..." : "退出群聊" }}</span>
+      </button>
+    </div>
+
     <Transition name="conv-edit-drawer">
       <div
         v-if="isProfileEditOpen"
@@ -138,7 +151,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { Pencil, X } from "lucide-vue-next";
+import { Pencil, Trash, X } from "lucide-vue-next";
 import toast from "@/commons/utils/toast";
 import { useConversationInfoStore } from "@/store/conversationInfo/conversationInfo";
 import { useConvStore } from "@/store/conv/conv";
@@ -167,6 +180,7 @@ const userStore = useUserStore();
 const loading = ref(false);
 const error = ref<string | null>(null);
 const isApplying = ref(false);
+const isLeavingGroup = ref(false);
 const isProfileEditOpen = ref(false);
 const conversation = ref<ConversationEntity | null>(null);
 const members = ref<ConversationMemberDTO[]>([]);
@@ -221,6 +235,27 @@ const openProfileEdit = () => {
  */
 const closeProfileEdit = () => {
   isProfileEditOpen.value = false;
+};
+
+/**
+ * 退出当前群聊。
+ * 使用场景：用户点击底部“退出群聊”按钮后，调用 store action 走 API->normalize->store 链路并回收本地会话状态。
+ */
+const handleLeaveGroup = async () => {
+  if (!props.convId || isLeavingGroup.value) return;
+  const confirmLeave = window.confirm("确认退出该群聊吗？");
+  if (!confirmLeave) return;
+  isLeavingGroup.value = true;
+  try {
+    await conversationInfoStore.leaveConversation(props.convId);
+    toast.success("已退出群聊");
+    emit("close");
+  } catch (leaveError) {
+    console.error("退出群聊失败:", leaveError);
+    toast.error("退出失败，请稍后重试");
+  } finally {
+    isLeavingGroup.value = false;
+  }
 };
 
 /**
@@ -451,238 +486,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.group-conv-info {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-}
-
-.group-conv-info__header {
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid #e5e7eb;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.group-conv-info__title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.group-conv-info__edit,
-.group-conv-info__close {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  border: none;
-  background: transparent;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-  cursor: pointer;
-}
-
-.group-conv-info__edit {
-  left: 14px;
-}
-
-.group-conv-info__close {
-  right: 14px;
-}
-
-.group-conv-info__edit:hover,
-.group-conv-info__close:hover {
-  background: #f3f4f6;
-}
-
-.group-conv-info__state {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-}
-
-.group-conv-info__state--error {
-  color: #dc2626;
-}
-
-.group-conv-info__content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 14px 16px;
-}
-
-.group-section {
-  padding: 14px 0;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.group-section--identity {
-  padding-top: 16px;
-}
-
-.group-identity-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.group-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-  font-size: 22px;
-  font-weight: 600;
-}
-
-.group-avatar__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.group-main-info {
-  min-width: 0;
-}
-
-.group-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.group-id {
-  margin-top: 4px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.group-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 8px;
-}
-
-.group-textarea,
-.group-input {
-  width: 100%;
-  border: none;
-  border-radius: 10px;
-  background: rgba(156, 163, 175, 0.12);
-  color: #111827;
-  padding: 10px 12px;
-  font-size: 14px;
-  line-height: 1.4;
-  box-sizing: border-box;
-  outline: none;
-}
-
-.group-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.settings-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 42px;
-}
-
-.settings-row + .settings-row {
-  border-top: 1px solid #f3f4f6;
-}
-
-.settings-label {
-  font-size: 14px;
-  color: #111827;
-}
-
-.settings-row--status .settings-status {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.group-actions-float {
-  position: absolute;
-  top: 50%;
-  right: -98px;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  opacity: 0;
-  pointer-events: none;
-  transition: right 0.2s ease, opacity 0.2s ease;
-}
-
-.group-actions-float.visible {
-  right: 8px;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.group-action-btn {
-  border: none;
-  border-radius: 999px;
-  min-width: 74px;
-  height: 32px;
-  padding: 0 12px;
-  font-size: 13px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-}
-
-.group-action-btn--apply {
-  background: #2563eb;
-  color: #fff;
-}
-
-.group-action-btn--cancel {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.group-action-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.conv-edit-drawer-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  background: rgba(15, 23, 42, 0.25);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.conv-edit-drawer-enter-active,
-.conv-edit-drawer-leave-active {
-  transition: opacity 0.22s ease;
-}
-
-.conv-edit-drawer-enter-from,
-.conv-edit-drawer-leave-to {
-  opacity: 0;
-}
+@import "@/assets/styles/group-conv-info.css";
+@import "@/assets/styles/night/group-conv-info-night.css";
 </style>

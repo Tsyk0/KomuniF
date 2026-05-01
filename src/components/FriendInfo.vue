@@ -110,6 +110,7 @@
           <button
             class="action-btn secondary danger"
             @click="handleDeleteFriend"
+            :disabled="deletingFriend"
             type="button"
             title="删除好友"
             aria-label="删除好友"
@@ -125,11 +126,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted } from "vue";
+import { computed, watch, onMounted, onUnmounted, ref } from "vue";
 import { ArrowLeft, MessageCircleMore, UserX } from "lucide-vue-next";
 import { useFriendStore } from "@/store/friend/showFriend";
+import { useConversationInfoStore } from "@/store/conversationInfo/conversationInfo";
 import type { FriendListItem } from "@/types/dto/friend";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import toast from "@/commons/utils/toast";
 import {
   resolveFriendDisplayInitial,
   resolveFriendGenderText,
@@ -163,6 +166,8 @@ const emit = defineEmits<{
 }>();
 
 const friendStore = useFriendStore();
+const conversationInfoStore = useConversationInfoStore();
+const deletingFriend = ref(false);
 
 /**
  * 当前好友详情数据统一来源于 friend store 的 currentFriend。
@@ -245,8 +250,35 @@ const handleStartChat = () => {
   emit("send-message", props.friend);
 };
 
-const handleDeleteFriend = () => {
-  emit("delete-friend", props.friend);
+/**
+ * 删除好友：走 store action 触发完整 API -> Normalize -> Store 链路，并在成功后返回上一层。
+ * 使用场景：好友详情页点击删除按钮时，立即删除并同步本地 Pinia 中的好友/会话状态。
+ */
+const handleDeleteFriend = async () => {
+  const friendId = Number(props.friend?.friendId);
+  if (!friendId) {
+    toast.error("好友ID无效，无法删除");
+    return;
+  }
+
+  if (deletingFriend.value) return;
+
+  const friendName =
+    props.friend?.displayName || props.friend?.nickname || "该好友";
+  const confirmed = window.confirm(`确认删除好友「${friendName}」吗？`);
+  if (!confirmed) return;
+
+  deletingFriend.value = true;
+  try {
+    await conversationInfoStore.deleteFriend(friendId);
+    toast.success("好友已删除");
+    emit("back");
+  } catch (error) {
+    console.error("删除好友失败:", error);
+    toast.error("删除好友失败，请稍后重试");
+  } finally {
+    deletingFriend.value = false;
+  }
 };
 </script>
 

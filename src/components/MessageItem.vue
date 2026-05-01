@@ -19,7 +19,10 @@
 
       <div
         class="message-bubble received"
-        :class="{ 'message-bubble--flash': flashAnchor }"
+        :class="{
+          'message-bubble--flash': flashAnchor,
+          'message-bubble--attachment': isAttachmentMessage,
+        }"
       >
         <div
           v-if="flashAnchor"
@@ -77,7 +80,10 @@
     <div v-else class="message-wrapper message-right message-sent">
       <div
         class="message-bubble sent"
-        :class="{ 'message-bubble--flash': flashAnchor }"
+        :class="{
+          'message-bubble--flash': flashAnchor,
+          'message-bubble--attachment': isAttachmentMessage,
+        }"
       >
         <div
           v-if="flashAnchor"
@@ -264,6 +270,9 @@ const isImageMessage = computed(() => props.message.messageType === "image");
 /** 是否为视频类消息（缩略图 + 弹窗播放，与图片并列） */
 const isVideoMessage = computed(() => props.message.messageType === "video");
 const isFileLikeMessage = computed(() => props.message.messageType === "file");
+const isAttachmentMessage = computed(
+  () => isImageMessage.value || isVideoMessage.value || isFileLikeMessage.value
+);
 const resolvedDownloadUrl = computed(() => {
   const directUrl = props.message.downloadUrl;
   if (directUrl) return directUrl;

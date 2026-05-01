@@ -62,3 +62,19 @@ export async function updateConversationMemberNamesNormalized(
     throw new Error(response.message || "Failed to update member names");
   }
 }
+
+/** 退出群聊。 */
+export async function leaveConversationNormalized(convId: number): Promise<void> {
+  const response = await manageConversationApi.leaveConversation(convId);
+  if (response.code !== 200) {
+    throw new Error(response.message || "Failed to leave conversation");
+  }
+}
+
+/** 删除好友（解除好友关系）。 */
+export async function deleteFriendNormalized(friendId: number): Promise<void> {
+  const response = await friendApi.deleteFriend(friendId);
+  if (response.code !== 200) {
+    throw new Error(response.message || "Failed to delete friend");
+  }
+}

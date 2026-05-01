@@ -61,6 +61,20 @@ export const useFriendStore = defineStore("friend", {
       this.currentFriend = null;
     },
 
+    /**
+     * 本地移除指定好友并同步 currentFriend。
+     * 使用场景：删除好友成功后，立即从好友列表与详情态中剔除该好友。
+     */
+    removeFriendLocal(friendId: number) {
+      const targetId = Number(friendId);
+      this.friends = this.friends.filter(
+        (friend) => Number(friend.friendId) !== targetId
+      );
+      if (Number(this.currentFriend?.friendId || 0) === targetId) {
+        this.currentFriend = null;
+      }
+    },
+
     /** 从 normalize 层加载好友列表。 */
     async loadFriends() {
       this.loadingFriends = true;

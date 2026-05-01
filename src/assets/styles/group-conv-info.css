@@ -1,0 +1,274 @@
+.group-conv-info {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  position: relative;
+}
+
+.group-conv-info__header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.group-conv-info__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.group-conv-info__edit,
+.group-conv-info__close {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.group-conv-info__edit {
+  left: 14px;
+}
+
+.group-conv-info__close {
+  right: 14px;
+}
+
+.group-conv-info__edit:hover,
+.group-conv-info__close:hover {
+  background: #f3f4f6;
+}
+
+.group-conv-info__state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.group-conv-info__state--error {
+  color: #dc2626;
+}
+
+.group-conv-info__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 14px 84px;
+}
+
+.group-section {
+  padding: 14px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.group-section--identity {
+  padding-top: 16px;
+}
+
+.group-identity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.group-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.group-avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.group-main-info {
+  min-width: 0;
+}
+
+.group-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.group-id {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.group-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.group-textarea,
+.group-input {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: rgba(156, 163, 175, 0.12);
+  color: #111827;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.group-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.group-textarea:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+}
+
+.settings-row + .settings-row {
+  border-top: 1px solid #f3f4f6;
+}
+
+.settings-label {
+  font-size: 14px;
+  color: #111827;
+}
+
+.settings-row--status .settings-status {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.group-actions-float {
+  position: absolute;
+  top: 50%;
+  right: -98px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: right 0.2s ease, opacity 0.2s ease;
+}
+
+.group-actions-float.visible {
+  right: 8px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.group-action-btn {
+  border: none;
+  border-radius: 999px;
+  min-width: 74px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.group-action-btn--apply {
+  background: #2563eb;
+  color: #fff;
+}
+
+.group-action-btn--cancel {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.group-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.group-danger-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+  z-index: 12;
+}
+
+.group-danger-btn {
+  width: 100%;
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.group-danger-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.conv-edit-drawer-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.25);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.conv-edit-drawer-enter-active,
+.conv-edit-drawer-leave-active {
+  transition: opacity 0.22s ease;
+}
+
+.conv-edit-drawer-enter-from,
+.conv-edit-drawer-leave-to {
+  opacity: 0;
+}

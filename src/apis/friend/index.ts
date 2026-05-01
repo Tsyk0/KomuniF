@@ -49,10 +49,24 @@ export function updateFriendRemarkAndGroupApi(
   });
 }
 
+/**
+ * 删除好友（改为非好友关系）。
+ * 对应后端接口：DELETE /friends/{friendId}
+ */
+export function deleteFriendApi(
+  friendId: number
+): Promise<BaseResponse<string>> {
+  return service({
+    url: `/friends/${friendId}`,
+    method: "delete",
+  });
+}
+
 export const friendApi = {
   getFriendListByUserId: getFriendListByUserIdApi,
   getFriendInfo: getFriendInfoApi,
   updateFriendRemarkAndGroup: updateFriendRemarkAndGroupApi,
+  deleteFriend: deleteFriendApi,
 };
 
 export default friendApi;

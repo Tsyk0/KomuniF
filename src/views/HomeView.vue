@@ -194,8 +194,8 @@
           :friend="selectedFriend"
           @back="clearSelectedFriend"
           @send-message="handleSendMessageToFriend"
-          @delete-friend="handleDeleteFriend"
         />
+        <!-- @back="clearSelectedFriend"意思是：监听子组件的 back 事件，触发父组件的 clearSelectedFriend 方法 -->
 
         <NotificationCenter
           v-else-if="currentMainView === 'notifications'"
@@ -594,14 +594,6 @@ const handleSendMessageToFriend = async (friend) => {
   currentListView.value = "chat";
   currentMainView.value = null;
   selectedFriend.value = null;
-};
-
-/**
- * 删除好友入口：当前后端删除接口未接入，明确提示而不是伪实现。
- */
-const handleDeleteFriend = (friend) => {
-  const name = friend?.displayName || friend?.nickname || "该好友";
-  toast.warning(`删除好友（${name}）功能暂未接入，请先在后端完成接口后再启用`);
 };
 
 const handleAvatarError = () => {

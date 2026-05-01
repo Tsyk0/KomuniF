@@ -159,6 +159,12 @@
   max-width: 70%;
 }
 
+/* 附件消息气泡：去掉接收方 70% 限制，避免图片/视频右侧被气泡裁切。 */
+.message-bubble.message-bubble--attachment {
+  max-width: min(260px, 78vw);
+  min-width: 0;
+}
+
 .received:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12),
               0 1px 3px rgba(0, 0, 0, 0.1) inset,
@@ -197,6 +203,7 @@
 
 .message-image-thumb {
   display: block;
+  width: 100%;
   max-width: 220px;
   max-height: 220px;
   border-radius: 10px;
@@ -209,6 +216,7 @@
 .message-video-thumb-wrap {
   position: relative;
   display: inline-block;
+  width: 100%;
   max-width: 220px;
   max-height: 220px;
   margin-bottom: 18px;
@@ -297,7 +305,8 @@
 }
 
 .file-message-card {
-  width: 240px;
+  width: 100%;
+  max-width: 240px;
   display: flex;
   align-items: center;
   gap: 10px;

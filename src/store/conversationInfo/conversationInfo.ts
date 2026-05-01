@@ -2,7 +2,10 @@ import { defineStore } from "pinia";
 import type { ConversationEntity } from "@/types/dto/conversation-member";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import { useConvStore } from "@/store/conv/conv";
+import { useFriendStore } from "@/store/friend/showFriend";
 import {
+  deleteFriendNormalized,
+  leaveConversationNormalized,
   loadConversationInfoNormalized,
   persistConversationInfoNormalized,
   updateConversationMemberNamesNormalized,
@@ -62,6 +65,28 @@ export const useConversationInfoStore = defineStore("conversationInfo", {
       payload: UpdateConversationMemberNamesPayload
     ) {
       await updateConversationMemberNamesNormalized(convId, payload);
+    },
+
+    /**
+     * 退出群聊并同步本地会话状态。
+     * 使用场景：群资料页点击“退出群聊”后，立即从会话列表移除对应群会话。
+     */
+    async leaveConversation(convId: number) {
+      await leaveConversationNormalized(convId);
+      const convStore = useConvStore();
+      convStore.removeConversationLocal(convId);
+    },
+
+    /**
+     * 删除好友并同步本地好友/单聊会话状态。
+     * 使用场景：单聊资料页点击“删除好友”后，立即移除好友与相关单聊会话入口。
+     */
+    async deleteFriend(friendId: number) {
+      await deleteFriendNormalized(friendId);
+      const friendStore = useFriendStore();
+      const convStore = useConvStore();
+      friendStore.removeFriendLocal(friendId);
+      convStore.removeSingleConversationByPeerUserId(friendId);
     },
   },
 });

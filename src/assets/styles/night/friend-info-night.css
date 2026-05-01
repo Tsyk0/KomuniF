@@ -18,6 +18,7 @@ html.night-mode .friend-detail-header {
   min-height: 70px;
   box-sizing: border-box;
   position: relative;
+  background: #18181b;
 }
 
 html.night-mode .friend-detail-header .back-button {
@@ -38,6 +39,11 @@ html.night-mode .friend-detail-header .back-button {
   border-radius: 999px;
   box-shadow: none;
   transition: background-color 0.2s ease;
+}
+
+html.night-mode .friend-detail-header .back-button .back-icon,
+html.night-mode .friend-detail-header .back-button svg {
+  color: #9ca3af;
 }
 
 html.night-mode .friend-detail-header .back-icon {
@@ -90,6 +96,9 @@ html.night-mode .avatar-large-img {
 /* 底部操作区域分隔线 - 夜晚模式 */
 html.night-mode .friend-actions-bottom {
   border-top-color: #334155;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 /* 删除好友按钮 - 夜晚模式 */

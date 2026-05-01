@@ -66,9 +66,23 @@ export function updateConversationMemberNamesApi(
   });
 }
 
+/**
+ * 退出当前登录用户所在群聊。
+ * 对应后端接口：DELETE /conversations/{convId}/members/me
+ */
+export function leaveConversationApi(
+  convId: number
+): Promise<BaseResponse<string>> {
+  return service({
+    url: `/conversations/${convId}/members/me`,
+    method: "delete",
+  });
+}
+
 export const manageConversationApi = {
   updateConversationInfo: updateConversationInfoApi,
   updateConversationMemberNames: updateConversationMemberNamesApi,
+  leaveConversation: leaveConversationApi,
 };
 
 export default manageConversationApi;

@@ -160,6 +160,27 @@ html.night-mode .received {
   max-width: 70%;
 }
 
+/* 夜间模式下附件消息气泡：去掉接收方 70% 限制，避免右侧被裁切。 */
+html.night-mode .message-bubble.message-bubble--attachment {
+  max-width: min(260px, 78vw);
+  min-width: 0;
+}
+
+html.night-mode .message-image-thumb {
+  width: 100%;
+  max-width: 220px;
+}
+
+html.night-mode .message-video-thumb-wrap {
+  width: 100%;
+  max-width: 220px;
+}
+
+html.night-mode .file-message-card {
+  width: 100%;
+  max-width: 240px;
+}
+
 html.night-mode .received:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
               0 1px 3px rgba(0, 0, 0, 0.3) inset,

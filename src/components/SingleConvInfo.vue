@@ -95,12 +95,24 @@
         取消
       </button>
     </div>
+
+    <div class="single-danger-footer">
+      <button
+        class="single-danger-btn"
+        type="button"
+        :disabled="isDeletingFriend"
+        @click="handleDeleteFriend"
+      >
+        <UserRoundX :size="22" :stroke-width="2.2" />
+        <span>{{ isDeletingFriend ? "删除中..." : "删除好友" }}</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { X } from "lucide-vue-next";
+import { UserRoundX, X } from "lucide-vue-next";
 import toast from "@/commons/utils/toast";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import { useFriendStore } from "@/store/friend/showFriend";
@@ -135,6 +147,7 @@ const conversationInfoStore = useConversationInfoStore();
 const conversationStore = useConvStore();
 const loading = ref(false);
 const isApplying = ref(false);
+const isDeletingFriend = ref(false);
 const friendInfo = ref<FriendInfoViewModel | null>(null);
 const editableRemark = ref("");
 const editableGroup = ref("");
@@ -261,6 +274,30 @@ const handleApply = async () => {
 };
 
 /**
+ * 删除当前好友关系。
+ * 使用场景：用户点击底部“删除好友”按钮后，调用 store action 走 API->normalize->store 链路并清理本地好友/单聊状态。
+ */
+const handleDeleteFriend = async () => {
+  const targetFriendId = Number(props.friendId || 0);
+  if (!Number.isFinite(targetFriendId) || targetFriendId <= 0 || isDeletingFriend.value) {
+    return;
+  }
+  const confirmDelete = window.confirm("确认删除该好友吗？");
+  if (!confirmDelete) return;
+  isDeletingFriend.value = true;
+  try {
+    await conversationInfoStore.deleteFriend(targetFriendId);
+    toast.success("已删除好友");
+    emit("close");
+  } catch (deleteError) {
+    console.error("删除好友失败:", deleteError);
+    toast.error("删除失败，请稍后重试");
+  } finally {
+    isDeletingFriend.value = false;
+  }
+};
+
+/**
  * 加载单聊好友信息并初始化可编辑字段。
  * 使用场景：单聊信息面板打开或 friendId 变化时更新右侧信息栏。
  */
@@ -296,200 +333,6 @@ watch(hasPendingChanges, (pending) => {
 </script>
 
 <style scoped>
-.single-conv-info {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-  position: relative;
-}
-
-.single-conv-info__header {
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid #e5e7eb;
-  position: relative;
-}
-
-.single-conv-info__title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.single-conv-info__close {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: none;
-  background: transparent;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-  cursor: pointer;
-}
-
-.single-conv-info__close:hover {
-  background: #f3f4f6;
-}
-
-.single-conv-info__state {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-}
-
-.single-conv-info__content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 14px 16px;
-}
-
-.single-section {
-  padding: 14px 0;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.single-section--identity {
-  padding-top: 16px;
-}
-
-.single-user-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.single-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 600;
-}
-
-.single-avatar__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.single-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.single-id {
-  margin-top: 4px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.single-item-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 8px;
-}
-
-.single-readonly-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 38px;
-}
-
-.single-readonly-row + .single-readonly-row {
-  border-top: 1px solid #f3f4f6;
-}
-
-.single-readonly-label {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.single-readonly-value {
-  max-width: 65%;
-  text-align: right;
-  font-size: 14px;
-  color: #111827;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.single-input {
-  width: 100%;
-  border: none;
-  border-radius: 10px;
-  background: rgba(156, 163, 175, 0.12);
-  color: #111827;
-  padding: 10px 12px;
-  font-size: 14px;
-  line-height: 1.4;
-  box-sizing: border-box;
-  outline: none;
-}
-
-.single-actions-float {
-  position: absolute;
-  top: 50%;
-  right: -98px;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  opacity: 0;
-  pointer-events: none;
-  transition: right 0.2s ease, opacity 0.2s ease;
-}
-
-.single-actions-float.visible {
-  right: 8px;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.single-action-btn {
-  border: none;
-  border-radius: 999px;
-  min-width: 74px;
-  height: 32px;
-  padding: 0 12px;
-  font-size: 13px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-}
-
-.single-action-btn--apply {
-  background: #2563eb;
-  color: #fff;
-}
-
-.single-action-btn--cancel {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.single-action-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+@import "@/assets/styles/single-conv-info.css";
+@import "@/assets/styles/night/single-conv-info-night.css";
 </style>
