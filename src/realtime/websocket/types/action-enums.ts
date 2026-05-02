@@ -34,6 +34,8 @@ export const WS_SERVER_ACTION = {
   newRequestHandle: "newRequestHandle",
   speechToTextCompleted: "speechToTextCompleted",
   subscriptionUpdate: "subscriptionUpdate",
+  /** 群成员管理（踢人、禁言、解除禁言） */
+  groupConvMemberManage: "groupConvMemberManage",
 } as const;
 
 export type WsServerAction =

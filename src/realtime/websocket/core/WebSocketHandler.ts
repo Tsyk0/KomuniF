@@ -164,6 +164,8 @@ export class WebSocketHandler {
     switch (action) {
       case "connected":
         this.sessionManager.setConnected(true);
+        // realtimeEventBus.emit和window.dispatchEvent都在传递消息，为什么要两个？
+        // 这样做不是为了「两个总线各干一半同一件事」，而是 同一条 WS 下行用两种载体各广播一次，让 不同写法的消费者都能接到，属于项目里已经形成的 双通道兼容。
         realtimeEventBus.emit("connected", {
           userId: message.userId,
           subscriptions: Array.isArray(message.subscriptions) ? message.subscriptions : [],
@@ -173,6 +175,12 @@ export class WebSocketHandler {
       case "newMessage":
         realtimeEventBus.emit("newMessage", message);
         window.dispatchEvent(new CustomEvent("websocket:newMessage", { detail: message }));
+        break;
+      case "groupConvMemberManage":
+        realtimeEventBus.emit("groupConvMemberManage", message);
+        window.dispatchEvent(
+          new CustomEvent("websocket:groupConvMemberManage", { detail: message })
+        );
         break;
       case "messageSent":
         realtimeEventBus.emit("messageSent", message);

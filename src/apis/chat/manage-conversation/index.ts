@@ -81,10 +81,55 @@ export function leaveConversationApi(
   });
 }
 
+/**
+ * 群主踢出成员：目标 member_status → 0
+ * DELETE /conversations/{convId}/members/{targetUserId}
+ */
+export function removeConversationMemberApi(
+  convId: number,
+  targetUserId: number
+): Promise<BaseResponse<string>> {
+  return service({
+    url: `/conversations/${convId}/members/${targetUserId}`,
+    method: "delete",
+  });
+}
+
+/**
+ * 禁言成员：正常 → 2
+ * POST /conversations/{convId}/members/{targetUserId}/mute
+ */
+export function muteConversationMemberApi(
+  convId: number,
+  targetUserId: number
+): Promise<BaseResponse<string>> {
+  return service({
+    url: `/conversations/${convId}/members/${targetUserId}/mute`,
+    method: "post",
+  });
+}
+
+/**
+ * 解除禁言：2 → 1
+ * DELETE /conversations/{convId}/members/{targetUserId}/mute
+ */
+export function unmuteConversationMemberApi(
+  convId: number,
+  targetUserId: number
+): Promise<BaseResponse<string>> {
+  return service({
+    url: `/conversations/${convId}/members/${targetUserId}/mute`,
+    method: "delete",
+  });
+}
+
 export const manageConversationApi = {
   updateConversationInfo: updateConversationInfoApi,
   updateConversationMemberNames: updateConversationMemberNamesApi,
   leaveConversation: leaveConversationApi,
+  removeConversationMember: removeConversationMemberApi,
+  muteConversationMember: muteConversationMemberApi,
+  unmuteConversationMember: unmuteConversationMemberApi,
 };
 
 export default manageConversationApi;

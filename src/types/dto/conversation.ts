@@ -75,6 +75,11 @@ export interface ConversationSummaryDTO {
 
   // 时间信息
   updateTime: string;
+
+  /**
+   * 当前用户在该群的成员状态（群聊 summary 可能带）：1 正常，2 禁言；单聊通常无此字段。
+   */
+  memberStatus?: number;
 }
 
 /**
@@ -85,7 +90,10 @@ export interface MessageDisplayMemberDTO {
   memberNickname: string | null; // 群昵称
   userNickname: string;          // 用户原本昵称
   userAvatar: string | null;     // 用户头像
-  role?: number;                 // 角色 (1-群主, 2-管理员, 3-普通成员)
+  /** 0 普通，1 管理员，2 群主 */
+  role?: number;
+  /** 1 正常，2 禁言 */
+  memberStatus?: number;
   joinTime?: string;
 }
 

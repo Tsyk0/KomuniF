@@ -12,6 +12,7 @@ import App from './App.vue'
 import router from './router'
 import { useThemeStore } from './store/theme/theme'
 import { bindConversationRealtimeLastMessageListener } from './store/conv/conv'
+import { bindGroupConvMemberManageRealtimeListener } from '@/interactions/realtime/groupConvMemberManageInteraction'
 
 // 创建Vue应用实例
 const app = createApp(App)
@@ -20,6 +21,7 @@ const app = createApp(App)
 const pinia = createPinia()
 app.use(pinia)
 bindConversationRealtimeLastMessageListener()
+bindGroupConvMemberManageRealtimeListener()
 
 // 使用路由
 app.use(router)

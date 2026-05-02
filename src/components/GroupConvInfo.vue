@@ -168,13 +168,15 @@
               <span
                 v-if="isGroupOwnerMember(m)"
                 class="group-member-row__badge is-owner"
-                >群主</span
-              >
+              >群主</span>
               <span
                 v-else-if="isGroupAdminMember(m)"
                 class="group-member-row__badge is-admin"
-                >管理员</span
-              >
+              >管理员</span>
+              <span
+                v-if="getMemberEffectiveStatus(m) === MemberStatus.MUTED"
+                class="group-member-row__badge is-muted"
+              >禁言</span>
             </button>
             <p
               v-if="filteredMembersForList.length === 0"
@@ -231,7 +233,51 @@
             <dt>本群角色</dt>
             <dd>{{ memberRolePlainText(popoverMember) }}</dd>
           </div>
+          <div class="group-member-popover__row">
+            <dt>成员状态</dt>
+            <dd>{{ memberStatusPlainText(popoverMember) }}</dd>
+          </div>
         </dl>
+        <div
+          v-if="showPopoverGroupManage"
+          class="group-member-popover__manage"
+        >
+          <button
+            type="button"
+            class="group-member-popover__manage-btn"
+            title="踢出群聊"
+            aria-label="踢出群聊"
+            :disabled="memberPopoverActionLoading"
+            @click.stop="handleKickGroupMember"
+          >
+            <UserMinus :size="20" :stroke-width="2.2" />
+            <span>踢出</span>
+          </button>
+          <button
+            v-if="canMutePopoverMember"
+            type="button"
+            class="group-member-popover__manage-btn"
+            title="禁言"
+            aria-label="禁言"
+            :disabled="memberPopoverActionLoading"
+            @click.stop="handleMuteGroupMember"
+          >
+            <MicOff :size="20" :stroke-width="2.2" />
+            <span>禁言</span>
+          </button>
+          <button
+            v-if="canUnmutePopoverMember"
+            type="button"
+            class="group-member-popover__manage-btn"
+            title="解除禁言"
+            aria-label="解除禁言"
+            :disabled="memberPopoverActionLoading"
+            @click.stop="handleUnmuteGroupMember"
+          >
+            <Mic :size="20" :stroke-width="2.2" />
+            <span>解除禁言</span>
+          </button>
+        </div>
         <div
           v-if="
             !isPopoverMemberSelf &&
@@ -318,14 +364,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, watchEffect } from "vue";
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
 import {
   ChevronDown,
   ChevronRight,
   MessageCircleMore,
+  Mic,
+  MicOff,
   Pencil,
   Search,
   Trash,
+  UserMinus,
   UserPlus,
   X,
 } from "lucide-vue-next";
@@ -349,6 +406,8 @@ import type {
 } from "@/types/dto/conversation-member";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import { FriendRelationStatus, type FriendListItem } from "@/types/dto/friend";
+import { MemberRole, MemberStatus } from "@/entity/conversation-member";
+import { GROUP_CONV_MEMBERS_REFRESH_EVENT } from "@/interactions/realtime/groupConvMemberManageInteraction";
 
 const props = defineProps<{
   convId: number | null;
@@ -424,25 +483,36 @@ const isCurrentUserGroupOwner = computed(() => {
   if (myUserId <= 0) return false;
   if (Number(conversation.value?.convOwnerId || 0) === myUserId) return true;
   const me = members.value.find((member) => Number(member.userId) === myUserId);
-  return Number(me?.role || 0) === 1;
+  return Number(me?.role ?? 0) === MemberRole.OWNER;
 });
 
 /**
- * 判断成员是否为本群群主（优先 role=1，其次与 convOwnerId 一致）。
- * 使用场景：成员列表角标、资料卡「本群角色」展示。
+ * 成员 member_status 数值；缺省按正常(1)。
+ * 使用场景：列表过滤、禁言角标、群管理按钮显隐。
+ */
+function getMemberEffectiveStatus(member: ConversationMemberDTO): number {
+  const s = member.memberStatus;
+  if (s === undefined || s === null) return MemberStatus.NORMAL;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : MemberStatus.NORMAL;
+}
+
+/**
+ * 判断成员是否为本群群主（member_role === 2 或与 convOwnerId 一致）。
+ * 使用场景：成员列表角标、资料卡「本群角色」展示；不可对群主执行踢人/禁言。
  */
 const isGroupOwnerMember = (member: ConversationMemberDTO): boolean => {
   const ownerId = Number(conversation.value?.convOwnerId || 0);
-  if (member.role === 1) return true;
+  if (Number(member.role) === MemberRole.OWNER) return true;
   return ownerId > 0 && Number(member.userId) === ownerId;
 };
 
 /**
- * 判断成员是否为管理员且非群主。
+ * 判断成员是否为管理员且非群主（member_role === 1）。
  * 使用场景：成员列表「管理员」角标。
  */
 const isGroupAdminMember = (member: ConversationMemberDTO): boolean =>
-  member.role === 2 && !isGroupOwnerMember(member);
+  Number(member.role) === MemberRole.ADMIN && !isGroupOwnerMember(member);
 
 /**
  * 成员在列表中的主展示名：有群昵称用群昵称，否则用户昵称，再否则回退 userId。
@@ -480,6 +550,16 @@ const memberRolePlainText = (member: ConversationMemberDTO): string => {
   return "成员";
 };
 
+/**
+ * 成员状态文案（群管理、资料卡展示）。
+ */
+const memberStatusPlainText = (member: ConversationMemberDTO): string => {
+  const s = getMemberEffectiveStatus(member);
+  if (s === MemberStatus.QUIT) return "已退出";
+  if (s === MemberStatus.MUTED) return "禁言中";
+  return "正常";
+};
+
 /** 成员排序权重；用于 sortedMembersForList 中把群主、管理员排在前面。 */
 const memberSortRank = (member: ConversationMemberDTO): number => {
   if (isGroupOwnerMember(member)) return 0;
@@ -492,7 +572,9 @@ const memberSortRank = (member: ConversationMemberDTO): number => {
  * 使用场景：展开「查看群成员」后的默认列表顺序。
  */
 const sortedMembersForList = computed(() => {
-  const list = [...members.value];
+  const list = members.value.filter(
+    (m) => getMemberEffectiveStatus(m) !== MemberStatus.QUIT
+  );
   list.sort((a, b) => {
     const d = memberSortRank(a) - memberSortRank(b);
     if (d !== 0) return d;
@@ -589,6 +671,130 @@ const showPopoverAddFriendAction = computed(
 );
 
 /**
+ * 群主在成员资料卡上是否展示「踢出 / 禁言 / 解除禁言」。
+ * 使用场景：不能对自己、不能对群主操作；已退出成员不在列表中。
+ */
+const showPopoverGroupManage = computed(() => {
+  if (!isCurrentUserGroupOwner.value || isPopoverMemberSelf.value) return false;
+  const m = popoverMember.value;
+  if (!m) return false;
+  if (isGroupOwnerMember(m)) return false;
+  return getMemberEffectiveStatus(m) !== MemberStatus.QUIT;
+});
+
+const canMutePopoverMember = computed(
+  () =>
+    showPopoverGroupManage.value &&
+    !!popoverMember.value &&
+    getMemberEffectiveStatus(popoverMember.value) === MemberStatus.NORMAL
+);
+
+const canUnmutePopoverMember = computed(
+  () =>
+    showPopoverGroupManage.value &&
+    !!popoverMember.value &&
+    getMemberEffectiveStatus(popoverMember.value) === MemberStatus.MUTED
+);
+
+/**
+ * 本地同步成员字段（列表 + 当前悬浮卡）。
+ * 使用场景：禁言/解禁成功后立即更新 UI，无需整页重载。
+ */
+const patchMemberInLocalState = (
+  userId: number,
+  patch: Partial<ConversationMemberDTO>
+) => {
+  const uid = Number(userId);
+  const idx = members.value.findIndex((x) => Number(x.userId) === uid);
+  if (idx >= 0) {
+    members.value[idx] = { ...members.value[idx], ...patch };
+  }
+  if (popoverMember.value && Number(popoverMember.value.userId) === uid) {
+    popoverMember.value = { ...popoverMember.value, ...patch };
+  }
+};
+
+/**
+ * 群主将成员踢出群聊（二次确认 + 刷新摘要与成员缓存）。
+ */
+const handleKickGroupMember = async () => {
+  const m = popoverMember.value;
+  if (!m || !props.convId || memberPopoverActionLoading.value) return;
+  const label = memberListLabel(m);
+  if (!window.confirm(`确定将「${label}」移出群聊？`)) return;
+  memberPopoverActionLoading.value = true;
+  try {
+    const msg = await conversationInfoStore.removeGroupMember(
+      props.convId,
+      m.userId
+    );
+    toast.success(msg);
+    members.value = members.value.filter(
+      (x) => Number(x.userId) !== Number(m.userId)
+    );
+    closeMemberPopover();
+    await conversationStore.refreshConversationById(props.convId);
+    await conversationStore.loadCompressedCM(props.convId, true);
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : "操作失败");
+  } finally {
+    memberPopoverActionLoading.value = false;
+  }
+};
+
+/**
+ * 群主禁言成员。
+ */
+const handleMuteGroupMember = async () => {
+  const m = popoverMember.value;
+  if (!m || !props.convId || memberPopoverActionLoading.value) return;
+  memberPopoverActionLoading.value = true;
+  try {
+    const msg = await conversationInfoStore.muteGroupMember(
+      props.convId,
+      m.userId
+    );
+    toast.success(msg);
+    patchMemberInLocalState(m.userId, { memberStatus: MemberStatus.MUTED });
+    await conversationStore.patchConversationMemberStatusLocal(
+      props.convId,
+      m.userId,
+      MemberStatus.MUTED
+    );
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : "操作失败");
+  } finally {
+    memberPopoverActionLoading.value = false;
+  }
+};
+
+/**
+ * 群主解除成员禁言。
+ */
+const handleUnmuteGroupMember = async () => {
+  const m = popoverMember.value;
+  if (!m || !props.convId || memberPopoverActionLoading.value) return;
+  memberPopoverActionLoading.value = true;
+  try {
+    const msg = await conversationInfoStore.unmuteGroupMember(
+      props.convId,
+      m.userId
+    );
+    toast.success(msg);
+    patchMemberInLocalState(m.userId, { memberStatus: MemberStatus.NORMAL });
+    await conversationStore.patchConversationMemberStatusLocal(
+      props.convId,
+      m.userId,
+      MemberStatus.NORMAL
+    );
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : "操作失败");
+  } finally {
+    memberPopoverActionLoading.value = false;
+  }
+};
+
+/**
  * 从群成员悬浮卡打开与该用户的单聊（创建或复用会话）。
  * 使用场景：已是好友时点击「发送消息」图标；复用 convCreateStore 与首页一致。
  */
@@ -655,6 +861,55 @@ const handleMemberPopoverAddFriend = async () => {
 const closeMemberPopover = () => {
   popoverMember.value = null;
   memberPopoverAnchorRowRef.value = null;
+};
+
+/**
+ * 将悬浮卡上的成员与 `members` 中同一 userId 的最新一行对齐。
+ * 使用场景：`loadGroupConversationInfo` 等整表替换 `members` 后，避免 `popoverMember` 仍引用旧对象，导致「成员状态 / 禁言角标」与列表不一致、管理按钮（如解除禁言）显隐错误。
+ */
+const syncPopoverMemberFromMembersList = () => {
+  const m = popoverMember.value;
+  if (!m) return;
+  const uid = Number(m.userId);
+  if (!Number.isFinite(uid) || uid <= 0) return;
+  const fresh = members.value.find((x) => Number(x.userId) === uid);
+  if (fresh) {
+    popoverMember.value = fresh;
+  } else {
+    closeMemberPopover();
+  }
+};
+
+/**
+ * 把消息区已加载的 compressedCMMap 中的 memberStatus 合并进资料页成员列表。
+ * 使用场景：GET 详情未返回 member_status 时归一化会得到「正常」，但 Pinia 里可能已是禁言；用缓存纠偏角标与「解除禁言」按钮。
+ */
+const mergeMemberStatusFromCompressedCache = (convId: number) => {
+  const cm = conversationStore.compressedCMMap.get(convId);
+  if (!cm?.length) return;
+  members.value = members.value.map((m) => {
+    const row = cm.find((c) => Number(c.userId) === Number(m.userId));
+    if (
+      !row ||
+      row.memberStatus === undefined ||
+      row.memberStatus === null
+    ) {
+      return m;
+    }
+    const cached = Number(row.memberStatus);
+    if (
+      cached === MemberStatus.MUTED &&
+      getMemberEffectiveStatus(m) !== MemberStatus.MUTED
+    ) {
+      return { ...m, memberStatus: MemberStatus.MUTED };
+    }
+    const hasApi =
+      m.memberStatus !== undefined && m.memberStatus !== null;
+    if (!hasApi) {
+      return { ...m, memberStatus: cached };
+    }
+    return m;
+  });
 };
 
 /**
@@ -991,6 +1246,8 @@ const loadGroupConversationInfo = async () => {
     );
     conversation.value = detail.conversation as ConversationEntity;
     members.value = detail.members as ConversationMemberDTO[];
+    mergeMemberStatusFromCompressedCache(props.convId);
+    syncPopoverMemberFromMembersList();
     initEditableFields();
   } catch (loadError) {
     console.error("加载群聊详情失败:", loadError);
@@ -1014,6 +1271,23 @@ watch(
 
 watch(hasPendingChanges, (pending) => {
   emit("changes-pending", pending);
+});
+
+/**
+ * WS 群成员变更后轻量重拉详情，与 HTTP 管理结果、广播幂等对齐。
+ */
+const onGroupMembersNeedRefresh = (e: Event) => {
+  const d = (e as CustomEvent<{ convId?: number }>).detail;
+  if (props.convId == null || Number(d?.convId) !== Number(props.convId)) return;
+  void loadGroupConversationInfo();
+};
+
+onMounted(() => {
+  window.addEventListener(GROUP_CONV_MEMBERS_REFRESH_EVENT, onGroupMembersNeedRefresh);
+});
+
+onUnmounted(() => {
+  window.removeEventListener(GROUP_CONV_MEMBERS_REFRESH_EVENT, onGroupMembersNeedRefresh);
 });
 </script>
 

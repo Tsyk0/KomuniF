@@ -25,7 +25,13 @@
 
       <div class="conversation-item-info-wrapper">
         <div class="conversation-header">
-          <span class="conversation-name">{{ displayName }}</span>
+          <div class="conversation-title-row">
+            <span class="conversation-name">{{ displayName }}</span>
+            <span
+              v-if="showMutedInList"
+              class="conversation-muted-tag"
+            >禁言</span>
+          </div>
           <span class="conversation-time">{{ lastMessageTime }}</span>
         </div>
 
@@ -65,6 +71,7 @@ import type {
 import { useUserStore } from "@/store/user/user";
 import { useFriendStore } from "@/store/friend/showFriend";
 import { useConvStore } from "@/store/conv/conv";
+import { MemberStatus } from "@/entity/conversation-member";
 
 interface Props {
   conversation: ConversationSummaryDTO;
@@ -78,6 +85,13 @@ const convStore = useConvStore();
 
 const displayName = computed(() => {
   return getConversationDisplayName(props.conversation);
+});
+
+/** 群聊且当前用户在该群被禁言时，在会话列表展示标签。 */
+const showMutedInList = computed(() => {
+  const c = props.conversation;
+  if (Number(c.convType) !== 2) return false;
+  return Number(c.memberStatus) === MemberStatus.MUTED;
 });
 
 const avatar = computed(() => {

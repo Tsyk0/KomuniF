@@ -7,7 +7,10 @@ import {
   deleteFriendNormalized,
   leaveConversationNormalized,
   loadConversationInfoNormalized,
+  muteGroupMemberNormalized,
   persistConversationInfoNormalized,
+  removeGroupMemberNormalized,
+  unmuteGroupMemberNormalized,
   updateConversationMemberNamesNormalized,
   updateFriendRemarkNormalized,
   type ConversationInfoDetail,
@@ -87,6 +90,21 @@ export const useConversationInfoStore = defineStore("conversationInfo", {
       const convStore = useConvStore();
       friendStore.removeFriendLocal(friendId);
       convStore.removeSingleConversationByPeerUserId(friendId);
+    },
+
+    /** 群主踢出成员；成功返回后端提示文案。 */
+    removeGroupMember(convId: number, targetUserId: number) {
+      return removeGroupMemberNormalized(convId, targetUserId);
+    },
+
+    /** 群主禁言成员。 */
+    muteGroupMember(convId: number, targetUserId: number) {
+      return muteGroupMemberNormalized(convId, targetUserId);
+    },
+
+    /** 群主解除成员禁言。 */
+    unmuteGroupMember(convId: number, targetUserId: number) {
+      return unmuteGroupMemberNormalized(convId, targetUserId);
     },
   },
 });

@@ -567,6 +567,22 @@
   100% { transform: rotate(360deg); }
 }
 
+/* 群聊禁言提示（叠在输入区上方，与 composer 同属底部容器） */
+.chat-muted-banner {
+  flex-shrink: 0;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  color: #b45309;
+  background: rgba(180, 83, 9, 0.12);
+  border: 1px solid rgba(180, 83, 9, 0.22);
+  box-sizing: border-box;
+}
+
 /* 发送消息容器 */
 .message-input-container {
   position: absolute;
@@ -574,6 +590,9 @@
   transform: translateX(-50%);
   bottom: 12px;
   z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   /* background-color: #ffffff; */
   background:transparent !important;
   /* padding: 16px 20px; */

@@ -80,8 +80,28 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 10px;
   margin-bottom: 6px;
   position: relative;
+}
+
+.conversation-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.conversation-muted-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  color: #6b7280;
+  background: rgba(107, 114, 128, 0.18);
+  line-height: 1.2;
 }
 
 .conversation-name {
@@ -94,6 +114,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
   flex: 1;
   line-height: 1.2;
 }

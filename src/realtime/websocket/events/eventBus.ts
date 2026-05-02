@@ -13,6 +13,8 @@ export type RealtimeEventMap = {
   conversationPresence: { convId: number; onlineCount: number };
   newSystemNotification: Record<string, unknown>;
   newRequestHandle: Record<string, unknown>;
+  /** 群成员管理：踢人 / 禁言 / 解禁广播 */
+  groupConvMemberManage: Record<string, unknown>;
   serverError: { code?: number | string; message: string };
 };
 

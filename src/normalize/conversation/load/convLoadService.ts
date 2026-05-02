@@ -9,6 +9,10 @@ import type {
 } from "@/types/dto/conversation-member";
 import type { MessageDisplayMemberDTO } from "@/types/dto/conversation";
 import { normalizeConversationSummary } from "./convLoadMapper";
+import {
+  normalizeConversationMemberDtoFromApi,
+  normalizeMessageDisplayMemberFromApi,
+} from "@/normalize/conversation/member/groupMemberRecordMapper";
 
 export type ConversationInfoDetail = {
   conversation: ConversationEntity;
@@ -39,9 +43,12 @@ export async function loadConversationInfoNormalized(
   if (response.code !== 200 || !response.data) {
     throw new Error(response.message || "Failed to load conversation info");
   }
+  const rawMembers = Array.isArray(response.data.members)
+    ? response.data.members
+    : [];
   return {
     conversation: response.data.conversation,
-    members: Array.isArray(response.data.members) ? response.data.members : [],
+    members: rawMembers.map(normalizeConversationMemberDtoFromApi),
   };
 }
 
@@ -53,5 +60,6 @@ export async function loadConversationMembersNormalized(
   if (response.code !== 200) {
     throw new Error(response.message || "加载群成员失败");
   }
-  return Array.isArray(response.data) ? response.data : [];
+  const list = Array.isArray(response.data) ? response.data : [];
+  return list.map(normalizeMessageDisplayMemberFromApi);
 }

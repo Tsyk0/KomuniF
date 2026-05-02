@@ -32,8 +32,9 @@
               </div>
               <div class="chat-details">
                 <h3 class="chat-name">{{ conversationDisplayName }}</h3>
-                <p v-if="chatStatusText" class="chat-status">
-                  {{ chatStatusText }}
+                <p v-if="chatStatusText || isCurrentUserMutedInGroup" class="chat-status">
+                  <template v-if="isCurrentUserMutedInGroup">您已被禁言</template>
+                  <template v-else-if="chatStatusText">{{ chatStatusText }}</template>
                 </p>
               </div>
             </div>
@@ -133,12 +134,20 @@
 
         <!-- 发送消息区域 -->
         <div class="message-input-container">
+          <div
+            v-if="isCurrentUserMutedInGroup"
+            class="chat-muted-banner"
+            role="status"
+          >
+            您已被禁言，无法发送消息
+          </div>
           <div class="composer-row">
             <div class="input-wrapper">
               <button
                 class="action-button emoji-button"
                 title="表情"
                 type="button"
+                :disabled="composerDisabled"
               >
                 <Smile :size="22" :stroke-width="2.2" />
               </button>
@@ -148,7 +157,8 @@
                 <el-input
                   v-model="messageText"
                   class="message-input-el"
-                  placeholder="输入消息..."
+                  :placeholder="composerPlaceholder"
+                  :disabled="composerDisabled"
                   @keydown.enter.exact.prevent="handleEnterKey"
                 />
               </div>
@@ -158,6 +168,7 @@
                   class="action-button attachment-button"
                   title="附件"
                   type="button"
+                  :disabled="composerDisabled"
                   @click.stop="openFilePicker"
                 >
                   <Paperclip :size="22" :stroke-width="2.2" />
@@ -171,7 +182,12 @@
                 />
               </div>
             </div>
-            <button class="action-button mic-button" title="语音" type="button">
+            <button
+              class="action-button mic-button"
+              title="语音"
+              type="button"
+              :disabled="composerDisabled"
+            >
               <Mic :size="22" :stroke-width="2.2" />
             </button>
           </div>
@@ -265,6 +281,8 @@ import {
 import { handleRealtimeIncomingMessage } from "@/normalize/message";
 import type { DisplayMessage } from "@/entity/message";
 import type { User } from "@/entity/user";
+import toast from "@/commons/utils/toast";
+import { MemberStatus } from "@/entity/conversation-member";
 
 // Store
 const showMessageStore = useShowMessageStore();
@@ -302,6 +320,22 @@ const currentConversation = computed(() => {
   const fromMap = conversationStore.conversationMap.get(props.convId);
   return fromMap == null ? null : fromMap;
 });
+
+/**
+ * 当前群聊会话中，本人是否被禁言（summary.memberStatus === 2）。
+ * 使用场景：禁用输入区并在发送前拦截（含附件）。
+ */
+const isCurrentUserMutedInGroup = computed(() => {
+  const c = currentConversation.value;
+  if (!c || Number(c.convType) !== 2) return false;
+  return Number(c.memberStatus) === MemberStatus.MUTED;
+});
+
+const composerDisabled = computed(() => isCurrentUserMutedInGroup.value);
+
+const composerPlaceholder = computed(() =>
+  isCurrentUserMutedInGroup.value ? "您已被禁言，无法发送消息" : "输入消息..."
+);
 
 const conversationDisplayName = computed(() => {
   return getConversationDisplayName(currentConversation.value);
@@ -437,7 +471,10 @@ const firstChar = computed(() => {
 
 const canSend = computed(() => {
   return (
-    messageText.value.trim().length > 0 && props.convId && !isSending.value
+    messageText.value.trim().length > 0 &&
+    props.convId &&
+    !isSending.value &&
+    !isCurrentUserMutedInGroup.value
   );
 });
 
@@ -576,6 +613,10 @@ const handleIncomingWebSocketMessage = (message: any) => {
  */
 const sendMessage = async () => {
   if (!canSend.value || !props.convId) return;
+  if (isCurrentUserMutedInGroup.value) {
+    toast.error("您已被禁言，无法发送消息");
+    return;
+  }
 
   const content = messageText.value.trim();
   const currentUser = authStore.user;
@@ -690,6 +731,10 @@ const handleEnterKey = (event: KeyboardEvent) => {
  * 作用场景：用户点击回形针按钮后直接选取附件（不再经过二级菜单）。
  */
 const openFilePicker = () => {
+  if (composerDisabled.value) {
+    toast.error("您已被禁言，无法发送消息");
+    return;
+  }
   fileInputRef.value?.click();
 };
 
@@ -715,6 +760,10 @@ const sendFileMessage = async (params: {
   mimeType: string;
 }) => {
   if (!props.convId || !authStore.user?.userId) return;
+  if (isCurrentUserMutedInGroup.value) {
+    toast.error("您已被禁言，无法发送消息");
+    return;
+  }
   const messagePayload = {
     fileId: params.fileId,
     fileName: params.fileName,
@@ -798,6 +847,11 @@ const handleFilePicked = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   const pickedFile = input.files?.[0];
   if (!pickedFile || !props.convId) {
+    if (input) input.value = "";
+    return;
+  }
+  if (isCurrentUserMutedInGroup.value) {
+    toast.error("您已被禁言，无法发送消息");
     if (input) input.value = "";
     return;
   }

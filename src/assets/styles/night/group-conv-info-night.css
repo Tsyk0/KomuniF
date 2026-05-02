@@ -125,3 +125,8 @@ html.night-mode .group-member-row__badge.is-admin {
   background: rgba(139, 92, 246, 0.24);
   color: var(--theme-primary-faint);
 }
+
+html.night-mode .group-member-row__badge.is-muted {
+  background: rgba(161, 161, 170, 0.22);
+  color: #d4d4d8;
+}

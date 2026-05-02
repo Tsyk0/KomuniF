@@ -16,6 +16,7 @@ import {
 import type { DisplayMessage } from "@/entity/message";
 import { useUserStore } from "@/store/user/user";
 import { useFriendStore } from "@/store/friend/showFriend";
+import { MemberRole } from "@/entity/conversation-member";
 
 export const useConvStore = defineStore("conv", {
   state: () => ({
@@ -198,6 +199,62 @@ export const useConvStore = defineStore("conv", {
     },
 
     /**
+     * 本地补丁更新群成员展示缓存中的禁言等 memberStatus。
+     * 使用场景：群主禁言/解禁、WS 广播后同步消息区与资料页依赖的成员行。
+     * 说明：若尚未加载过 compressedCMMap（例如只打开资料页未进聊天），会先请求成员列表再写入，避免早退导致 Pinia 与 DB 不一致。
+     */
+    async patchConversationMemberStatusLocal(
+      convId: number,
+      userId: number,
+      memberStatus: number
+    ) {
+      const uid = Number(userId);
+      if (!Number.isFinite(uid) || uid <= 0) return;
+
+      let currentMembers = this.compressedCMMap.get(convId);
+      if (!currentMembers || currentMembers.length === 0) {
+        try {
+          currentMembers = await loadConversationMembersNormalized(convId);
+        } catch {
+          currentMembers = [];
+        }
+      }
+
+      let found = false;
+      const patchedMembers = currentMembers.map((member) => {
+        if (Number(member.userId) !== uid) return member;
+        found = true;
+        return { ...member, memberStatus };
+      });
+
+      if (!found) {
+        patchedMembers.push({
+          userId: uid,
+          memberNickname: null,
+          userNickname: "",
+          userAvatar: null,
+          role: MemberRole.NORMAL,
+          memberStatus,
+        });
+      }
+
+      this.compressedCMMap.set(convId, patchedMembers);
+    },
+
+    /**
+     * 从群成员压缩缓存中移除一人（他人被踢）；无列表或已无此人时幂等。
+     * 使用场景：WS `groupConvMemberManage` kicked 且目标非本人。
+     */
+    removeGroupMemberFromCompressedCache(convId: number, targetUserId: number) {
+      const list = this.compressedCMMap.get(convId);
+      if (!list || list.length === 0) return;
+      const tid = Number(targetUserId);
+      const next = list.filter((m) => Number(m.userId) !== tid);
+      if (next.length === list.length) return;
+      this.compressedCMMap.set(convId, next);
+    },
+
+    /**
      * 本地移除指定会话并同步 currentConversation。
      * 使用场景：退出群聊后，立即从会话列表删除该项并清理相关缓存。
      */
@@ -286,3 +343,4 @@ export function bindConversationRealtimeLastMessageListener(): void {
     useConvStore().applyLastMessageFromRealtimePayload(payload);
   });
 }
+

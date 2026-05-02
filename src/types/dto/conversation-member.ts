@@ -21,6 +21,8 @@ export interface ConversationEntity {
 
 /**
  * 会话成员信息（含群昵称与用户原始昵称）
+ * role：0 普通成员，1 管理员，2 群主（与后端 member_role 一致）。
+ * memberStatus：0 已退出/被踢，1 正常，2 禁言（群聊）。
  */
 export interface ConversationMemberDTO {
   userId: number;
@@ -28,6 +30,8 @@ export interface ConversationMemberDTO {
   userNickname: string;
   userAvatar: string | null;
   role: number;
+  /** 缺省按 1（正常）处理，与后端未返回时一致 */
+  memberStatus?: number;
 }
 
 // RESTful 命名兼容别名
