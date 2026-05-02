@@ -4,6 +4,7 @@
     class="search-result-item"
     role="button"
     tabindex="0"
+    v-ripple="{ rippleOpts }"
     @click="emitSelect"
     @keydown.enter.prevent="emitSelect"
     @keydown.space.prevent="emitSelect"
@@ -40,6 +41,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "select", message: DisplayMessage): void;
 }>();
+
+const rippleOpts = { color: "var(--sli-ripple-color)", duration: 520 };
+
 const convStore = useConvStore();
 const authStore = useUserStore();
 
@@ -106,13 +110,7 @@ const timeText = computed(() => {
 
 <style scoped>
 .search-result-item {
-  display: flex;
-  gap: 10px;
-  padding: 10px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
+  gap: 12px;
   outline: none;
 }
 
@@ -121,8 +119,8 @@ const timeText = computed(() => {
 }
 
 .avatar {
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   flex-shrink: 0;
   overflow: hidden;
@@ -178,11 +176,6 @@ const timeText = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-html.night-mode .search-result-item {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(2, 6, 23, 0.55);
 }
 
 html.night-mode .name {

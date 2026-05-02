@@ -28,6 +28,7 @@
 @import "@/assets/styles/friend-info.css";
 @import "@/assets/styles/friend-group.css";
 @import "@/assets/styles/friend-item.css";
+@import "@/assets/styles/sidebar-list-item.css";
 
 /* ================== 统一的滚动条样式 ================== */
 /* 原则：透明轨道、无箭头、Thumb 仅悬停/拖拽时显示，全局宽度一致 6px */

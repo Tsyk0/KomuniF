@@ -187,8 +187,8 @@
 }
 
 .conv-create-row-avatar {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -296,7 +296,7 @@
   box-shadow: none;
 }
 
-/* ========== 主区域：顶栏 + 表单（侧栏勾选好友） ========== */
+/* ========== 主区域：顶栏 + 表单（侧栏点选好友） ========== */
 
 .conv-create-panel--main-area {
   border-radius: 0;

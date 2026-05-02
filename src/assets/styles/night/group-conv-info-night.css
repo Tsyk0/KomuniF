@@ -67,3 +67,61 @@ html.night-mode .group-danger-btn {
 html.night-mode .conv-edit-drawer-mask {
   background: rgba(0, 0, 0, 0.45);
 }
+
+html.night-mode .group-members-trigger__label {
+  color: #e4e4e7;
+}
+
+html.night-mode .group-members-trigger:hover .group-members-trigger__label {
+  color: #93c5fd;
+}
+
+html.night-mode .group-members-trigger__chevron {
+  color: #71717a;
+}
+
+html.night-mode .group-members-panel {
+  background: rgba(63, 63, 70, 0.45);
+}
+
+html.night-mode .group-members-panel__title {
+  color: #e4e4e7;
+}
+
+html.night-mode .group-members-panel__search-btn {
+  color: #a1a1aa;
+}
+
+html.night-mode .group-members-panel__search-btn:hover,
+html.night-mode .group-members-panel__search-btn.is-active {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+html.night-mode .group-members-panel__filter-input {
+  background: #27272a;
+  color: #f4f4f5;
+  border: 1px solid #3f3f46;
+}
+
+html.night-mode .group-members-panel__empty {
+  color: #71717a;
+}
+
+html.night-mode .group-member-row:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+html.night-mode .group-member-row__name {
+  color: #e4e4e7;
+}
+
+html.night-mode .group-member-row__badge.is-owner {
+  background: rgba(234, 179, 8, 0.22);
+  color: #fbbf24;
+}
+
+html.night-mode .group-member-row__badge.is-admin {
+  background: rgba(59, 130, 246, 0.22);
+  color: #93c5fd;
+}

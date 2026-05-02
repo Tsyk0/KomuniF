@@ -3,6 +3,8 @@ import service from "../../service";
 import type { ConversationEntity } from "@/types/dto/conversation-member";
 import type { BaseResponse } from "@/types/dto/base";
 
+// 占位：display_status 的 PATCH 待后端路径确定后在此模块补充；乐观更新可用 convStore.patchConversationLocal。
+
 export interface UpdateConversationMemberNamesPayload {
   memberNickname?: string | null;
   privateDisplayName?: string | null;

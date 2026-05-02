@@ -5,21 +5,20 @@ import type {
   CreateGroupJoinRequestPayload,
   CreateGroupJoinRequestResult,
   NotificationCursorDTO,
-  NotificationRecentItemDTO,
+  NotificationInboxDTO,
   NotificationUnreadSummaryDTO,
   SendFriendRequestResult,
   RequestHandlePayload,
-  RequestHandle,
 } from "@/types/dto/notification";
 
 /**
- * 拉取当前用户最近系统通知
- * GET /notifications/recent
+ * 收件箱：系统通知与待处理请求分块返回
+ * GET /notifications/inbox
  */
-export async function getRecentNotifications(
+export async function getNotificationInbox(
   page?: number,
   pageSize?: number
-): Promise<ApiResponse<NotificationRecentItemDTO[]>> {
+): Promise<ApiResponse<NotificationInboxDTO>> {
   const params: Record<string, number> = {};
   if (page != null && Number.isFinite(page)) {
     params.page = Math.max(1, Math.floor(Number(page)));
@@ -28,36 +27,9 @@ export async function getRecentNotifications(
     params.pageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSize))));
   }
   return service({
-    url: "/notifications/recent",
+    url: "/notifications/inbox",
     method: "get",
     params: Object.keys(params).length ? params : undefined,
-  });
-}
-
-/**
- * 以 notificationId 为锚点向更早翻页。
- * GET /notifications/recent/more?anchorId={id}&pageSize={n}
- */
-export async function getRecentNotificationsBeforeAnchor(
-  anchorId: number,
-  pageSize?: number
-): Promise<ApiResponse<NotificationRecentItemDTO[]>> {
-  const id = Math.floor(Number(anchorId));
-  if (!Number.isFinite(id) || id <= 0) {
-    throw new Error("无效的通知锚点 ID");
-  }
-
-  const params: Record<string, number> = {
-    anchorId: id,
-  };
-  if (pageSize != null && Number.isFinite(pageSize)) {
-    params.pageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSize))));
-  }
-
-  return service({
-    url: "/notifications/recent/more",
-    method: "get",
-    params,
   });
 }
 
@@ -151,8 +123,7 @@ export async function submitRequestHandleApi(
 }
 
 export const notificationApi = {
-  getRecentNotifications,
-  getRecentNotificationsBeforeAnchor,
+  getNotificationInbox,
   getNotificationCursor,
   updateNotificationCursor,
   getNotificationUnreadSummary,

@@ -1,0 +1,185 @@
+/**
+ * 侧栏统一列表项：会话列表、好友列表、Plus（好友多选 / 找人 / 找群）等行式条目共用尺寸与交互。
+ * 悬停对齐 more-options back-btn；日间 active 天蓝、ripple 略深；夜间变量见 sidebar-list-item-night.css。
+ */
+
+:root {
+  /* 列表外壳：与会话列表「单容器包全部 item」一致的内边距与行间距（各侧栏列表共用） */
+  --sll-padding-x: 14px;
+  --sll-padding-y: 10px;
+  --sll-row-gap: 10px;
+
+  /* 行高：外卡片 78px（含上下 1px 边框），内层 container 至少 76px（含上下 padding） */
+  --sli-item-height: 78px;
+  --sli-item-container-height: 76px;
+  --sli-min-height: var(--sli-item-height);
+  --sli-pad-y: 12px;
+  --sli-pad-x: 14px;
+  --sli-radius: 12px;
+  --sli-bg: #eef4fb;
+  --sli-border: 1px solid #e8edf5;
+  --sli-hover-bg: rgba(107, 114, 128, 0.12);
+  --sli-active-bg: #bae6fd;
+  --sli-active-border: rgba(14, 165, 233, 0.4);
+  --sli-ripple-color: rgba(2, 132, 199, 0.42);
+  --sli-avatar-size: 48px;
+  /* 侧栏列表行卡片最小宽度：与会话行对齐，避免好友外包层 min-width:0 在 flex 交叉轴被压窄约 4px */
+  --sli-item-min-width: 78px;
+}
+
+/**
+ * 包住「全部列表项」的唯一滚动容器：水平留白与行距只在这里控制，item 本身不再设左右 margin。
+ * 使用场景：会话 conversations-container、好友列表、通知列表内容区等与主侧栏对齐。
+ */
+.sidebar-list-items {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--sll-padding-y) var(--sll-padding-x);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sll-row-gap);
+  box-sizing: border-box;
+}
+
+/* 会话 / 好友：在 flex 侧栏里子项需 height:0 才能让内部 overflow-y 生效并保留 padding、gap */
+.conversation-list .conversations-container.sidebar-list-items,
+.friend-list-container .friend-groups > .sidebar-list-items.friend-list-items,
+.friend-pick-sidebar .friend-pick-scroll > .sidebar-list-items.friend-pick-list,
+.homeview .friend-pick-sidebar-wrap .friend-pick-scroll > .sidebar-list-items.friend-pick-list {
+  height: 0;
+}
+
+/**
+ * Home 侧栏：显式重申 padding / gap，避免被 .homeview 下其它 overflow 规则抢走滚动容器导致贴边、行距消失。
+ * 使用场景：主界面会话列表、好友列表与统一变量对齐。
+ */
+.homeview .conversation-list > .conversations-container.sidebar-list-items,
+.homeview .friend-list-container .friend-groups > .sidebar-list-items.friend-list-items,
+.homeview .friend-pick-sidebar-wrap .friend-pick-scroll > .sidebar-list-items.friend-pick-list {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--sll-padding-y) var(--sll-padding-x);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sll-row-gap);
+  box-sizing: border-box;
+}
+
+/**
+ * 好友每一项外包层：与会话列表「item 直接挂在 sidebar-list-items 下」占满同一可用宽度；
+ * 不使用 min-width:0，否则在纵向 flex 里交叉轴可被压窄，出现 friend-item 比 conversation-item 窄几像素。
+ */
+.friend-item-wrapper {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/**
+ * 侧栏列表行外壳：*-item 固定总高；内边距与行内 flex 在 *-item-container（高度见 --sli-item-container-height）。
+ */
+.conversation-item,
+.friend-item,
+.friend-pick-item,
+.user-search-result-item,
+.conv-search-result-item,
+.search-result-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: var(--sli-item-min-width);
+  min-height: var(--sli-item-height);
+  height: var(--sli-item-height);
+  padding: 0;
+  margin: 0;
+  border-radius: var(--sli-radius);
+  border: var(--sli-border);
+  background-color: var(--sli-bg);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.conversation-item-container,
+.friend-item-container,
+.friend-pick-item-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: var(--sli-item-container-height);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--sli-pad-y) var(--sli-pad-x);
+}
+
+.conversation-item:hover,
+.friend-item:hover,
+.friend-pick-item:hover,
+.user-search-result-item:hover,
+.conv-search-result-item:hover,
+.search-result-item:hover {
+  background-color: var(--sli-hover-bg) !important;
+  border-color: transparent;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.conversation-item.active,
+.friend-item.active,
+.friend-pick-item.selected,
+.user-search-result-item.selected,
+.conv-search-result-item.selected {
+  background-color: var(--sli-active-bg) !important;
+  border-color: var(--sli-active-border);
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.conversation-item:active,
+.friend-item:active,
+.friend-pick-item:active,
+.user-search-result-item:active,
+.conv-search-result-item:active,
+.search-result-item:active {
+  transform: none !important;
+}
+
+/* 去掉左侧装饰条、列表内竖点等与统一风格冲突的伪元素 */
+.conversation-item::before,
+.friend-item::before {
+  display: none !important;
+  content: none !important;
+}
+
+.conversation-item::after,
+.friend-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* 悬停时不再放大头像，避免各行视觉高度跳动 */
+.conversation-item:hover .avatar-img,
+.conversation-item:hover .avatar-placeholder,
+.friend-item:hover .friend-item-avatar-img,
+.friend-item:hover .friend-item-avatar-default {
+  transform: none !important;
+}
+
+/* 好友行内操作按钮浮在 ripple 之上 */
+.friend-item-actions-wrapper {
+  position: relative;
+  z-index: 2;
+}

@@ -11,6 +11,7 @@ import './assets/styles/toast.css'
 import App from './App.vue'
 import router from './router'
 import { useThemeStore } from './store/theme/theme'
+import { bindConversationRealtimeLastMessageListener } from './store/conv/conv'
 
 // 创建Vue应用实例
 const app = createApp(App)
@@ -18,6 +19,7 @@ const app = createApp(App)
 // 使用Pinia状态管理
 const pinia = createPinia()
 app.use(pinia)
+bindConversationRealtimeLastMessageListener()
 
 // 使用路由
 app.use(router)
@@ -51,6 +53,7 @@ const loadNightStyles = () => {
     'friend-info-night.css',
     'friend-list-night.css',
     'friend-item-night.css',
+    'sidebar-list-item-night.css',
     'friend-group-night.css',
     'searchbar-night.css',
     'conv-create-panel-night.css',

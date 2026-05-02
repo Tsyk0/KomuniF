@@ -9,14 +9,27 @@
 
 /* 搜索框样式已移除 */
 
-/* 好友列表内容区域 */
+/* 好友列表内容区域：滚动交给内部 .sidebar-list-items，与会话列表一致 */
 .friend-list-container .friend-list-content {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: 0;
   position: relative;
 }
 
 .friend-list-container .friend-groups {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background-color: white;
+}
+
+.friend-list-container .friend-list-items {
+  flex: 1;
+  min-height: 0;
 }

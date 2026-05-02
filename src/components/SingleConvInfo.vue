@@ -117,7 +117,7 @@ import toast from "@/commons/utils/toast";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import { useFriendStore } from "@/store/friend/showFriend";
 import { useConversationInfoStore } from "@/store/conversationInfo/conversationInfo";
-import { useConvStore } from "@/store/conv/conv";
+import { syncFriendRemarkToStores } from "@/interactions/friendRemark/syncFriendRemarkToStores";
 
 type FriendInfoViewModel = {
   friendId: number;
@@ -144,7 +144,6 @@ const emit = defineEmits<{
 
 const friendStore = useFriendStore();
 const conversationInfoStore = useConversationInfoStore();
-const conversationStore = useConvStore();
 const loading = ref(false);
 const isApplying = ref(false);
 const isDeletingFriend = ref(false);
@@ -186,52 +185,6 @@ const hasPendingChanges = computed(
 );
 
 /**
- * 将单聊备注改动回写到本地 pinia，保证列表与会话头部即时更新。
- * 使用场景：用户点击“应用”后，单聊名称/分组等依赖处无需刷新即可同步。
- */
-const syncSingleLocalChangesToPinia = () => {
-  const targetFriendId = Number(props.friendId || 0);
-  if (!Number.isFinite(targetFriendId) || targetFriendId <= 0) return;
-  const nextRemark = editableRemark.value.trim();
-  const nextGroup = editableGroup.value.trim();
-  const normalizedRemark = nextRemark === "" ? null : nextRemark;
-  const normalizedGroup = nextGroup === "" ? null : nextGroup;
-
-  if (friendStore.currentFriend && Number(friendStore.currentFriend.friendId) === targetFriendId) {
-    friendStore.currentFriend = {
-      ...friendStore.currentFriend,
-      remarkName: normalizedRemark,
-      group: normalizedGroup,
-      displayName: normalizedRemark || friendStore.currentFriend.nickname || "未知用户",
-    };
-  }
-
-  /** 好友列表补丁；用于让联系人列表和其他引用处即时更新备注和分组显示。 */
-  friendStore.friends = friendStore.friends.map((friend) =>
-    Number(friend.friendId) === targetFriendId
-      ? {
-          ...friend,
-          remarkName: normalizedRemark,
-          group: normalizedGroup,
-          displayName: normalizedRemark || friend.nickname || "未知用户",
-        }
-      : friend
-  );
-
-  conversationStore.conversations
-    .filter((conv) => {
-      if (Number(conv.convType) !== 1) return false;
-      const peerId = Number(conv.peer?.peerUserId || conv.targetUserId || 0);
-      return peerId === targetFriendId;
-    })
-    .forEach((conv) => {
-      conversationStore.patchConversationLocal(conv.convId, {
-        privateDisplayName: normalizedRemark,
-      });
-    });
-};
-
-/**
  * 取消编辑并回退到初始值。
  * 使用场景：用户点击“取消”撤销当前未提交的备注/分组改动。
  */
@@ -261,7 +214,11 @@ const handleApply = async () => {
   isApplying.value = true;
   try {
     await conversationInfoStore.updateFriendRemark(targetFriendId, payload);
-    syncSingleLocalChangesToPinia();
+    syncFriendRemarkToStores(
+      targetFriendId,
+      editableRemark.value.trim(),
+      editableGroup.value.trim()
+    );
     initialRemark.value = editableRemark.value;
     initialGroup.value = editableGroup.value;
     toast.success("单聊资料已保存");

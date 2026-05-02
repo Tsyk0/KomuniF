@@ -60,11 +60,23 @@ export interface RequestHandle {
   handleTime: string | null;
 }
 
-/** 通知列表项（后端 recent 返回） */
+/** 通知列表项（合并展示用：可由 inbox `noti.items` 映射或历史 recent 结构） */
 export interface NotificationRecentItemDTO {
   notificationId: number;
   notification: SystemNotification;
   rah: RequestHandle | null;
+}
+
+/** 收件箱分页块：系统通知与待处理请求分开展示（GET /notifications/inbox） */
+export interface NotificationInboxPageDTO<T = unknown> {
+  items: T[];
+  page: number;
+  pageSize: number;
+}
+
+export interface NotificationInboxDTO {
+  noti: NotificationInboxPageDTO<unknown>;
+  rah: NotificationInboxPageDTO<unknown>;
 }
 
 export interface NotificationCursorDTO {

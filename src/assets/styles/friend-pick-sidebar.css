@@ -8,21 +8,26 @@
   background: var(--fp-bg, #fff);
 }
 
+/* 外层只裁切；滚动与列表留白由内部 .sidebar-list-items.friend-pick-list 负责（与会话列表一致） */
 .friend-pick-scroll {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px 12px 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.friend-pick-list.sidebar-list-items {
   scrollbar-width: thin;
   scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
 }
 
-.friend-pick-scroll::-webkit-scrollbar {
+.friend-pick-list.sidebar-list-items::-webkit-scrollbar {
   width: 6px;
 }
 
-.friend-pick-scroll::-webkit-scrollbar-thumb {
+.friend-pick-list.sidebar-list-items::-webkit-scrollbar-thumb {
   background: rgba(100, 116, 139, 0.35);
   border-radius: 999px;
 }
@@ -35,57 +40,26 @@
   line-height: 1.5;
 }
 
-.friend-pick-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+/* .friend-pick-list 与全局 .sidebar-list-items 组合：padding、gap、flex 由 sidebar-list-item.css 统一 */
 
-.friend-pick-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-}
+/* 行尺寸 / 悬停 / 选中 由 sidebar-list-item.css 与 .friend-pick-item.selected 统一 */
 
-.friend-pick-row:hover {
-  background: var(--fp-row-hover, rgba(15, 23, 42, 0.04));
-}
+/* 行内第二层 layout 由 sidebar-list-item 的 .friend-pick-item-container 提供 padding；此处只做各 wrapper 布局 */
 
-.friend-pick-row.selected {
-  background: var(--fp-row-selected, rgba(37, 99, 235, 0.08));
-  border-color: rgba(37, 99, 235, 0.22);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-}
-
-.friend-pick-row-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1;
-}
-
-.friend-pick-avatar {
-  width: 44px;
-  height: 44px;
+/* 头像 wrapper：与会话头像区对齐 */
+.friend-pick-item-avatar-wrapper {
+  width: var(--sli-avatar-size, 48px);
+  height: var(--sli-avatar-size, 48px);
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+  margin-right: 12px;
   background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid #fff;
-  outline: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .friend-pick-avatar-img {
@@ -100,16 +74,20 @@
   color: #64748b;
 }
 
-.friend-pick-text {
+.friend-pick-item-info-wrapper {
+  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
+  justify-content: center;
+  /* 与会话信息区「标题 + 副行」占位大致同高，行与行之间对齐 */
+  min-height: 44px;
 }
 
 .friend-pick-name {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
   color: var(--fp-text, #0f172a);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -117,17 +95,9 @@
 }
 
 .friend-pick-sub {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fp-sub, #94a3b8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.friend-pick-check {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  accent-color: #2563eb;
-  cursor: pointer;
 }

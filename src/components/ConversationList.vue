@@ -16,14 +16,14 @@
     </div>
 
     <!-- empty state -->
-    <div v-else-if="conversations.length === 0" class="empty-conversation">
+    <div v-else-if="mainSidebarConversations.length === 0" class="empty-conversation">
       <div class="empty-icon">-</div>
       <p class="empty-text">No conversations</p>
       <p class="empty-hint">Start a chat from your friend list.</p>
     </div>
 
     <!-- conversation list -->
-    <div v-else class="conversations-container">
+    <div v-else class="conversations-container sidebar-list-items">
       <ConversationItem
         v-for="conversation in filteredConversations"
         :key="conversation.convId"
@@ -43,11 +43,17 @@ import {
   openConversationByClick,
   searchConversationMatchedIdsByMessages,
 } from "@/interactions/conversationList/ConversationListInteraction";
+import { prepareMainConversationSidebarList } from "@/commons/utils/conversation-main-list";
+import { resolveLastMessageSenderLabel } from "@/commons/utils/conversation-last-message-sender";
+import { useFriendStore } from "@/store/friend/showFriend";
+import { useUserStore } from "@/store/user/user";
 import ConversationItem from "./ConversationItem.vue";
 
 // Store
 const convStore = useConvStore();
 const showMessageStore = useShowMessageStore();
+const friendStore = useFriendStore();
+const userStore = useUserStore();
 
 // Props
 const props = defineProps<{
@@ -65,6 +71,11 @@ const conversations = computed(() => {
   return convStore.conversations || [];
 });
 
+/** 主侧栏展示用：隐藏 displayStatus===2，置顶优先；与 store 全量列表分离。 */
+const mainSidebarConversations = computed(() =>
+  prepareMainConversationSidebarList(conversations.value)
+);
+
 const isLoading = computed(() => {
   return loading.value;
 });
@@ -72,11 +83,11 @@ const isLoading = computed(() => {
 const filteredConversations = computed(() => {
   const keyword = props.searchQuery?.trim().toLowerCase();
   if (!keyword) {
-    return conversations.value;
+    return mainSidebarConversations.value;
   }
 
   const matchedConvIdSet = messageMatchedConversationIds.value;
-  return conversations.value.filter((conversation) => {
+  return mainSidebarConversations.value.filter((conversation) => {
     if (conversation.convName?.toLowerCase().includes(keyword)) {
       return true;
     }
@@ -87,9 +98,14 @@ const filteredConversations = computed(() => {
       return true;
     }
 
-    // match by sender display name
-    const senderName =
-      lastMsg?.senderDisplayName || `User${lastMsg?.senderId || ""}`;
+    // match by sender display name（与 ConversationItem 一致：好友优先备注，否则群昵称等）
+    const senderName = lastMsg
+      ? resolveLastMessageSenderLabel(
+          lastMsg,
+          friendStore.friends,
+          userStore.user?.userId
+        )
+      : "";
     if (senderName.toLowerCase().includes(keyword)) {
       return true;
     }
@@ -126,7 +142,7 @@ const searchConversationByMessages = async (keyword: string) => {
   }
   messageMatchedConversationIds.value = await searchConversationMatchedIdsByMessages(
     keyword,
-    conversations.value
+    mainSidebarConversations.value
   );
 };
 

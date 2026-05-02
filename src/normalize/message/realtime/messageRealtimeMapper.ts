@@ -1,5 +1,5 @@
 import type { DisplayMessage } from "@/entity/message";
-import type { MessageDisplayMemberDTO } from "@/types/dto/conversation";
+import type { LastMessageInfo, MessageDisplayMemberDTO } from "@/types/dto/conversation";
 
 /**
  * WS 入站消息映射的最小运行上下文。
@@ -79,5 +79,69 @@ export function mapRealtimeIncomingToDisplayMessage(
     downloadUrl: payload.downloadUrl ?? null,
     // 统一判定是否本人发送，供 UI 左右布局与状态渲染使用。
     isSentByMe: senderId === context.currentUserId,
+  };
+}
+
+/**
+ * 将 WS `newMessage` 的 payload 转为会话列表用的 `LastMessageInfo`（与 `mapRealtimeIncomingToDisplayMessage` 的字段解析一致）。
+ * 使用场景：Pinia 会话摘要需根据实时推送更新「最后一条」预览与排序时间，而不打开聊天窗时。
+ */
+export function mapRealtimePayloadToLastMessageInfo(
+  payload: Record<string, any>,
+  context: RealtimeMessageMapContext
+): LastMessageInfo | null {
+  const convId = Number(payload.convId);
+  const senderId = Number(payload.senderId);
+  if (!Number.isFinite(convId) || convId <= 0) return null;
+  if (!Number.isFinite(senderId) || senderId <= 0) return null;
+
+  const messageIdRaw = Number(payload.messageId);
+  const messageId =
+    Number.isFinite(messageIdRaw) && messageIdRaw > 0 ? messageIdRaw : Date.now();
+
+  const member = context.conversationMembers?.find(
+    (m) => Number(m.userId) === senderId
+  );
+  const senderDisplayName =
+    senderId === context.currentUserId
+      ? "我"
+      : (member?.memberNickname || "").trim() ||
+        (member?.userNickname || "").trim() ||
+        `用户${senderId}`;
+
+  const senderAvatar =
+    senderId === context.currentUserId
+      ? context.currentUserAvatar || member?.userAvatar || null
+      : member?.userAvatar || null;
+
+  const sendTime = payload.sendTime
+    ? new Date(payload.sendTime).toISOString()
+    : new Date().toISOString();
+
+  return {
+    messageId,
+    senderId,
+    messageType: payload.messageType || "text",
+    messageContent: payload.messageContent || payload.content || "",
+    senderDisplayName,
+    senderAvatar,
+    sendTime,
+  };
+}
+
+/**
+ * 将本地回显的 `DisplayMessage` 转为会话侧栏用的 `LastMessageInfo`（当前用户刚发出的一条）。
+ * 使用场景：WS 发送成功或秒传仅回显后，立即更新 Pinia 会话摘要，无需等服务端 `newMessage` 环回。
+ */
+export function mapDisplayMessageToLastMessageInfo(msg: DisplayMessage): LastMessageInfo {
+  const senderDisplayName = (msg.senderName || "").trim() || "我";
+  return {
+    messageId: msg.messageId,
+    senderId: msg.senderId,
+    messageType: msg.messageType || "text",
+    messageContent: msg.messageContent || "",
+    senderDisplayName,
+    senderAvatar: msg.senderAvatar ?? null,
+    sendTime: msg.sendTime,
   };
 }

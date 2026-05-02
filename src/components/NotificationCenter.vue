@@ -51,29 +51,31 @@
         </button>
       </div>
 
-      <ul v-if="activeTab === 'system'" class="sys-notif-list">
-        <li
-          v-for="item in systemItems"
-          :key="item.notificationId"
-          class="sys-notif-list-row"
-        >
-          <SystemNotificationItem :notification="item.notification" />
-        </li>
-      </ul>
+      <div class="sidebar-list-items sys-notif-tab-panel">
+        <ul v-if="activeTab === 'system'" class="sys-notif-list">
+          <li
+            v-for="item in systemItems"
+            :key="item.notificationId"
+            class="sys-notif-list-row"
+          >
+            <SystemNotificationItem :notification="item.notification" />
+          </li>
+        </ul>
 
-      <ul v-else class="sys-notif-list">
-        <li
-          v-for="rah in requestItems"
-          :key="rah.id"
-          class="sys-notif-list-row"
-        >
-          <RequestHandleItem
-            :rah="rah"
-            :current-user-id="currentUserId"
-            @action="(action) => onHandleRah(rah.id, action)"
-          />
-        </li>
-      </ul>
+        <ul v-else class="sys-notif-list">
+          <li
+            v-for="rah in requestItems"
+            :key="rah.id"
+            class="sys-notif-list-row"
+          >
+            <RequestHandleItem
+              :rah="rah"
+              :current-user-id="currentUserId"
+              @action="(action) => onHandleRah(rah.id, action)"
+            />
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>

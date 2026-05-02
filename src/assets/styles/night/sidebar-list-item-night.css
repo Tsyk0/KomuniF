@@ -1,0 +1,19 @@
+/**
+ * 侧栏统一列表项 — 夜间：天蓝改为紫系 active / ripple。
+ */
+
+html.night-mode {
+  --sli-item-height: 78px;
+  --sli-item-container-height: 76px;
+  --sli-item-min-width: 78px;
+  --sll-padding-x: 14px;
+  --sll-padding-y: 10px;
+  --sll-row-gap: 10px;
+
+  --sli-bg: rgba(30, 41, 59, 0.45);
+  --sli-border: 1px solid rgba(51, 65, 85, 0.9);
+  --sli-hover-bg: rgba(107, 114, 128, 0.12);
+  --sli-active-bg: rgba(139, 92, 246, 0.38);
+  --sli-active-border: rgba(167, 139, 250, 0.5);
+  --sli-ripple-color: rgba(124, 58, 237, 0.45);
+}

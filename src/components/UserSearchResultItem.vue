@@ -4,6 +4,7 @@
     type="button"
     class="user-search-result-item"
     :class="{ selected: selected }"
+    v-ripple="{ rippleOpts }"
     @click="emit('select', user)"
   >
     <div class="conv-create-row-avatar">
@@ -36,6 +37,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [user: User];
 }>();
+
+/** 与侧栏统一列表项的 ripple 变量一致。 */
+const rippleOpts = { color: "var(--sli-ripple-color)", duration: 520 };
 
 const imgBroken = ref(false);
 
@@ -71,30 +75,8 @@ function onImgError() {
 @import "@/assets/styles/conv-create-panel.css";
 
 .user-search-result-item {
-  display: flex;
-  align-items: center;
   gap: 12px;
-  width: 100%;
-  padding: 10px 12px;
-  margin: 0;
-  border: 1px solid transparent;
-  border-radius: var(--cc-radius-sm, 12px);
-  background: transparent;
-  cursor: pointer;
   text-align: left;
   font: inherit;
-  box-sizing: border-box;
-  transition: background 0.18s ease, border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.user-search-result-item:hover {
-  background: var(--cc-row-hover, rgba(15, 23, 42, 0.04));
-}
-
-.user-search-result-item.selected {
-  background: var(--cc-row-selected, rgba(37, 99, 235, 0.08));
-  border-color: rgba(37, 99, 235, 0.2);
-  box-shadow: var(--cc-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
 }
 </style>

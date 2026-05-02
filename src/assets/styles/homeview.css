@@ -284,9 +284,14 @@
   color: #4cd964;
 }
 
+/* 会话列表外壳只负责占位与裁切；滚动与内边距在内部 .sidebar-list-items（与会话卡片间距一致） */
 .homeview .conversation-list {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
 }
 
 .homeview .section-title {
@@ -555,11 +560,6 @@
   opacity: 0.9;
 }
 
-.homeview .conversations-container {
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-}
-
 /* 空状态 */
 .homeview .empty-conversation {
   display: flex;
@@ -676,14 +676,3 @@
   color: #999;
 }
 
-/* 调整现有样式以适应搜索框 */
-.homeview .conversation-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0;
-}
-
-.homeview .conversations-container {
-  max-height: calc(100vh - 250px);
-  overflow-y: auto;
-}

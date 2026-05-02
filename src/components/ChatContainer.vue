@@ -624,6 +624,9 @@ const sendMessage = async () => {
     if (!success) {
       throw new Error("WebSocket send failed");
     }
+    if (tempMessage) {
+      conversationStore.syncConversationLastMessageFromSentDisplay(props.convId, tempMessage);
+    }
   } catch (error) {
     console.error("发送消息失败:", error);
 
@@ -746,11 +749,13 @@ const sendFileMessage = async (params: {
     showMessageStore.updateMessageStatus(tempMessage.messageId, 4);
     throw new Error("附件消息发送失败");
   }
+  conversationStore.syncConversationLastMessageFromSentDisplay(props.convId, tempMessage);
 };
 
 /**
  * 仅做本地附件消息回显（不触发 WS 发送）。
- * 作用场景：秒传命中时，后端已持久化并广播给他人，但当前端需要立即看到自己的消息。
+ * 使用场景：秒传命中时，后端已持久化并广播给他人，但当前端需要立即看到自己的消息。
+ * 返回：回显后的展示消息，供同步会话列表最后一条摘要；未满足前置条件时返回 undefined。
  */
 const appendLocalFileMessageEcho = (params: {
   messageType: "image" | "file" | "video";
@@ -758,9 +763,9 @@ const appendLocalFileMessageEcho = (params: {
   fileName: string;
   fileSize: number;
   mimeType: string;
-}) => {
-  if (!props.convId || !authStore.user?.userId) return;
-  sendMessageStore.appendLocalMessageEcho(
+}): DisplayMessage | undefined => {
+  if (!props.convId || !authStore.user?.userId) return undefined;
+  const echoed = sendMessageStore.appendLocalMessageEcho(
     {
       convId: props.convId,
       currentUserId: authStore.user.userId,
@@ -778,6 +783,7 @@ const appendLocalFileMessageEcho = (params: {
     }
   );
   scrollToBottom();
+  return echoed;
 };
 
 /**
@@ -801,13 +807,16 @@ const handleFilePicked = async (event: Event) => {
     });
     if (uploadResult.instantUpload) {
       // 秒传命中时，后端已写消息并推送给其他端；当前端本端做即时回显但不重复发送。
-      appendLocalFileMessageEcho({
+      const echoed = appendLocalFileMessageEcho({
         messageType,
         fileId: uploadResult.fileId,
         fileName: pickedFile.name,
         fileSize: pickedFile.size,
         mimeType: pickedFile.type || "application/octet-stream",
       });
+      if (echoed) {
+        conversationStore.syncConversationLastMessageFromSentDisplay(props.convId, echoed);
+      }
       return;
     }
     await sendFileMessage({

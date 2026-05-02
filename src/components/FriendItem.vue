@@ -1,67 +1,75 @@
 <template>
+  <!-- 结构约定：friend-item 最外层 → friend-item-container 行内布局与内边距 → *-wrapper 各内容区 -->
   <div
-    class="friend-item-container"
+    class="friend-item"
     :class="{ active: isActive }"
     @click="handleClick"
-    v-ripple
+    v-ripple="{ rippleOpts }"
   >
-    <!-- 头像 -->
-    <div class="friend-item-avatar">
-      <img
-        v-if="avatarSrc"
-        :src="avatarSrc"
-        :alt="displayRemarkName"
-        class="friend-item-avatar-img"
-      />
-      <div v-else class="friend-item-avatar-default">
-        {{ displayRemarkName.charAt(0) }}
+    <div class="friend-item-container">
+      <div class="friend-item-avatar-wrapper">
+        <img
+          v-if="avatarSrc"
+          :src="avatarSrc"
+          :alt="displayRemarkName"
+          class="friend-item-avatar-img"
+        />
+        <div v-else class="friend-item-avatar-default">
+          {{ displayRemarkName.charAt(0) }}
+        </div>
+        <span class="friend-item-online-dot" :class="friend.onlineStatus"></span>
       </div>
-      <span class="friend-item-online-dot" :class="friend.onlineStatus"></span>
-    </div>
 
-    <!-- 好友信息 -->
-    <div class="friend-item-info">
-      <div class="friend-item-name-row">
-        <span class="friend-item-remarkname">{{ displayRemarkName }}</span>
-        <span v-if="friend.unreadCount" class="friend-item-unread">
-          {{ friend.unreadCount }}
-        </span>
+      <div class="friend-item-info-wrapper">
+        <div class="friend-item-name-row">
+          <span class="friend-item-remarkname">{{ displayRemarkName }}</span>
+          <span v-if="friend.unreadCount" class="friend-item-unread">
+            {{ friend.unreadCount }}
+          </span>
+        </div>
+        <div class="friend-item-details">
+          <span class="friend-item-nickname" v-if="friend.nickname">
+            {{ friend.nickname }}
+          </span>
+          <span v-else-if="friend.lastSeen" class="friend-item-last-seen">
+            {{ friend.lastSeen }}
+          </span>
+          <span v-else class="friend-item-nickname">
+            {{ friend.displayName }}
+          </span>
+        </div>
       </div>
-      <div class="friend-item-details">
-        <span class="friend-item-nickname" v-if="friend.nickname">
-          {{ friend.nickname }}
-        </span>
-        <span v-else-if="friend.lastSeen" class="friend-item-last-seen">
-          {{ friend.lastSeen }}
-        </span>
-        <span v-else class="friend-item-nickname">
-          {{ friend.displayName }}
-        </span>
-      </div>
-    </div>
 
-    <!-- 操作按钮（悬停时显示） -->
-    <div class="friend-item-actions">
-      <button
-        class="friend-item-action-btn"
-        title="发送消息"
-        @click.stop="handleSendMessage"
-      >
-        &#128172;
-      </button>
-      <button
-        class="friend-item-action-btn more"
-        title="更多操作"
-        @click.stop="handleMoreActions"
-      >
-        &#8943;
-      </button>
+      <div class="friend-item-actions-wrapper">
+        <button
+          class="friend-item-action-btn"
+          type="button"
+          title="发送消息"
+          aria-label="发送消息"
+          @click.stop="handleSendMessage"
+        >
+          <MessageCircleMore :size="22" :stroke-width="2.2" />
+        </button>
+        <button
+          class="friend-item-action-btn more"
+          type="button"
+          title="更多操作"
+          aria-label="更多操作"
+          @click.stop="handleMoreActions"
+        >
+          <CircleEllipsis :size="22" :stroke-width="2.2" />
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
+
+/** 侧栏统一列表项水波纹颜色，见 sidebar-list-item.css / --sli-ripple-color。 */
+const rippleOpts = { color: "var(--sli-ripple-color)", duration: 520 };
+import { CircleEllipsis, MessageCircleMore } from "lucide-vue-next";
 import type { FriendListItem } from "@/types/dto/friend";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 

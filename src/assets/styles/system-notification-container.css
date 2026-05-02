@@ -158,10 +158,16 @@
   scrollbar-gutter: stable;
 }
 
-.sys-notif-scroll__inner {
+.sys-notif-container > .sys-notif-scroll__inner {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
   max-width: min(920px, 100%);
   margin: 0 auto;
-  width: 100%;
+  box-sizing: border-box;
 }
 
 .sys-notif-list {
@@ -170,7 +176,18 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: var(--sll-row-gap, 12px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 通知中心列表：每行在可用宽度内横向居中固定尺寸卡片 */
+.sys-notif-tab-panel .sys-notif-list-row {
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .sys-notif-list > li {
@@ -466,6 +483,7 @@
 }
 
 .sys-notif-pagination {
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   padding: 6px 0 12px;

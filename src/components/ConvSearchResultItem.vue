@@ -3,6 +3,7 @@
     type="button"
     class="conv-search-result-item"
     :class="{ selected }"
+    v-ripple="{ rippleOpts }"
     @click="emit('select', conversation)"
   >
     <div class="conv-search-result-main">
@@ -34,22 +35,17 @@ const displayName = computed(() => {
 const emit = defineEmits<{
   select: [conversation: ConversationSummaryDTO];
 }>();
+
+const rippleOpts = { color: "var(--sli-ripple-color)", duration: 520 };
 </script>
 
 <style scoped>
 .conv-search-result-item {
-  width: 100%;
   text-align: left;
-  border: 1px solid var(--cc-border);
-  border-radius: var(--cc-radius-sm);
-  background: var(--cc-surface);
-  padding: 10px 12px;
-  cursor: pointer;
-}
-
-.conv-search-result-item.selected {
-  border-color: var(--cc-accent);
-  background: var(--cc-accent-soft);
+  font: inherit;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
 }
 
 .conv-search-result-title {

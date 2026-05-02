@@ -8,6 +8,14 @@ import {
   loadConversationMembersNormalized,
 } from "@/normalize/conversation";
 import { normalizeConversationSummary } from "@/normalize/conversation/load/convLoadMapper";
+import { realtimeEventBus } from "@/realtime/websocket";
+import {
+  mapRealtimePayloadToLastMessageInfo,
+  mapDisplayMessageToLastMessageInfo,
+} from "@/normalize/message/realtime/messageRealtimeMapper";
+import type { DisplayMessage } from "@/entity/message";
+import { useUserStore } from "@/store/user/user";
+import { useFriendStore } from "@/store/friend/showFriend";
 
 export const useConvStore = defineStore("conv", {
   state: () => ({
@@ -76,6 +84,75 @@ export const useConvStore = defineStore("conv", {
 
     getConversationById(convId: number): ConversationSummaryDTO | undefined {
       return this.conversationMap.get(convId);
+    },
+
+    /**
+     * 本人发送且本地回显成功后，立即把该条写入会话摘要的 `lastMessage` 与 `updateTime`。
+     * 使用场景：`ChatContainer` 在 WS 文本/附件发送成功或秒传仅回显后，刷新侧栏 `ConversationItem` 预览与排序。
+     */
+    syncConversationLastMessageFromSentDisplay(convId: number, displayMessage: DisplayMessage) {
+      if (!Number.isFinite(convId) || convId <= 0) return;
+      if (!this.conversationMap.has(convId)) return;
+      const lastMessage = mapDisplayMessageToLastMessageInfo(displayMessage);
+      this.patchConversationLocal(convId, {
+        lastMessage,
+        updateTime: lastMessage.sendTime,
+      });
+    },
+
+    /**
+     * 根据 WebSocket `newMessage` 推送更新该会话在列表中的「最后一条」与 `updateTime`，触发侧栏排序与预览刷新。
+     * 使用场景：`realtimeEventBus` 收到 `newMessage` 且该 `convId` 已在本地会话列表中存在时（未在列表中的会话忽略）。
+     */
+    applyLastMessageFromRealtimePayload(payload: Record<string, unknown>) {
+      const action = String(payload.action || "");
+      if (action && action !== "newMessage") return;
+
+      const raw = payload as Record<string, any>;
+      const convId = Number(raw.convId);
+      if (!Number.isFinite(convId) || convId <= 0) return;
+      if (!this.conversationMap.has(convId)) return;
+
+      const authStore = useUserStore();
+      /** 当前登录用户 ID；用于解析「我」与本人头像，以及单聊好友名补全。 */
+      const currentUserId = authStore.user?.userId;
+      if (currentUserId == null) return;
+
+      const friendStore = useFriendStore();
+      /** 群成员缓存；单聊常为空，此时依赖好友列表补全发送者展示名。 */
+      const conversationMembers = this.compressedCMMap.get(convId) || [];
+
+      const mappedLast = mapRealtimePayloadToLastMessageInfo(raw, {
+        currentUserId,
+        currentUserAvatar: authStore.user?.userAvatar ?? null,
+        conversationMembers,
+      });
+      if (!mappedLast) return;
+
+      /** 经单聊好友名补全后的最后一条摘要；用于写入 patch，避免闭包内对可空变量的误判。 */
+      let lastMessageForPatch = mappedLast;
+
+      const conv = this.conversationMap.get(convId);
+      if (
+        conv &&
+        Number(conv.convType) === 1 &&
+        Number(lastMessageForPatch.senderId) !== Number(currentUserId)
+      ) {
+        const senderId = lastMessageForPatch.senderId;
+        const friend = friendStore.friends.find((f) => Number(f.friendId) === Number(senderId));
+        if (friend) {
+          const fromFriend =
+            (friend.displayName || "").trim() || (friend.nickname || "").trim();
+          if (fromFriend) {
+            lastMessageForPatch = { ...lastMessageForPatch, senderDisplayName: fromFriend };
+          }
+        }
+      }
+
+      this.patchConversationLocal(convId, {
+        lastMessage: lastMessageForPatch,
+        updateTime: lastMessageForPatch.sendTime,
+      });
     },
 
     /**
@@ -194,3 +271,18 @@ export const useConvStore = defineStore("conv", {
     },
   },
 });
+
+/** 防止 HMR 或重复初始化导致同一事件注册多次监听器。 */
+let conversationRealtimeLastMessageListenerBound = false;
+
+/**
+ * 订阅实时 `newMessage` 并同步更新会话列表中的最后一条消息摘要。
+ * 使用场景：应用入口在 `app.use(pinia)` 之后调用一次，使侧栏与 `ConversationItem` 预览随 WS 即时变化。
+ */
+export function bindConversationRealtimeLastMessageListener(): void {
+  if (conversationRealtimeLastMessageListenerBound) return;
+  conversationRealtimeLastMessageListenerBound = true;
+  realtimeEventBus.on("newMessage", (payload) => {
+    useConvStore().applyLastMessageFromRealtimePayload(payload);
+  });
+}

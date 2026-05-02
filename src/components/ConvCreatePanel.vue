@@ -27,7 +27,7 @@
       />
 
       <p class="conv-create-hint">
-        在左侧好友列表中勾选成员，然后在下方创建群聊（不含自己；你将自动入群）
+        在左侧好友列表中点击行以选中成员，然后在下方创建群聊（不含自己；你将自动入群）
       </p>
 
       <p class="conv-create-selected-count">

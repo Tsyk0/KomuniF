@@ -10,14 +10,27 @@ html.night-mode .friend-list-container {
 
 /* 搜索框样式已移除 */
 
-/* 好友列表内容区域 - 夜晚模式 */
+/* 好友列表内容区域 - 夜晚模式（与会话侧栏滚动结构一致） */
 html.night-mode .friend-list-container .friend-list-content {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: 0;
   position: relative;
 }
 
 html.night-mode .friend-list-container .friend-groups {
-  background-color: rgb(26,26,26);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: rgb(26, 26, 26);
+}
+
+html.night-mode .friend-list-container .friend-list-items {
+  flex: 1;
+  min-height: 0;
 }

@@ -156,6 +156,7 @@
           >
             <FriendList
               @friend-click="handleFriendClick"
+              @send-message="handleSendMessageToFriend"
               :search-query="searchKeyword"
             />
           </div>
@@ -592,6 +593,7 @@ const handleSendMessageToFriend = async (friend) => {
   if (!ok) return;
 
   currentListView.value = "chat";
+  // 切换到chat视图
   currentMainView.value = null;
   selectedFriend.value = null;
 };

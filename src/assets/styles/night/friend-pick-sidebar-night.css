@@ -5,28 +5,22 @@ html.night-mode .friend-pick-sidebar {
   --fp-muted: #94a3b8;
   --fp-text: #f1f5f9;
   --fp-sub: #64748b;
-  --fp-row-hover: rgba(96, 165, 250, 0.08);
-  --fp-row-selected: rgba(96, 165, 250, 0.16);
 }
 
-html.night-mode .friend-pick-avatar {
+html.night-mode .friend-pick-item-avatar-wrapper {
   background: linear-gradient(145deg, #3f3f46, #2f2f2f);
-  border-color: rgba(30, 41, 59, 0.9);
-  outline-color: #475569;
+  border: 2px solid rgba(30, 41, 59, 0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 html.night-mode .friend-pick-avatar-ph {
   color: #94a3b8;
 }
 
-html.night-mode .friend-pick-check {
-  accent-color: #60a5fa;
-}
-
-html.night-mode .friend-pick-scroll::-webkit-scrollbar-thumb {
+html.night-mode .friend-pick-list.sidebar-list-items::-webkit-scrollbar-thumb {
   background: rgba(100, 116, 139, 0.45);
 }
 
-html.night-mode .friend-pick-scroll {
+html.night-mode .friend-pick-list.sidebar-list-items {
   scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
 }

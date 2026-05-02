@@ -6,9 +6,14 @@
   flex-direction: row;
   align-items: stretch;
   gap: 0;
-  background: var(--sn-surface-elevated, #ffffff);
+  /* 通知中心条目：日间纯白底、固定 500×200，与夜间样式在 *-night 中区分 */
+  width: 500px;
+  max-width: 100%;
+  height: 200px;
+  box-sizing: border-box;
+  background: #ffffff;
   border: 1px solid var(--sn-border-strong, rgba(15, 23, 42, 0.12));
-  border-radius: 14px;
+  border-radius: 0;
   padding: 0;
   overflow: hidden;
   box-shadow:
@@ -16,8 +21,7 @@
     0 4px 16px rgba(15, 23, 42, 0.06);
   transition:
     border-color 0.2s,
-    box-shadow 0.2s,
-    transform 0.2s;
+    box-shadow 0.2s;
 }
 
 .sys-notif-item:hover {
@@ -25,14 +29,13 @@
   box-shadow:
     0 2px 4px rgba(15, 23, 42, 0.06),
     0 8px 24px rgba(15, 23, 42, 0.08);
-  transform: translateY(-1px);
 }
 
 .sys-notif-item__accent {
   width: 5px;
   flex-shrink: 0;
   background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
-  border-radius: 14px 0 0 14px;
+  border-radius: 0;
 }
 
 /* 已接受：绿色 */
@@ -56,10 +59,13 @@
 .sys-notif-item__inner {
   flex: 1;
   min-width: 0;
-  padding: 16px 18px 14px;
+  min-height: 0;
+  padding: 12px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sys-notif-item__meta {

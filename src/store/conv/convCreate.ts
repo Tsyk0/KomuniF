@@ -8,7 +8,7 @@ import { useConvStore } from "@/store/conv/conv";
 export type ConvCreatePanel = "group" | "add-friend" | "search-conv";
 
 /**
- * 新建群聊流程：侧栏勾选好友 + 主区域填群名并创建。
+ * 新建群聊流程：侧栏点选好友 + 主区域填群名并创建。
  * 退出后恢复进入前的列表视图（chat / friends）。
  */
 export const useConvCreateStore = defineStore("convCreate", {

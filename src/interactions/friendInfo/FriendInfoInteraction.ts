@@ -57,6 +57,70 @@ export function resolveFriendGenderText(gender: number | null | undefined): stri
   return "未知";
 }
 
+/**
+ * 将生日字符串（如 YYYY-MM-DD）格式化为「M月D日」中文展示；无法解析返回 null。
+ * 使用场景：好友资料卡紧凑信息行（生日 + 星座）。
+ */
+export function formatBirthdayMonthDayCn(
+  birthday: string | null | undefined
+): string | null {
+  if (!birthday || typeof birthday !== "string") return null;
+  const parts = birthday.trim().split(/[-/.]/);
+  if (parts.length < 3) return null;
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!Number.isFinite(month) || !Number.isFinite(day)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return `${month}月${day}日`;
+}
+
+/**
+ * 根据公历月日返回中文星座名。
+ * 使用场景：与 `formatBirthdayMonthDayCn` 组合展示「10月1日 天秤座」。
+ */
+export function getZodiacSignCn(month: number, day: number): string {
+  const md = month * 100 + day;
+  if (md >= 120 && md <= 218) return "水瓶座";
+  if (md >= 219 && md <= 320) return "双鱼座";
+  if (md >= 321 && md <= 419) return "白羊座";
+  if (md >= 420 && md <= 520) return "金牛座";
+  if (md >= 521 && md <= 621) return "双子座";
+  if (md >= 622 && md <= 722) return "巨蟹座";
+  if (md >= 723 && md <= 822) return "狮子座";
+  if (md >= 823 && md <= 922) return "处女座";
+  if (md >= 923 && md <= 1023) return "天秤座";
+  if (md >= 1024 && md <= 1121) return "天蝎座";
+  if (md >= 1122 && md <= 1221) return "射手座";
+  if (md >= 1222 || md <= 119) return "摩羯座";
+  return "摩羯座";
+}
+
+/**
+ * 从 YYYY-MM-DD 粗略计算周岁；无法解析或未来日期返回 null。
+ * 使用场景：资料卡「性别 | 年龄 | …」摘要行。
+ */
+export function computeAgeYearsFromBirthday(
+  birthday: string | null | undefined
+): number | null {
+  if (!birthday || typeof birthday !== "string") return null;
+  const parts = birthday.trim().split(/[-/.]/);
+  if (parts.length < 3) return null;
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+  const birth = new Date(y, m - 1, d);
+  if (Number.isNaN(birth.getTime())) return null;
+  const today = new Date();
+  if (birth > today) return null;
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age -= 1;
+  }
+  return age >= 0 ? age : null;
+}
+
 /** 执行好友详情加载流程。 */
 export async function loadFriendInfoFlow(input: {
   friendId: number | null | undefined;
