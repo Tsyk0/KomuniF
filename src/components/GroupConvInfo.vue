@@ -162,15 +162,19 @@
                   memberDisplayInitial(m)
                 }}</span>
               </div>
-              <span class="group-member-row__name">{{ memberListLabel(m) }}</span>
+              <span class="group-member-row__name">{{
+                memberListLabel(m)
+              }}</span>
               <span
                 v-if="isGroupOwnerMember(m)"
                 class="group-member-row__badge is-owner"
-              >群主</span>
+                >群主</span
+              >
               <span
                 v-else-if="isGroupAdminMember(m)"
                 class="group-member-row__badge is-admin"
-              >管理员</span>
+                >管理员</span
+              >
             </button>
             <p
               v-if="filteredMembersForList.length === 0"
@@ -207,6 +211,9 @@
         <div class="group-member-popover__name">
           {{ memberListLabel(popoverMember) }}
         </div>
+        <p v-if="isPopoverMemberSelf" class="group-member-popover__self-hint">
+          我自己
+        </p>
         <dl class="group-member-popover__dl">
           <div class="group-member-popover__row">
             <dt>用户昵称</dt>
@@ -225,6 +232,36 @@
             <dd>{{ memberRolePlainText(popoverMember) }}</dd>
           </div>
         </dl>
+        <div
+          v-if="
+            !isPopoverMemberSelf &&
+            (showPopoverSendMessageAction || showPopoverAddFriendAction)
+          "
+          class="group-member-popover__actions"
+        >
+          <button
+            v-if="showPopoverSendMessageAction"
+            type="button"
+            class="group-member-popover__icon-btn"
+            title="发送消息"
+            aria-label="发送消息"
+            :disabled="memberPopoverActionLoading"
+            @click.stop="handleMemberPopoverSendMessage"
+          >
+            <MessageCircleMore :size="22" :stroke-width="2.2" />
+          </button>
+          <button
+            v-if="showPopoverAddFriendAction"
+            type="button"
+            class="group-member-popover__icon-btn"
+            title="加为好友"
+            aria-label="加为好友"
+            :disabled="memberPopoverActionLoading"
+            @click.stop="handleMemberPopoverAddFriend"
+          >
+            <UserPlus :size="22" :stroke-width="2.2" />
+          </button>
+        </div>
       </div>
     </Teleport>
 
@@ -281,18 +318,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, watchEffect } from "vue";
+import { computed, nextTick, ref, watch, watchEffect } from "vue";
 import {
   ChevronDown,
   ChevronRight,
+  MessageCircleMore,
   Pencil,
   Search,
   Trash,
+  UserPlus,
   X,
 } from "lucide-vue-next";
 import toast from "@/commons/utils/toast";
+import {
+  executeFriendRequestFlow,
+  mapFriendRequestErrorMessage,
+} from "@/interactions/userSearch/UserSearchInteraction";
+import { useAppBootstrapStore } from "@/store/app/bootstrap";
 import { useConversationInfoStore } from "@/store/conversationInfo/conversationInfo";
+import { useConvCreateStore } from "@/store/conv/convCreate";
 import { useConvStore } from "@/store/conv/conv";
+import { useFriendStore } from "@/store/friend/showFriend";
+import { useShowMessageStore } from "@/store/message/showMessage";
 import { useUserStore } from "@/store/user/user";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import ConvProfileEdit from "./ConvProfileEdit.vue";
@@ -301,6 +348,7 @@ import type {
   ConversationMemberDTO,
 } from "@/types/dto/conversation-member";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
+import { FriendRelationStatus, type FriendListItem } from "@/types/dto/friend";
 
 const props = defineProps<{
   convId: number | null;
@@ -314,6 +362,10 @@ const emit = defineEmits<{
 const conversationInfoStore = useConversationInfoStore();
 const conversationStore = useConvStore();
 const userStore = useUserStore();
+const friendStore = useFriendStore();
+const convCreateStore = useConvCreateStore();
+const showMessageStore = useShowMessageStore();
+const appBootstrapStore = useAppBootstrapStore();
 
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -336,6 +388,8 @@ const memberPopoverPos = ref({ top: 0, left: 0 });
 /** 最近一次打开资料卡所点击的成员行 DOM；用于文档点击判断，避免点同一行误关。 */
 const memberPopoverAnchorRowRef = ref<HTMLElement | null>(null);
 const memberPopoverPanelRef = ref<HTMLElement | null>(null);
+/** 悬浮卡上「发消息 / 加好友」请求进行中；用于防止重复点击。 */
+const memberPopoverActionLoading = ref(false);
 
 const editableNotice = ref("");
 const editableMyNickname = ref("");
@@ -468,6 +522,133 @@ const memberPopoverStyle = computed(() => ({
 }));
 
 /**
+ * 当前登录用户 ID（数字）；无效时返回 0。
+ * 使用场景：成员悬浮卡发消息、加好友、判断是否本人。
+ */
+const getAuthUserId = (): number => {
+  const raw = userStore.user?.userId;
+  if (raw == null) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+/**
+ * 在好友全量缓存中按对方 userId 查找一行（匹配 friendId 或 userId）。
+ * 使用场景：群成员 popover 对照 `friendStore.friends` 判断是否为好友。
+ */
+const findFriendRowByPeerUserId = (
+  peerUserId: number
+): FriendListItem | undefined => {
+  const pid = Number(peerUserId);
+  if (!Number.isFinite(pid) || pid <= 0) return undefined;
+  return friendStore.friends.find(
+    (f) => Number(f.friendId) === pid || Number(f.userId) === pid
+  );
+};
+
+/**
+ * 悬浮卡选中的是否为当前登录用户；本人不展示发消息/加好友。
+ * 使用场景：模板 v-if 与操作按钮显隐。
+ */
+const isPopoverMemberSelf = computed(() => {
+  const me = getAuthUserId();
+  if (me <= 0 || !popoverMember.value) return false;
+  return Number(popoverMember.value.userId) === me;
+});
+
+/**
+ * 在 friends 中命中该成员的一行（任意 relationStatus，含拉黑/非好友等）。
+ * 使用场景：与「仅 0/1 算可聊天好友」区分，避免把有脏行当作可发消息。
+ */
+const popoverPeerRelationRow = computed((): FriendListItem | null => {
+  const m = popoverMember.value;
+  if (!m) return null;
+  return findFriendRowByPeerUserId(Number(m.userId)) ?? null;
+});
+
+/**
+ * 是否属于可发单聊的「正常好友」：仅当 pinia 中存在该用户且 relationStatus 为 0 或 1。
+ * 若仅有关系行但为 2/3（拉黑、非好友等），视为非好友，只应出现「加为好友」。
+ */
+const isPopoverPeerActiveFriend = computed((): boolean => {
+  const row = popoverPeerRelationRow.value;
+  if (!row) return false;
+  const r = Number(row.relationStatus);
+  return (
+    r === FriendRelationStatus.FRIEND_PINNED ||
+    r === FriendRelationStatus.NORMAL
+  );
+});
+
+const showPopoverSendMessageAction = computed(
+  () => isPopoverPeerActiveFriend.value
+);
+
+const showPopoverAddFriendAction = computed(
+  () => !isPopoverPeerActiveFriend.value
+);
+
+/**
+ * 从群成员悬浮卡打开与该用户的单聊（创建或复用会话）。
+ * 使用场景：已是好友时点击「发送消息」图标；复用 convCreateStore 与首页一致。
+ */
+const handleMemberPopoverSendMessage = async () => {
+  const m = popoverMember.value;
+  if (!m || memberPopoverActionLoading.value) return;
+  if (!isPopoverPeerActiveFriend.value) return;
+  const peerId = Number(m.userId);
+  const me = getAuthUserId();
+  if (me <= 0 || peerId === me) return;
+  memberPopoverActionLoading.value = true;
+  try {
+    const result = await convCreateStore.openOrCreateSingleConversation({
+      peerUserId: peerId,
+      currentUserId: me,
+      loadMessages: (cid) => showMessageStore.loadMessages(cid),
+      loadConversationsBootstrap: (userId) =>
+        appBootstrapStore.loadOne("conversations", userId),
+    });
+    if (!result.ok) {
+      if (result.message) toast.error(result.message);
+      return;
+    }
+    closeMemberPopover();
+    emit("close");
+  } catch (e) {
+    console.error("打开单聊失败:", e);
+    toast.error("打开会话失败，请稍后重试");
+  } finally {
+    memberPopoverActionLoading.value = false;
+  }
+};
+
+/**
+ * 向悬浮卡成员发送好友申请。
+ * 使用场景：非好友（含无记录或 relationStatus 非 0/1）时点击「加为好友」。
+ */
+const handleMemberPopoverAddFriend = async () => {
+  const m = popoverMember.value;
+  if (!m || memberPopoverActionLoading.value) return;
+  const targetId = Number(m.userId);
+  const me = getAuthUserId();
+  if (me <= 0 || targetId === me) return;
+  memberPopoverActionLoading.value = true;
+  try {
+    const result = await executeFriendRequestFlow({
+      targetUserId: targetId,
+      isSelfTarget: false,
+      sendFriendRequest: (id) => friendStore.sendFriendRequest(id),
+    });
+    if (result.ok) toast.success(result.message);
+    else toast.error(result.message);
+  } catch (e: unknown) {
+    toast.error(mapFriendRequestErrorMessage(e));
+  } finally {
+    memberPopoverActionLoading.value = false;
+  }
+};
+
+/**
  * 关闭成员悬浮资料卡并清理锚点引用。
  * 使用场景：切换会话、收起成员区、点击文档空白处或再次点击当前行。
  */
@@ -499,10 +680,27 @@ const toggleMemberSearch = () => {
 };
 
 /**
+ * 按弹层真实高度上推 top，使底边不超过视口底（留 margin）。
+ * 使用场景：`onMemberRowClick` 在 nextTick / rAF 后校正，避免按钮被裁切。
+ */
+const clampMemberPopoverWithinViewportBottom = () => {
+  const el = memberPopoverPanelRef.value;
+  if (!el) return;
+  const margin = 8;
+  const h = el.getBoundingClientRect().height;
+  const maxTop = window.innerHeight - margin - h;
+  const cur = memberPopoverPos.value.top;
+  const nextTop = Math.max(margin, Math.min(cur, maxTop));
+  if (nextTop !== cur) {
+    memberPopoverPos.value = { ...memberPopoverPos.value, top: nextTop };
+  }
+};
+
+/**
  * 点击成员行：在行旁打开/切换资料卡，再次点击同一行则关闭。
  * 使用场景：群成员列表交互；坐标由 currentTarget.getBoundingClientRect 计算。
  */
-const onMemberRowClick = (
+const onMemberRowClick = async (
   member: ConversationMemberDTO,
   event: MouseEvent
 ) => {
@@ -516,7 +714,8 @@ const onMemberRowClick = (
   popoverMember.value = member;
   const rect = row.getBoundingClientRect();
   const panelW = 256;
-  const panelH = 220;
+  /** 粗估高度仅用于首帧纵向对齐；真实高度在 clamp 里测量。 */
+  const panelHEstimate = 360;
   const gap = 8;
   let left = rect.right + gap;
   if (left + panelW > window.innerWidth - gap) {
@@ -526,13 +725,19 @@ const onMemberRowClick = (
     left = gap;
   }
   let top = rect.top;
-  if (top + panelH > window.innerHeight - gap) {
-    top = Math.max(gap, window.innerHeight - panelH - gap);
+  if (top + panelHEstimate > window.innerHeight - gap) {
+    top = Math.max(gap, window.innerHeight - panelHEstimate - gap);
   }
   if (top < gap) {
     top = gap;
   }
   memberPopoverPos.value = { top, left };
+
+  await nextTick();
+  clampMemberPopoverWithinViewportBottom();
+  requestAnimationFrame(() => {
+    clampMemberPopoverWithinViewportBottom();
+  });
 };
 
 watchEffect((onCleanup) => {

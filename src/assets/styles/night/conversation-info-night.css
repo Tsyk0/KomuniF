@@ -96,7 +96,12 @@ html.night-mode .avatar-large-default {
   width: 52px;
   height: 52px;
   border-radius: 999px;
-  background: radial-gradient(circle at 30% 0, #60a5fa, #3b82f6 45%, #1d4ed8 100%);
+  background: radial-gradient(
+    circle at 30% 0,
+    var(--theme-primary-faint),
+    var(--theme-primary-strong) 45%,
+    var(--theme-primary-stronger) 100%
+  );
   color: #e5e7eb;
   display: flex;
   align-items: center;
@@ -237,7 +242,12 @@ html.night-mode .member-avatar-default {
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: radial-gradient(circle at 30% 0, #a855f7, #6366f1 50%, #0ea5e9 100%);
+  background: radial-gradient(
+    circle at 30% 0,
+    var(--theme-primary-faint),
+    var(--theme-primary-strong) 50%,
+    var(--theme-primary-stronger) 100%
+  );
   color: #f9fafb;
   display: flex;
   align-items: center;
@@ -259,7 +269,7 @@ html.night-mode .member-tag {
 }
 
 html.night-mode .me-tag {
-  background: #3b82f6;
+  background: var(--theme-primary-strong);
 }
 
 html.night-mode .role-tag {
@@ -348,7 +358,7 @@ html.night-mode .disabled-badge {
 /* 可编辑 / 只读字段的指示 */
 html.night-mode .conversation-field-editable {
   cursor: pointer;
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.38);
 }
 
 html.night-mode .conversation-field-readonly {
@@ -388,12 +398,12 @@ html.night-mode .info-action-btn {
 }
 
 html.night-mode .info-action-btn.apply {
-  background: #2563eb;
+  background: var(--theme-primary-mid);
   color: #e5e7eb;
 }
 
 html.night-mode .info-action-btn.apply:hover {
-  background: #1d4ed8;
+  background: var(--theme-primary-stronger);
   transform: translateY(-1px);
   box-shadow: 0 3px 10px rgba(37, 99, 235, 0.7);
 }

@@ -1,5 +1,26 @@
 /* src/assets/styles/base.css */
 
+/**
+ * 日间主题交互色（蓝）：悬停 / 激活 / 点击 / 主按钮与链接强调。
+ * 夜间在 base-night.css 的 html.night-mode 中覆盖为紫系同名变量。
+ */
+:root {
+  --theme-primary-soft: #38bdf8;
+  --theme-primary: #0ea5e9;
+  --theme-primary-mid: #2563eb;
+  --theme-primary-strong: #0284c7;
+  --theme-primary-stronger: #0369a1;
+  --theme-primary-deep-end: #0c4a6e;
+  --theme-primary-faint: #7dd3fc;
+  --theme-primary-on-dark: #e0f2fe;
+  --theme-list-active-bg: #bae6fd;
+  --theme-list-active-border: rgba(14, 165, 233, 0.45);
+  --theme-ripple: rgba(2, 132, 199, 0.42);
+  --theme-focus-ring: rgba(14, 165, 233, 0.45);
+  --theme-focus-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22);
+  --theme-shadow-primary-soft: 0 4px 14px rgba(14, 165, 233, 0.28);
+}
+
 /* ========== 1. 基础重置与全局样式 ========== */
 /* 移除全局滚动条 */
 * {

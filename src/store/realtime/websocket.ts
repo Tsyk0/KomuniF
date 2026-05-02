@@ -46,11 +46,7 @@ export const useWebSocketStore = defineStore("websocket", () => {
     isConnected.value = false;
   };
 
-  /** 发送文本消息（直接走动作处理层）。 */
-  const sendTextMessage = (convId: number, messageContent: string, replyToMessageId?: number) =>
-    handler.actionHandler.sendTextMessage(convId, messageContent, replyToMessageId);
-
-  /** 按 messageType 分发发送逻辑。 */
+  /** 按 messageType 分发发送逻辑（含 text / image / file / video）。 */
   const sendMessageByType = (request: SendMessageRequest) =>
     handler.actionHandler.sendMessageByType(request);
 
@@ -79,7 +75,6 @@ export const useWebSocketStore = defineStore("websocket", () => {
     connect,
     connectAndSubscribeAll,
     disconnect,
-    sendTextMessage,
     sendMessageByType,
     sendSubscribe,
     sendReadReceipt,

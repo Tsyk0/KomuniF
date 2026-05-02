@@ -17,7 +17,10 @@
         <div v-else class="friend-item-avatar-default">
           {{ displayRemarkName.charAt(0) }}
         </div>
-        <span class="friend-item-online-dot" :class="friend.onlineStatus"></span>
+        <span
+          class="friend-item-online-dot"
+          :class="friend.onlineStatus"
+        ></span>
       </div>
 
       <div class="friend-item-info-wrapper">

@@ -31,27 +31,53 @@
 
     <div class="sys-notif-scroll__inner">
       <div class="sys-notif-pagination">
-        <button
-          type="button"
-          class="sys-notif-load-more"
-          :class="{ active: activeTab === 'system' }"
-          @click="activeTab = 'system'"
-        >
-          系统通知
-        </button>
-        <button
-          type="button"
-          class="sys-notif-load-more"
-          :class="{ active: activeTab === 'request' }"
-          @click="activeTab = 'request'"
-        >
-          待处理请求<span v-if="requestItems.length > 0"
-            >（{{ requestItems.length }}）</span
-          >
-        </button>
+        <div class="sys-notif-segment" role="tablist" aria-label="通知分类">
+          <div class="sys-notif-segment__track">
+            <div
+              class="sys-notif-segment__thumb"
+              :class="{
+                'sys-notif-segment__thumb--request': activeTab === 'request',
+              }"
+              aria-hidden="true"
+            />
+            <button
+              type="button"
+              role="tab"
+              class="sys-notif-segment__tab"
+              :class="{ active: activeTab === 'system' }"
+              :aria-selected="activeTab === 'system'"
+              id="sys-notif-tab-system"
+              aria-controls="sys-notif-tab-panel"
+              @click="activeTab = 'system'"
+            >
+              系统通知
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="sys-notif-segment__tab"
+              :class="{ active: activeTab === 'request' }"
+              :aria-selected="activeTab === 'request'"
+              id="sys-notif-tab-request"
+              aria-controls="sys-notif-tab-panel"
+              @click="activeTab = 'request'"
+            >
+              待处理请求<span v-if="requestItems.length > 0"
+                >（{{ requestItems.length }}）</span
+              >
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div class="sidebar-list-items sys-notif-tab-panel">
+      <div
+        id="sys-notif-tab-panel"
+        class="sidebar-list-items sys-notif-tab-panel"
+        role="tabpanel"
+        :aria-labelledby="
+          activeTab === 'system' ? 'sys-notif-tab-system' : 'sys-notif-tab-request'
+        "
+      >
         <ul v-if="activeTab === 'system'" class="sys-notif-list">
           <li
             v-for="item in systemItems"

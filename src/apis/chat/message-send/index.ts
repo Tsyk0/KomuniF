@@ -3,10 +3,7 @@ import service from '../../service';
 import type { BaseResponse } from '@/types/dto/base';
 import type { SendMessageRequest, SendMessageResponseData } from '@/types/dto/message';
 
-/**
- * 发送消息 - 主接口
- * 对应后端接口：POST /message/sendMessage
- */
+/** 发送消息：POST /conversations/:convId/messages（body 为除 convId 外的字段）。 */
 export function sendMessageApi(
     data: SendMessageRequest
 ): Promise<BaseResponse<SendMessageResponseData>> {

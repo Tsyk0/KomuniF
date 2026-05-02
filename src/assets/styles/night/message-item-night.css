@@ -107,8 +107,8 @@ html.night-mode .message-item .avatar-placeholder:hover::after {
 
 /* 自己发送的头像颜色 */
 html.night-mode .message-sent .avatar-placeholder {
-  background: linear-gradient(135deg, #0078d7 0%, #005a9e 100%);
-  box-shadow: 0 4px 12px rgba(0, 120, 215, 0.4);
+  background: linear-gradient(135deg, var(--theme-primary-strong) 0%, var(--theme-primary-stronger) 100%);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
 }
 
 /* 显示名称 */
@@ -152,7 +152,6 @@ html.night-mode .message-bubble::before {
 /* 接收方气泡：宽度自适应，不超过70% */
 html.night-mode .received {
   background: linear-gradient(135deg, #2d2d2d 0%, #252525 100%);
-  border-top-left-radius: 4px;
   color: #e0e0e0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25),
               0 1px 3px rgba(0, 0, 0, 0.3) inset,
@@ -176,9 +175,60 @@ html.night-mode .message-video-thumb-wrap {
   max-width: 220px;
 }
 
+/**
+ * 文件消息卡片：夜间深灰底，与接收气泡 #2d2d2d 区分一层；发送气泡内用半透明压暗以压住蓝底。
+ */
 html.night-mode .file-message-card {
   width: 100%;
   max-width: 240px;
+  background: #34343a;
+  color: #e8e8ed;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+html.night-mode .file-message-card:hover {
+  background: #3d3d44;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html.night-mode .sent .file-message-card {
+  background: rgba(0, 0, 0, 0.28);
+  color: #f4f4f5;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+html.night-mode .sent .file-message-card:hover {
+  background: rgba(0, 0, 0, 0.36);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+html.night-mode .file-message-icon {
+  background: rgba(167, 139, 250, 0.22);
+  color: var(--theme-primary-faint);
+}
+
+html.night-mode .sent .file-message-icon {
+  background: rgba(255, 255, 255, 0.14);
+  color: #e0f2fe;
+}
+
+html.night-mode .file-message-name {
+  color: inherit;
+}
+
+html.night-mode .file-message-meta {
+  color: #a1a1aa;
+  opacity: 1;
+}
+
+html.night-mode .sent .file-message-meta {
+  color: rgba(255, 255, 255, 0.75);
 }
 
 html.night-mode .received:hover {
@@ -188,12 +238,22 @@ html.night-mode .received:hover {
   transform: translateY(-1px);
 }
 
+/**
+ * 与日间 message-item.css 一致：靠头像侧两角小圆、外侧两大圆，并压过 chat-container-night 单角声明。
+ */
+html.night-mode .message-item .message-bubble.received {
+  border-radius: 4px 18px 18px 4px;
+}
+
+html.night-mode .message-item .message-bubble.sent {
+  border-radius: 18px 4px 4px 18px;
+}
+
 /* 发送方气泡：始终顶贴右侧，宽度自适应 */
 html.night-mode .sent {
-  background: linear-gradient(135deg, #0078d7 0%, #005a9e 100%);
+  background: linear-gradient(135deg, var(--theme-primary-strong) 0%, var(--theme-primary-stronger) 100%);
   color: white;
-  border-top-right-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 120, 215, 0.4),
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.42),
               0 1px 3px rgba(0, 0, 0, 0.3) inset,
               -1px 1px 0 rgba(255, 255, 255, 0.1) inset;
   margin-left: auto; /* 关键：确保气泡在容器内右对齐 */
@@ -201,7 +261,7 @@ html.night-mode .sent {
 }
 
 html.night-mode .sent:hover {
-  box-shadow: 0 4px 16px rgba(0, 120, 215, 0.5),
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.5),
               0 1px 3px rgba(0, 0, 0, 0.3) inset,
               -1px 1px 0 rgba(255, 255, 255, 0.1) inset;
   transform: translateY(-1px);

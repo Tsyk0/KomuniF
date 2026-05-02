@@ -25,7 +25,7 @@ html.night-mode .friend-item-avatar-default {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--theme-primary-strong) 0%, var(--theme-primary-stronger) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -203,8 +203,8 @@ html.night-mode .friend-item-action-btn {
 }
 
 html.night-mode .friend-item-action-btn:hover {
-  background: rgba(96, 165, 250, 0.1);
-  color: #60a5fa;
+  background: rgba(167, 139, 250, 0.1);
+  color: var(--theme-primary-soft);
 }
 
 html.night-mode .friend-item-action-btn.more:hover {

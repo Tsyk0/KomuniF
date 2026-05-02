@@ -29,7 +29,8 @@ html.night-mode .friend-detail-header .back-button:active {
 }
 
 html.night-mode .friend-detail-header .friend-detail-title {
-  color: #f4f4f5;
+  /* 与 UserProfileEdit .edit-header h2 夜间一致 */
+  color: #ffffff;
 }
 
 html.night-mode .friend-detail-body {

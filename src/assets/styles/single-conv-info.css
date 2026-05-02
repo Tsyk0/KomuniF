@@ -228,3 +228,28 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.single-add-friend-btn {
+  width: 100%;
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.single-add-friend-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.single-add-friend-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

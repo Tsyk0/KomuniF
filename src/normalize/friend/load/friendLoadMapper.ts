@@ -28,6 +28,7 @@ export function mapFriendSummaryToListItem(item: FriendSummaryDTO): FriendListIt
     id: Number(item.friendId),
     userId: Number(item.userId),
     friendId: Number(item.friendId),
+    relationStatus: Number(item.relationStatus),
     displayName: remarkName || nickname || `用户${item.friendId}`,
     nickname: nickname || `用户${item.friendId}`,
     remarkName: remarkName || null,

@@ -64,6 +64,7 @@ import type {
 } from "@/types/dto/conversation";
 import { useUserStore } from "@/store/user/user";
 import { useFriendStore } from "@/store/friend/showFriend";
+import { useConvStore } from "@/store/conv/conv";
 
 interface Props {
   conversation: ConversationSummaryDTO;
@@ -73,6 +74,7 @@ interface Props {
 const props = defineProps<Props>();
 const authStore = useUserStore();
 const friendStore = useFriendStore();
+const convStore = useConvStore();
 
 const displayName = computed(() => {
   return getConversationDisplayName(props.conversation);
@@ -155,7 +157,11 @@ const lastMessageSender = computed(() => {
   return resolveLastMessageSenderLabel(
     lastMsg,
     friendStore.friends,
-    authStore.user?.userId
+    authStore.user?.userId,
+    {
+      convType: props.conversation.convType,
+      conversationMembers: convStore.compressedCMMap.get(props.conversation.convId),
+    }
   );
 });
 

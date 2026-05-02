@@ -55,3 +55,12 @@ html.night-mode .single-danger-btn {
   background: rgba(239, 68, 68, 0.2);
   color: #f87171;
 }
+
+html.night-mode .single-add-friend-btn {
+  background: #2563eb;
+  color: #f4f4f5;
+}
+
+html.night-mode .single-add-friend-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}

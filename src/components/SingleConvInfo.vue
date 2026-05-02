@@ -23,20 +23,24 @@
             <img
               v-if="friendAvatarUrl"
               :src="friendAvatarUrl"
-              alt="好友头像"
+              :alt="isPeerSidebarFriend ? '好友头像' : '对方头像'"
               class="single-avatar__img"
             />
             <span v-else>{{ displayName.charAt(0).toUpperCase() }}</span>
           </div>
           <div class="single-main-info">
             <div class="single-name">{{ displayName }}</div>
-            <div class="single-id">好友 ID：{{ friendInfo.friendId }}</div>
+            <div class="single-id">
+              {{ isPeerSidebarFriend ? "好友 ID" : "对方 ID" }}：{{ friendInfo.friendId }}
+            </div>
           </div>
         </div>
       </section>
 
       <section class="single-section">
-        <div class="single-item-title">好友信息</div>
+        <div class="single-item-title">
+          {{ isPeerSidebarFriend ? "好友信息" : "对方信息" }}
+        </div>
         <div class="single-readonly-row">
           <span class="single-readonly-label">昵称</span>
           <span class="single-readonly-value">{{ friendNicknameText }}</span>
@@ -96,8 +100,9 @@
       </button>
     </div>
 
-    <div class="single-danger-footer">
+    <div v-if="friendInfo && !loading" class="single-danger-footer">
       <button
+        v-if="isPeerSidebarFriend"
         class="single-danger-btn"
         type="button"
         :disabled="isDeletingFriend"
@@ -106,21 +111,47 @@
         <UserRoundX :size="22" :stroke-width="2.2" />
         <span>{{ isDeletingFriend ? "删除中..." : "删除好友" }}</span>
       </button>
+      <button
+        v-else
+        class="single-add-friend-btn"
+        type="button"
+        :disabled="isSendingFriendRequest || isSelfPeer"
+        @click="handleAddFriend"
+      >
+        <UserPlus :size="22" :stroke-width="2.2" />
+        <span>{{
+          isSendingFriendRequest
+            ? "发送中..."
+            : isSelfPeer
+              ? "无法添加自己"
+              : "添加好友"
+        }}</span>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { UserRoundX, X } from "lucide-vue-next";
+import { UserPlus, UserRoundX, X } from "lucide-vue-next";
 import toast from "@/commons/utils/toast";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import { useFriendStore } from "@/store/friend/showFriend";
+import { useUserStore } from "@/store/user/user";
 import { useConversationInfoStore } from "@/store/conversationInfo/conversationInfo";
 import { syncFriendRemarkToStores } from "@/interactions/friendRemark/syncFriendRemarkToStores";
+import { loadFriendInfoNormalized } from "@/normalize/friend";
+import type { FriendListItem, FriendProfileDTO } from "@/types/dto/friend";
+import { FriendRelationStatus } from "@/types/dto/friend";
+import {
+  executeFriendRequestFlow,
+  mapFriendRequestErrorMessage,
+} from "@/interactions/userSearch/UserSearchInteraction";
 
 type FriendInfoViewModel = {
   friendId: number;
+  /** 与 GET /friends 或资料接口一致，用于区分好友(0/1)与非好友等展示 */
+  relationStatus?: number | null;
   friendNickname?: string | null;
   displayName?: string | null;
   nickname?: string | null;
@@ -143,10 +174,12 @@ const emit = defineEmits<{
 }>();
 
 const friendStore = useFriendStore();
+const userStore = useUserStore();
 const conversationInfoStore = useConversationInfoStore();
 const loading = ref(false);
 const isApplying = ref(false);
 const isDeletingFriend = ref(false);
+const isSendingFriendRequest = ref(false);
 const friendInfo = ref<FriendInfoViewModel | null>(null);
 const editableRemark = ref("");
 const editableGroup = ref("");
@@ -183,6 +216,78 @@ const hasPendingChanges = computed(
     editableRemark.value !== initialRemark.value ||
     editableGroup.value !== initialGroup.value
 );
+
+/**
+ * 是否为「侧栏好友」关系（relationStatus 0/1）；用于单聊详情文案与删除/添加按钮。
+ * 使用场景：与非好友单聊时隐藏「删除好友」，改为「添加好友」。
+ */
+const isPeerSidebarFriend = computed(() => {
+  const r = friendInfo.value?.relationStatus;
+  if (r === undefined || r === null || Number.isNaN(Number(r))) return false;
+  const n = Number(r);
+  return (
+    n === FriendRelationStatus.FRIEND_PINNED || n === FriendRelationStatus.NORMAL
+  );
+});
+
+/** 对端是否为自己；用于禁用「添加好友」。 */
+const isSelfPeer = computed(() => {
+  const me = userStore.user?.userId != null ? Number(userStore.user.userId) : NaN;
+  const peer = Number(props.friendId || 0);
+  return Number.isFinite(me) && Number.isFinite(peer) && me === peer;
+});
+
+/**
+ * 将列表项上的在线枚举还原为资料接口同口径数字，便于复用现有在线文案逻辑。
+ * 使用场景：仅从 Pinia 列表命中、未走资料接口时。
+ */
+function onlineStatusEnumToNumber(status: FriendListItem["onlineStatus"]): number {
+  if (status === "online") return 1;
+  if (status === "away") return 2;
+  return 0;
+}
+
+/**
+ * 从好友摘要行构建单聊侧栏展示模型。
+ * 使用场景：`setCurrentFriendById` 命中全量 `/friends` 缓存时。
+ */
+function mapListItemToSingleConvViewModel(hit: FriendListItem): FriendInfoViewModel {
+  return {
+    friendId: Number(hit.friendId),
+    relationStatus: Number(hit.relationStatus),
+    friendNickname: hit.nickname,
+    displayName: hit.displayName,
+    nickname: hit.nickname,
+    remarkName: hit.remarkName ?? null,
+    avatar: hit.avatar,
+    friendAvatar: hit.avatar,
+    friendGroup: hit.group,
+    group: hit.group,
+    friendSignature: hit.signature,
+    friendOnlineStatus: onlineStatusEnumToNumber(hit.onlineStatus),
+  };
+}
+
+/**
+ * 从好友资料 DTO 构建单聊侧栏展示模型。
+ * 使用场景：全量缓存无行时回退 GET `/friends/{id}/profile`。
+ */
+function mapProfileToSingleConvViewModel(profile: FriendProfileDTO): FriendInfoViewModel {
+  return {
+    friendId: Number(profile.friendId),
+    relationStatus: Number(profile.relationStatus),
+    friendNickname: profile.friendNickname,
+    displayName: profile.remarkName || profile.friendNickname,
+    nickname: profile.friendNickname,
+    remarkName: profile.remarkName ?? null,
+    avatar: profile.friendAvatar,
+    friendAvatar: profile.friendAvatar,
+    friendGroup: profile.friendGroup,
+    group: profile.friendGroup,
+    friendSignature: profile.friendSignature,
+    friendOnlineStatus: profile.friendOnlineStatus ?? null,
+  };
+}
 
 /**
  * 取消编辑并回退到初始值。
@@ -231,6 +336,42 @@ const handleApply = async () => {
 };
 
 /**
+ * 发送好友申请（非好友单聊侧栏入口）。
+ * 使用场景：relationStatus 非 0/1 时底部「添加好友」；与 UserSearch 共用 normalize 申请链路。
+ */
+const handleAddFriend = async () => {
+  const targetFriendId = Number(props.friendId || 0);
+  if (
+    !Number.isFinite(targetFriendId) ||
+    targetFriendId <= 0 ||
+    isSendingFriendRequest.value ||
+    isSelfPeer.value
+  ) {
+    return;
+  }
+  isSendingFriendRequest.value = true;
+  try {
+    const result = await executeFriendRequestFlow({
+      targetUserId: targetFriendId,
+      isSelfTarget: isSelfPeer.value,
+      sendFriendRequest: (id) => friendStore.sendFriendRequest(id),
+    });
+    if (result.ok) {
+      toast.success(result.message);
+      await friendStore.loadFriends();
+      await loadSingleConversationInfo();
+    } else {
+      toast.error(result.message);
+    }
+  } catch (addError) {
+    console.error("发送好友申请失败:", addError);
+    toast.error(mapFriendRequestErrorMessage(addError));
+  } finally {
+    isSendingFriendRequest.value = false;
+  }
+};
+
+/**
  * 删除当前好友关系。
  * 使用场景：用户点击底部“删除好友”按钮后，调用 store action 走 API->normalize->store 链路并清理本地好友/单聊状态。
  */
@@ -255,8 +396,8 @@ const handleDeleteFriend = async () => {
 };
 
 /**
- * 加载单聊好友信息并初始化可编辑字段。
- * 使用场景：单聊信息面板打开或 friendId 变化时更新右侧信息栏。
+ * 加载单聊对端信息并初始化可编辑字段。
+ * 使用场景：侧栏打开或 friendId 变化；优先 Pinia 全量 `/friends`，无行时再拉资料接口以拿到 relationStatus 与昵称等。
  */
 const loadSingleConversationInfo = async () => {
   if (!props.friendId || props.friendId <= 0) {
@@ -266,7 +407,17 @@ const loadSingleConversationInfo = async () => {
   loading.value = true;
   try {
     friendStore.setCurrentFriendById(props.friendId);
-    friendInfo.value = (friendStore.currentFriend as FriendInfoViewModel | null) || null;
+    const hit = friendStore.currentFriend;
+    if (hit) {
+      friendInfo.value = mapListItemToSingleConvViewModel(hit as FriendListItem);
+    } else {
+      try {
+        const profile = await loadFriendInfoNormalized(props.friendId);
+        friendInfo.value = mapProfileToSingleConvViewModel(profile);
+      } catch {
+        friendInfo.value = null;
+      }
+    }
     initialRemark.value = friendInfo.value?.remarkName || "";
     initialGroup.value = friendInfo.value?.friendGroup || friendInfo.value?.group || "";
     editableRemark.value = initialRemark.value;

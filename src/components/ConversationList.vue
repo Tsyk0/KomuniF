@@ -100,11 +100,10 @@ const filteredConversations = computed(() => {
 
     // match by sender display name（与 ConversationItem 一致：好友优先备注，否则群昵称等）
     const senderName = lastMsg
-      ? resolveLastMessageSenderLabel(
-          lastMsg,
-          friendStore.friends,
-          userStore.user?.userId
-        )
+      ? resolveLastMessageSenderLabel(lastMsg, friendStore.friends, userStore.user?.userId, {
+          convType: conversation.convType,
+          conversationMembers: convStore.compressedCMMap.get(conversation.convId),
+        })
       : "";
     if (senderName.toLowerCase().includes(keyword)) {
       return true;

@@ -620,7 +620,11 @@ const sendMessage = async () => {
     if (!websocketStore.isConnected) {
       throw new Error("WebSocket unavailable");
     }
-    const success = websocketStore.sendTextMessage(props.convId, content);
+    const success = websocketStore.sendMessageByType({
+      convId: props.convId,
+      messageType: "text",
+      messageContent: content,
+    });
     if (!success) {
       throw new Error("WebSocket send failed");
     }

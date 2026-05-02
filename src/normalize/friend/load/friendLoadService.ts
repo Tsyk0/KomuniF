@@ -1,38 +1,17 @@
 // src/normalize/friend/load/friendLoadService.ts
 import { friendApi } from "@/apis/friend";
-import type { FriendListItem, FriendProfileDTO, FriendSummaryDTO } from "@/types/dto/friend";
-import { FriendRelationStatus } from "@/types/dto/friend";
+import type { FriendListItem, FriendProfileDTO } from "@/types/dto/friend";
 import { mapFriendSummaryList, normalizeFriendProfile } from "./friendLoadMapper";
 
 /**
- * 开发态断言：GET /friends 仅应返回 relationStatus 为好友态（0/1）的行。
- * 使用场景：接口若误返拉黑/非好友时便于联调发现，生产环境不输出日志。
- */
-function assertFriendListRelationStatusFromFriendsApi(rows: FriendSummaryDTO[]) {
-  if (!import.meta.env.DEV) return;
-  for (const row of rows) {
-    const r = Number(row.relationStatus);
-    if (r === FriendRelationStatus.BLOCKED || r === FriendRelationStatus.NOT_FRIEND) {
-      console.warn(
-        "[GET /friends] relationStatus 预期仅为好友态(0/1)，收到异常值:",
-        r,
-        "friendId=",
-        row.friendId
-      );
-    }
-  }
-}
-
-/**
- * 加载并标准化好友列表。
- * 返回值可直接进入 showFriend store。
+ * 加载并标准化好友列表（含全部 relationStatus，供 Pinia 全量缓存）。
+ * 返回值可直接进入 showFriend store；侧栏可见项由 store 的 `filteredFriends` 再筛 0/1 并排序。
  */
 export async function loadFriendsNormalized(): Promise<FriendListItem[]> {
   const response = await friendApi.getFriendListByUserId();
   if (response.code !== 200 || !Array.isArray(response.data)) {
     throw new Error(response.message || "加载好友列表失败");
   }
-  assertFriendListRelationStatusFromFriendsApi(response.data);
   return mapFriendSummaryList(response.data);
 }
 

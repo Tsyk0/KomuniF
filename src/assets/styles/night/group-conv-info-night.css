@@ -73,7 +73,7 @@ html.night-mode .group-members-trigger__label {
 }
 
 html.night-mode .group-members-trigger:hover .group-members-trigger__label {
-  color: #93c5fd;
+  color: var(--theme-primary-faint);
 }
 
 html.night-mode .group-members-trigger__chevron {
@@ -94,8 +94,8 @@ html.night-mode .group-members-panel__search-btn {
 
 html.night-mode .group-members-panel__search-btn:hover,
 html.night-mode .group-members-panel__search-btn.is-active {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+  background: rgba(139, 92, 246, 0.22);
+  color: var(--theme-primary-faint);
 }
 
 html.night-mode .group-members-panel__filter-input {
@@ -109,7 +109,7 @@ html.night-mode .group-members-panel__empty {
 }
 
 html.night-mode .group-member-row:hover {
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(139, 92, 246, 0.14);
 }
 
 html.night-mode .group-member-row__name {
@@ -122,6 +122,6 @@ html.night-mode .group-member-row__badge.is-owner {
 }
 
 html.night-mode .group-member-row__badge.is-admin {
-  background: rgba(59, 130, 246, 0.22);
-  color: #93c5fd;
+  background: rgba(139, 92, 246, 0.24);
+  color: var(--theme-primary-faint);
 }

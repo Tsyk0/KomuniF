@@ -58,8 +58,8 @@ html.night-mode .toast-message.toast-warning {
 }
 
 html.night-mode .toast-message.toast-info {
-  border-left: 4px solid #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
+  border-left: 4px solid var(--theme-primary-strong);
+  background: rgba(139, 92, 246, 0.14);
 }
 
 /* 图标 */
@@ -82,7 +82,7 @@ html.night-mode .toast-message.toast-warning .toast-icon {
 }
 
 html.night-mode .toast-message.toast-info .toast-icon {
-  color: #3b82f6;
+  color: var(--theme-primary-strong);
 }
 
 /* 文字 */

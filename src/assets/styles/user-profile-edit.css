@@ -421,7 +421,7 @@ html.night-mode .user-profile-edit .profile-back-btn:active {
 }
 
 .user-profile-edit .gender-radio-group .el-radio-button.is-active .el-radio-button__inner {
-  background: #a855f7 !important;
+  background: var(--theme-primary-strong) !important;
   color: #ffffff !important;
   border: none !important;
   box-shadow: none !important;

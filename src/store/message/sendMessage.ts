@@ -57,19 +57,6 @@ export const useSendMessageStore = defineStore("sendMessage", () => {
     }
   };
 
-  /** 文本消息便捷方法，兼容现有调用签名。 */
-  const sendTextMessage = async (
-    convId: number,
-    _senderId: number,
-    content: string
-  ): Promise<SendMessageResponseData> => {
-    return sendMessage({
-      convId,
-      messageType: "text",
-      messageContent: content,
-    });
-  };
-
   /**
    * 统一本地回显（文本 + 附件），用于“自己发送时先显示一条发送中消息”。
    * 场景：组件只负责交互，回显构建和入列逻辑统一放在 store 复用。
@@ -112,7 +99,6 @@ export const useSendMessageStore = defineStore("sendMessage", () => {
   return {
     isSending,
     sendMessage,
-    sendTextMessage,
     appendLocalMessageEcho,
   };
 });

@@ -3,6 +3,7 @@ import { acceptHMRUpdate, defineStore } from "pinia";
 import { loadFriendsNormalized, searchUsersNormalized } from "@/normalize/friend";
 import { sendFriendRequestNormalized } from "@/normalize/notification";
 import type { FriendListItem } from "@/types/dto/friend";
+import { FriendRelationStatus } from "@/types/dto/friend";
 
 type FriendCurrentItem = FriendListItem & {
   friendBirthday?: string | null;
@@ -13,9 +14,41 @@ type FriendCurrentItem = FriendListItem & {
   friendOnlineStatus?: number | null;
 };
 
+/**
+ * 是否应在侧栏「好友列表 / 发起会话选人」中展示（仅关系态 0、1）。
+ * 使用场景：`filteredFriends` 从全量 `friends` 中筛出可见行。
+ */
+function isFriendVisibleInSidebarList(friend: FriendListItem): boolean {
+  const r = Number(friend.relationStatus);
+  return r === FriendRelationStatus.FRIEND_PINNED || r === FriendRelationStatus.NORMAL;
+}
+
+/**
+ * 侧栏好友顺序：relationStatus===0 置顶；同档内按 updateTime 新在前。
+ * 使用场景：`filteredFriends` 无搜索关键词时的基准顺序。
+ */
+function sortFriendsForSidebarVisible(items: FriendListItem[]): FriendListItem[] {
+  return [...items].sort((a, b) => {
+    const aPinned = Number(a.relationStatus) === FriendRelationStatus.FRIEND_PINNED;
+    const bPinned = Number(b.relationStatus) === FriendRelationStatus.FRIEND_PINNED;
+    if (aPinned !== bPinned) {
+      return aPinned ? -1 : 1;
+    }
+    const ta = new Date(a.updateTime || 0).getTime();
+    const tb = new Date(b.updateTime || 0).getTime();
+    if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) {
+      return tb - ta;
+    }
+    return Number(b.friendId) - Number(a.friendId);
+  });
+}
+
 export const useFriendStore = defineStore("friend", {
   state: () => ({
-    /** 好友列表（已标准化为可展示项）。 */
+    /**
+     * GET /friends 全量缓存（各 relationStatus 均可能存在）。
+     * 使用场景：会话发送者显示名映射、非好友备注等；侧栏列表勿直接用本字段应用 v-for。
+     */
     friends: [] as FriendListItem[],
     /** 当前打开详情的好友对象（来源于好友列表）。 */
     currentFriend: null as FriendCurrentItem | null,
@@ -119,13 +152,16 @@ export const useFriendStore = defineStore("friend", {
 
   getters: {
     /**
-     * 列表过滤：
-     * 仅负责前端交互态（搜索词）过滤，不做后端字段映射。
+     * 侧栏好友列表用：仅 relationStatus 为 0/1；0 置顶；再按搜索词过滤。
+     * 使用场景：FriendList、FriendPickSidebar；全量关系数据见 state.friends。
      */
     filteredFriends: (state) => {
+      const visibleSorted = sortFriendsForSidebarVisible(
+        state.friends.filter(isFriendVisibleInSidebarList)
+      );
       const keyword = state.searchKeyword.toLowerCase().trim();
-      if (!keyword) return state.friends;
-      return state.friends.filter((friend) => {
+      if (!keyword) return visibleSorted;
+      return visibleSorted.filter((friend) => {
         const searchIn = [
           friend.displayName,
           friend.nickname,

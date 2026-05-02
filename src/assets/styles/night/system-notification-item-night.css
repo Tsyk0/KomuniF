@@ -9,7 +9,7 @@ html.night-mode .sys-notif-item {
 }
 
 html.night-mode .sys-notif-item:hover {
-  border-color: rgba(129, 140, 248, 0.42);
+  border-color: rgba(167, 139, 250, 0.45);
   box-shadow:
     0 2px 6px rgba(0, 0, 0, 0.4),
     0 8px 28px rgba(0, 0, 0, 0.32);
@@ -48,8 +48,8 @@ html.night-mode .sys-notif-item--unread .sys-notif-item__badge {
 
 html.night-mode .sys-notif-item__unread-tag {
   color: #f8fafc;
-  background: linear-gradient(90deg, #6366f1, #818cf8);
-  box-shadow: 0 1px 8px rgba(99, 102, 241, 0.45);
+  background: linear-gradient(90deg, var(--theme-primary-strong), var(--theme-primary-soft));
+  box-shadow: 0 1px 8px rgba(124, 58, 237, 0.45);
 }
 
 html.night-mode .sys-notif-item__title {

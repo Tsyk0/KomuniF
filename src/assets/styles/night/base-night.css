@@ -1,5 +1,25 @@
 /* src/assets/styles/night/base-night.css */
 
+/**
+ * 夜间主题交互色（紫）：与 base.css :root 同名变量，在此整表覆盖。
+ */
+html.night-mode {
+  --theme-primary-soft: #c4b5fd;
+  --theme-primary: #a78bfa;
+  --theme-primary-mid: #7c3aed;
+  --theme-primary-strong: #8b5cf6;
+  --theme-primary-stronger: #6d28d9;
+  --theme-primary-deep-end: #4c1d95;
+  --theme-primary-faint: #ddd6fe;
+  --theme-primary-on-dark: #ede9fe;
+  --theme-list-active-bg: rgba(139, 92, 246, 0.38);
+  --theme-list-active-border: rgba(167, 139, 250, 0.55);
+  --theme-ripple: rgba(124, 58, 237, 0.45);
+  --theme-focus-ring: rgba(167, 139, 250, 0.45);
+  --theme-focus-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28);
+  --theme-shadow-primary-soft: 0 4px 14px rgba(124, 58, 237, 0.35);
+}
+
 /* ========== 1. 基础重置与全局样式 ========== */
 /* 移除全局滚动条 */
 html, body {
@@ -72,9 +92,9 @@ html.night-mode .nav-btn {
 
 html.night-mode .nav-btn:hover {
   background: rgba(60, 64, 72, 0.95);
-  border-color: #60a5fa;
+  border-color: var(--theme-primary-soft);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+  box-shadow: var(--theme-shadow-primary-soft);
 }
 
 html.night-mode .nav-btn:active {
@@ -110,9 +130,9 @@ html.night-mode .back-btn {
 
 html.night-mode .back-btn:hover {
   background: rgba(60, 64, 72, 0.95);
-  border-color: #60a5fa;
+  border-color: var(--theme-primary-soft);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+  box-shadow: var(--theme-shadow-primary-soft);
 }
 
 html.night-mode .back-btn:active {
@@ -130,12 +150,12 @@ html.night-mode .nav-icon {
 html.night-mode .nav-btn:focus,
 html.night-mode .back-btn:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.4);
+  box-shadow: var(--theme-focus-shadow);
 }
 
 /* ========== 4. 导航栏样式 ========== */
 html.night-mode .app-title {
-  color: #60a5fa;
+  color: var(--theme-primary-soft);
   font-size: 24px;
   font-weight: 700;
   margin: 0;
@@ -229,8 +249,8 @@ html.night-mode .el-input {
 
 html.night-mode .el-input:focus {
   outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  border-color: var(--theme-primary-soft);
+  box-shadow: var(--theme-focus-shadow);
 }
 
 html.night-mode .el-input.disabled {
@@ -240,10 +260,10 @@ html.night-mode .el-input.disabled {
   border-color: #6b7280;
 }
 
-.el-input:hover {
+html.night-mode .el-input:hover {
   outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  border-color: var(--theme-primary-soft);
+  box-shadow: var(--theme-focus-shadow);
 }
 
 html.night-mode .error-message {
@@ -258,7 +278,7 @@ html.night-mode .error-message {
 html.night-mode .submit-btn {
   width: 100%;
   padding: 16px;
-  background: #3b82f6;
+  background: var(--theme-primary-strong);
   color: white;
   border: none;
   border-radius: 8px;
@@ -270,19 +290,19 @@ html.night-mode .submit-btn {
   position: relative;
   overflow: hidden;
   min-height: 52px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: var(--theme-shadow-primary-soft);
   line-height: 1.4;
 }
 
 html.night-mode .submit-btn:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--theme-primary-mid);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
 }
 
 html.night-mode .submit-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 8px rgba(91, 33, 182, 0.35);
 }
 
 html.night-mode .submit-btn:disabled {
@@ -319,9 +339,9 @@ html.night-mode .option-btn {
 
 html.night-mode .option-btn:hover {
   background: rgba(60, 64, 72, 0.95);
-  border-color: #60a5fa;
+  border-color: var(--theme-primary-soft);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(96, 165, 250, 0.2);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.25);
 }
 
 html.night-mode .option-btn:active {
@@ -335,7 +355,7 @@ html.night-mode .option-icon {
   margin-right: 16px;
   width: 28px;
   text-align: center;
-  color: #60a5fa;
+  color: var(--theme-primary-soft);
 }
 
 html.night-mode .option-text {
@@ -376,7 +396,7 @@ html.night-mode #app input:not([type="checkbox"]):not([type="radio"]):focus,
 html.night-mode #app textarea:focus,
 html.night-mode #app select:focus {
   outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  border-color: var(--theme-primary-soft);
+  box-shadow: var(--theme-focus-shadow);
   background-color: rgba(15, 23, 42, 0.98);
 }

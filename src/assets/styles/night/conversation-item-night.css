@@ -22,7 +22,7 @@ html.night-mode .conversation-item .avatar-placeholder {
   width: 48px; /* 关键：与白天模式相同的尺寸 */
   height: 48px; /* 关键：与白天模式相同的尺寸 */
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--theme-primary-strong) 0%, var(--theme-primary-stronger) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,7 +102,7 @@ html.night-mode .conversation-item .conversation-name {
 
 html.night-mode .conversation-item .group-badge {
   font-size: 10px; /* 关键：与白天模式相同的字体大小 */
-  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  background: linear-gradient(135deg, var(--theme-primary-soft), var(--theme-primary-strong));
   color: #0f172a;
   padding: 2px 8px; /* 关键：与白天模式相同的padding */
   border-radius: 12px; /* 关键：与白天模式相同的圆角 */
@@ -110,13 +110,13 @@ html.night-mode .conversation-item .group-badge {
   font-weight: 600;
   letter-spacing: 0.5px; /* 关键：与白天模式相同的字间距 */
   text-transform: uppercase;
-  box-shadow: 0 2px 6px rgba(96, 165, 250, 0.5);
+  box-shadow: 0 2px 6px rgba(167, 139, 250, 0.5);
   transition: all 0.2s;
 }
 
 html.night-mode .conversation-item:hover .group-badge {
   transform: translateY(-1px); /* 关键：与白天模式相同的transform */
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.7);
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.7);
   background: linear-gradient(135deg, #7bb6ff, #4f9cff);
 }
 
@@ -130,7 +130,7 @@ html.night-mode .conversation-item .conversation-time {
 }
 
 html.night-mode .conversation-item:hover .conversation-time {
-  color: #93c5fd;
+  color: var(--theme-primary-faint);
 }
 
 /* ========== 消息预览区域 - 夜晚模式 ========== */
@@ -152,7 +152,7 @@ html.night-mode .conversation-item .message-preview {
 
 html.night-mode .conversation-item .sender-name {
   font-size: 12px; /* 关键：与白天模式相同的字体大小 */
-  color: #60a5fa;
+  color: var(--theme-primary-soft);
   flex-shrink: 0;
 }
 
@@ -182,31 +182,31 @@ html.night-mode .conversation-item .message-status {
 
 /* ========== 选中状态的样式增强 - 夜晚模式 ========== */
 html.night-mode .conversation-item.active .conversation-name {
-  color: #93c5fd;
+  color: var(--theme-primary-faint);
   font-weight: 600; /* 关键：与白天模式相同的字体粗细 */
-  text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+  text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
 }
 
 html.night-mode .conversation-item.active .conversation-time {
-  color: #60a5fa;
+  color: var(--theme-primary-soft);
   font-weight: 500; /* 关键：与白天模式相同的字体粗细 */
 }
 
 html.night-mode .conversation-item.active .message-content {
-  color: #93c5fd;
+  color: var(--theme-primary-faint);
   font-weight: 500; /* 关键：与白天模式相同的字体粗细 */
 }
 
 html.night-mode .conversation-item.active .avatar-img {
-  border-color: #60a5fa;
-  box-shadow: 0 4px 20px rgba(96, 165, 250, 0.6);
+  border-color: var(--theme-primary-soft);
+  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.6);
   filter: brightness(1.1);
 }
 
 html.night-mode .conversation-item.active .avatar-placeholder {
-  border-color: #60a5fa;
-  box-shadow: 0 4px 20px rgba(96, 165, 250, 0.6);
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  border-color: var(--theme-primary-soft);
+  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.6);
+  background: linear-gradient(135deg, var(--theme-primary-soft) 0%, var(--theme-primary-strong) 100%);
 }
 
 /* ========== 滑动删除效果 - 夜晚模式 ========== */

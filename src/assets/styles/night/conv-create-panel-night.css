@@ -8,11 +8,11 @@ html.night-mode .conv-create-panel {
   --cc-text: #f1f5f9;
   --cc-text-muted: #94a3b8;
   --cc-text-sub: #64748b;
-  --cc-accent: #60a5fa;
-  --cc-accent-hover: #93c5fd;
-  --cc-accent-soft: rgba(96, 165, 250, 0.18);
-  --cc-row-hover: rgba(96, 165, 250, 0.08);
-  --cc-row-selected: rgba(96, 165, 250, 0.16);
+  --cc-accent: var(--theme-primary-soft);
+  --cc-accent-hover: var(--theme-primary-faint);
+  --cc-accent-soft: rgba(167, 139, 250, 0.18);
+  --cc-row-hover: rgba(167, 139, 250, 0.08);
+  --cc-row-selected: rgba(167, 139, 250, 0.16);
   --cc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
   --cc-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
   --cc-radius: 14px;
@@ -60,7 +60,7 @@ html.night-mode .conv-create-input::placeholder {
 }
 
 html.night-mode .conv-create-input:hover {
-  border-color: rgba(96, 165, 250, 0.45);
+  border-color: rgba(167, 139, 250, 0.45);
 }
 
 html.night-mode .conv-create-input:focus {
@@ -86,7 +86,7 @@ html.night-mode .conv-create-row:hover {
 
 html.night-mode .conv-create-row:has(.conv-create-check:checked) {
   background: var(--cc-row-selected);
-  border-color: rgba(96, 165, 250, 0.35);
+  border-color: rgba(167, 139, 250, 0.35);
   box-shadow: var(--cc-shadow-sm);
 }
 
@@ -131,14 +131,14 @@ html.night-mode .conv-create-btn.secondary:hover {
 }
 
 html.night-mode .conv-create-btn.primary {
-  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(180deg, var(--theme-primary-strong) 0%, var(--theme-primary-mid) 100%);
   color: #fff;
   box-shadow: 0 2px 12px rgba(37, 99, 235, 0.45);
 }
 
 html.night-mode .conv-create-btn.primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
-  box-shadow: 0 4px 18px rgba(96, 165, 250, 0.4);
+  background: linear-gradient(180deg, var(--theme-primary-soft) 0%, var(--theme-primary-strong) 100%);
+  box-shadow: 0 4px 18px rgba(167, 139, 250, 0.4);
 }
 
 html.night-mode .conv-create-body::-webkit-scrollbar-thumb {

@@ -69,8 +69,8 @@ html.night-mode .user-profile-edit .avatar-display {
 }
 
 html.night-mode .user-profile-edit .avatar-display:hover {
-  border-color: #60a5fa;
-  box-shadow: 0 8px 22px rgba(59, 130, 246, 0.32);
+  border-color: var(--theme-primary-soft);
+  box-shadow: 0 8px 22px rgba(139, 92, 246, 0.35);
 }
 
 html.night-mode .user-profile-edit .avatar-img-container {
@@ -112,7 +112,7 @@ html.night-mode .user-profile-edit .avatar-display:hover .avatar-overlay {
 html.night-mode .user-profile-edit .avatar-placeholder-large {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(135deg, var(--theme-primary-strong), var(--theme-primary-stronger));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -361,7 +361,7 @@ html.night-mode
   .gender-radio-group
   .el-radio-button.is-active
   .el-radio-button__inner {
-  background: #a855f7 !important;
+  background: var(--theme-primary-strong) !important;
   color: #ffffff !important;
   border: none !important;
   box-shadow: none !important;

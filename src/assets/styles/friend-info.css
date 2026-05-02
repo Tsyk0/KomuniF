@@ -61,9 +61,10 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 18px;
+  /* 与 UserProfileEdit .edit-header h2 一致 */
+  font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: #333;
   margin: 0;
   white-space: nowrap;
   text-align: center;
@@ -125,7 +126,7 @@
   font-size: 28px;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(145deg, #6366f1, #4338ca);
+  background: linear-gradient(145deg, var(--theme-primary-mid, #2563eb), var(--theme-primary-stronger, #0369a1));
   border: 2px solid rgba(15, 23, 42, 0.08);
   box-sizing: border-box;
 }
@@ -325,8 +326,8 @@
 }
 
 .friend-card-input:focus {
-  border-color: rgba(129, 140, 248, 0.55);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  border-color: var(--theme-focus-ring);
+  box-shadow: var(--theme-focus-shadow);
 }
 
 .friend-detail-actions-float {
@@ -368,7 +369,7 @@
 }
 
 .friend-detail-action-btn--apply {
-  background: #4f46e5;
+  background: var(--theme-primary-strong, #0284c7);
   color: #fff;
 }
 

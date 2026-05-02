@@ -12,6 +12,10 @@
   background: #fff;
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
   border: 1px solid #e5e7eb;
+  /* 内容再多也不撑破视口；内部滚动保证底栏可点 */
+  max-height: calc(100vh - 16px);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .group-member-popover__avatar {
@@ -46,6 +50,13 @@
   white-space: nowrap;
 }
 
+.group-member-popover__self-hint {
+  margin: -6px 0 10px;
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+}
+
 .group-member-popover__dl {
   margin: 0;
 }
@@ -78,6 +89,41 @@
   word-break: break-all;
 }
 
+.group-member-popover__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.group-member-popover__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.group-member-popover__icon-btn:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.18);
+  color: #1d4ed8;
+}
+
+.group-member-popover__icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 html.night-mode .group-member-popover {
   background: #27272a;
   border-color: #3f3f46;
@@ -86,6 +132,10 @@ html.night-mode .group-member-popover {
 
 html.night-mode .group-member-popover__name {
   color: #f4f4f5;
+}
+
+html.night-mode .group-member-popover__self-hint {
+  color: #a1a1aa;
 }
 
 html.night-mode .group-member-popover__row {
@@ -98,4 +148,18 @@ html.night-mode .group-member-popover__row dt {
 
 html.night-mode .group-member-popover__row dd {
   color: #e4e4e7;
+}
+
+html.night-mode .group-member-popover__actions {
+  border-top-color: #3f3f46;
+}
+
+html.night-mode .group-member-popover__icon-btn {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+}
+
+html.night-mode .group-member-popover__icon-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.25);
+  color: #bfdbfe;
 }

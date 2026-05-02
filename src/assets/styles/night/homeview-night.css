@@ -99,8 +99,8 @@ html.night-mode .homeview .conversation-sidebar {
 }
 
 html.night-mode .homeview .conversation-sidebar.resizing {
-  border-right-color: #60a5fa;
-  box-shadow: 10px 0 22px -12px rgba(59, 130, 246, 0.45);
+  border-right-color: var(--theme-primary-soft);
+  box-shadow: 10px 0 22px -12px rgba(139, 92, 246, 0.42);
 }
 
 html.night-mode .homeview .sidebar-header {
@@ -132,11 +132,11 @@ html.night-mode .homeview .sidebar-header .user-profile {
 html.night-mode .homeview .sidebar-header .user-profile:hover {
   background: linear-gradient(
     135deg,
-    rgba(96, 165, 250, 0.15),
-    rgba(96, 165, 250, 0.2)
+    rgba(167, 139, 250, 0.15),
+    rgba(167, 139, 250, 0.2)
   );
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.2);
 }
 
 html.night-mode .homeview .sidebar-header .user-profile:hover .avatar-placeholder {
@@ -144,12 +144,12 @@ html.night-mode .homeview .sidebar-header .user-profile:hover .avatar-placeholde
 }
 
 html.night-mode .homeview .sidebar-header .user-profile:hover .user-name {
-  color: #60a5fa;
+  color: var(--theme-primary-soft);
 }
 
 html.night-mode .homeview .sidebar-header .user-profile:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(96, 165, 250, 0.2);
+  box-shadow: 0 2px 6px rgba(167, 139, 250, 0.2);
 }
 
 html.night-mode .homeview .sidebar-header .user-profile::after {
@@ -171,7 +171,7 @@ html.night-mode .homeview .sidebar-header .avatar-placeholder {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(135deg, var(--theme-primary-strong), var(--theme-primary-stronger));
   color: white;
   display: flex;
   align-items: center;
@@ -301,7 +301,7 @@ html.night-mode .homeview .chat-main-area::before {
    * 2. 整体亮度：修改下方的 opacity 属性 (当前 0.9)，范围 0-1
    */
   background: radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.2) 0%, transparent 85%),
-              radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.2) 0%, transparent 85%),
+              radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.22) 0%, transparent 85%),
               radial-gradient(circle at 0% 100%, rgba(236, 72, 153, 0.3) 0%, transparent 85%),
               radial-gradient(circle at 100% 100%, rgba(234, 179, 8, 0.3) 0%, transparent 85%);
 
@@ -368,7 +368,7 @@ html.night-mode .homeview .chat-label-header {
 
 html.night-mode .homeview .chat-label-icon {
   font-size: 36px;
-  color: #60a5fa;
+  color: var(--theme-primary-soft);
 }
 
 html.night-mode .homeview .chat-label-text {
@@ -475,7 +475,7 @@ html.night-mode .homeview .loading-spinner {
   width: 30px;
   height: 30px;
   border: 3px solid #334155;
-  border-top-color: #60a5fa;
+  border-top-color: var(--theme-primary-soft);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 10px;
@@ -504,7 +504,7 @@ html.night-mode .homeview .error-icon {
 html.night-mode .homeview .retry-btn {
   margin-top: 10px;
   padding: 6px 16px;
-  background-color: #3b82f6;
+  background-color: var(--theme-primary-strong);
   color: white;
   border: none;
   border-radius: 4px;
@@ -514,7 +514,7 @@ html.night-mode .homeview .retry-btn {
 }
 
 html.night-mode .homeview .retry-btn:hover {
-  background-color: #2563eb;
+  background-color: var(--theme-primary-mid);
 }
 
 /* 空状态 - 夜晚模式 */
@@ -567,8 +567,8 @@ html.night-mode .homeview .search-box {
 
 html.night-mode .homeview .search-box:focus-within {
   background: rgba(30, 30, 30, 0.9);
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+  border-color: var(--theme-primary-soft);
+  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.2);
 }
 
 html.night-mode .homeview .search-icon {

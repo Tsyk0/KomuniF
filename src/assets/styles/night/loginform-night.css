@@ -25,7 +25,7 @@ html.night-mode .loginform .form-container {
 
 /* ========== 免密登录提示（添加缺失的部分） ========== */
 html.night-mode .loginform .auto-login-hint {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--theme-primary-strong) 0%, var(--theme-primary-stronger) 100%);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
@@ -88,7 +88,7 @@ html.night-mode .loginform .normal-login-btn {
 html.night-mode .loginform .auto-login-btn {
   flex: 2;
   background: rgba(255, 255, 255, 0.95);
-  color: #4f46e5;
+  color: var(--theme-primary-mid);
 }
 
 html.night-mode .loginform .auto-login-btn:hover:not(:disabled) {
@@ -167,8 +167,8 @@ html.night-mode .loginform .el-input {
 
 html.night-mode .loginform .el-input:focus {
   outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  border-color: var(--theme-primary-soft);
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
 }
 
 html.night-mode .loginform .el-input.error {
@@ -213,11 +213,11 @@ html.night-mode .loginform .remember-me input[type="checkbox"] {
   cursor: pointer;
   margin: 0;
   flex-shrink: 0;
-  accent-color: #60a5fa;
+  accent-color: var(--theme-primary-soft);
 }
 
 html.night-mode .loginform .forgot-password {
-  color: #60a5fa;
+  color: var(--theme-primary-soft);
   text-decoration: none;
   font-size: 14px;
   transition: color 0.3s ease;
@@ -230,7 +230,7 @@ html.night-mode .loginform .forgot-password {
 }
 
 html.night-mode .loginform .forgot-password:hover {
-  color: #3b82f6;
+  color: var(--theme-primary-strong);
   text-decoration: underline;
 }
 
@@ -266,12 +266,12 @@ html.night-mode .loginform .el-button:disabled {
 }
 
 html.night-mode .loginform .el-button--primary {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(135deg, var(--theme-primary-strong), var(--theme-primary-stronger));
   color: white;
 }
 
 html.night-mode .loginform .el-button--primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
+  background: linear-gradient(135deg, var(--theme-primary-mid), var(--theme-primary-deep-end));
   transform: translateY(-1px);
 }
 

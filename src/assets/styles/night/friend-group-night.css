@@ -21,7 +21,7 @@ html.night-mode .group-header {
 }
 
 html.night-mode .group-header:hover {
-  background-color: rgba(96, 165, 250, 0.1);
+  background-color: rgba(167, 139, 250, 0.1);
 }
 
 html.night-mode .group-title {
@@ -73,7 +73,7 @@ html.night-mode .friend-group-empty-icon {
   font-size: 36px;
   margin-bottom: 16px;
   opacity: 0.2;
-  filter: drop-shadow(0 0 20px rgba(96, 165, 250, 0.3));
+  filter: drop-shadow(0 0 20px rgba(167, 139, 250, 0.3));
 }
 
 html.night-mode .friend-group-empty-text {
