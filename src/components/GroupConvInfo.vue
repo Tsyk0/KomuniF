@@ -166,11 +166,11 @@
                 memberListLabel(m)
               }}</span>
               <span
-                v-if="isGroupOwnerMember(m)"
+                v-if="isGroupOwnerMember(m, convOwnerIdForMemberUi)"
                 class="group-member-row__badge is-owner"
               >群主</span>
               <span
-                v-else-if="isGroupAdminMember(m)"
+                v-else-if="isGroupAdminMember(m, convOwnerIdForMemberUi)"
                 class="group-member-row__badge is-admin"
               >管理员</span>
               <span
@@ -190,125 +190,25 @@
     </div>
 
     <Teleport to="body">
-      <div
+      <GroupMemberPopover
         v-if="popoverMember"
-        ref="memberPopoverPanelRef"
-        class="group-member-popover"
-        :style="memberPopoverStyle"
-        role="dialog"
-        aria-label="成员信息"
-        @click.stop
-      >
-        <div class="group-member-popover__avatar">
-          <img
-            v-if="popoverMember && memberAvatarUrl(popoverMember)"
-            :src="memberAvatarUrl(popoverMember)"
-            alt=""
-            class="group-member-popover__avatar-img"
-          />
-          <span v-else class="group-member-popover__avatar-fallback">{{
-            memberDisplayInitial(popoverMember)
-          }}</span>
-        </div>
-        <div class="group-member-popover__name">
-          {{ memberListLabel(popoverMember) }}
-        </div>
-        <p v-if="isPopoverMemberSelf" class="group-member-popover__self-hint">
-          我自己
-        </p>
-        <dl class="group-member-popover__dl">
-          <div class="group-member-popover__row">
-            <dt>用户昵称</dt>
-            <dd>{{ popoverMember.userNickname }}</dd>
-          </div>
-          <div class="group-member-popover__row">
-            <dt>群昵称</dt>
-            <dd>{{ popoverMember.memberNickname || "—" }}</dd>
-          </div>
-          <div class="group-member-popover__row">
-            <dt>用户 ID</dt>
-            <dd>{{ popoverMember.userId }}</dd>
-          </div>
-          <div class="group-member-popover__row">
-            <dt>本群角色</dt>
-            <dd>{{ memberRolePlainText(popoverMember) }}</dd>
-          </div>
-          <div class="group-member-popover__row">
-            <dt>成员状态</dt>
-            <dd>{{ memberStatusPlainText(popoverMember) }}</dd>
-          </div>
-        </dl>
-        <div
-          v-if="showPopoverGroupManage"
-          class="group-member-popover__manage"
-        >
-          <button
-            type="button"
-            class="group-member-popover__manage-btn"
-            title="踢出群聊"
-            aria-label="踢出群聊"
-            :disabled="memberPopoverActionLoading"
-            @click.stop="handleKickGroupMember"
-          >
-            <UserMinus :size="20" :stroke-width="2.2" />
-            <span>踢出</span>
-          </button>
-          <button
-            v-if="canMutePopoverMember"
-            type="button"
-            class="group-member-popover__manage-btn"
-            title="禁言"
-            aria-label="禁言"
-            :disabled="memberPopoverActionLoading"
-            @click.stop="handleMuteGroupMember"
-          >
-            <MicOff :size="20" :stroke-width="2.2" />
-            <span>禁言</span>
-          </button>
-          <button
-            v-if="canUnmutePopoverMember"
-            type="button"
-            class="group-member-popover__manage-btn"
-            title="解除禁言"
-            aria-label="解除禁言"
-            :disabled="memberPopoverActionLoading"
-            @click.stop="handleUnmuteGroupMember"
-          >
-            <Mic :size="20" :stroke-width="2.2" />
-            <span>解除禁言</span>
-          </button>
-        </div>
-        <div
-          v-if="
-            !isPopoverMemberSelf &&
-            (showPopoverSendMessageAction || showPopoverAddFriendAction)
-          "
-          class="group-member-popover__actions"
-        >
-          <button
-            v-if="showPopoverSendMessageAction"
-            type="button"
-            class="group-member-popover__icon-btn"
-            title="发送消息"
-            aria-label="发送消息"
-            :disabled="memberPopoverActionLoading"
-            @click.stop="handleMemberPopoverSendMessage"
-          >
-            <MessageCircleMore :size="22" :stroke-width="2.2" />
-          </button>
-          <button
-            v-if="showPopoverAddFriendAction"
-            type="button"
-            class="group-member-popover__icon-btn"
-            title="加为好友"
-            aria-label="加为好友"
-            :disabled="memberPopoverActionLoading"
-            @click.stop="handleMemberPopoverAddFriend"
-          >
-            <UserPlus :size="22" :stroke-width="2.2" />
-          </button>
-        </div>
-      </div>
+        ref="groupMemberPopoverRef"
+        :member="popoverMember"
+        :panel-style="memberPopoverStyle"
+        :conv-owner-id="convOwnerIdForMemberUi"
+        :is-self="isPopoverMemberSelf"
+        :show-group-manage="showPopoverGroupManage"
+        :can-mute="canMutePopoverMember"
+        :can-unmute="canUnmutePopoverMember"
+        :show-send-message="showPopoverSendMessageAction"
+        :show-add-friend="showPopoverAddFriendAction"
+        :action-loading="memberPopoverActionLoading"
+        @kick="handleKickGroupMember"
+        @mute="handleMuteGroupMember"
+        @unmute="handleUnmuteGroupMember"
+        @send-message="handleMemberPopoverSendMessage"
+        @add-friend="handleMemberPopoverAddFriend"
+      />
     </Teleport>
 
     <div class="group-actions-float" :class="{ visible: hasPendingChanges }">
@@ -376,14 +276,9 @@ import {
 import {
   ChevronDown,
   ChevronRight,
-  MessageCircleMore,
-  Mic,
-  MicOff,
   Pencil,
   Search,
   Trash,
-  UserMinus,
-  UserPlus,
   X,
 } from "lucide-vue-next";
 import toast from "@/commons/utils/toast";
@@ -400,13 +295,26 @@ import { useShowMessageStore } from "@/store/message/showMessage";
 import { useUserStore } from "@/store/user/user";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import ConvProfileEdit from "./ConvProfileEdit.vue";
+import GroupMemberPopover from "./GroupMemberPopover.vue";
+import {
+  getMemberEffectiveStatus,
+  isGroupAdminMember,
+  isGroupOwnerMember,
+  memberAvatarUrl,
+  memberDisplayInitial,
+  memberListLabel,
+} from "@/commons/utils/group-member-card-display";
+import {
+  clampMemberPopoverWithinViewportBottom as clampGroupMemberPopoverBottom,
+  computeMemberPopoverPosition,
+} from "@/commons/utils/group-member-popover-layout";
 import type {
   ConversationEntity,
   ConversationMemberDTO,
 } from "@/types/dto/conversation-member";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import { FriendRelationStatus, type FriendListItem } from "@/types/dto/friend";
-import { MemberRole, MemberStatus } from "@/entity/conversation-member";
+import { MemberStatus } from "@/entity/conversation-member";
 import { GROUP_CONV_MEMBERS_REFRESH_EVENT } from "@/interactions/realtime/groupConvMemberManageInteraction";
 
 const props = defineProps<{
@@ -446,7 +354,10 @@ const popoverMember = ref<ConversationMemberDTO | null>(null);
 const memberPopoverPos = ref({ top: 0, left: 0 });
 /** 最近一次打开资料卡所点击的成员行 DOM；用于文档点击判断，避免点同一行误关。 */
 const memberPopoverAnchorRowRef = ref<HTMLElement | null>(null);
-const memberPopoverPanelRef = ref<HTMLElement | null>(null);
+/** 成员资料卡子组件实例；用于取 panelRef 做视口夹紧与 document 点击穿透判断。 */
+const groupMemberPopoverRef = ref<{ panelRef: HTMLElement | null } | null>(
+  null
+);
 /** 悬浮卡上「发消息 / 加好友」请求进行中；用于防止重复点击。 */
 const memberPopoverActionLoading = ref(false);
 
@@ -467,6 +378,10 @@ const groupAvatarUrl = computed(() =>
 );
 const groupName = computed(() => conversation.value?.convName || "未命名群聊");
 const groupNumber = computed(() => conversation.value?.convId || "-");
+/** 群详情实体中的群主 ID；成员行角标与 GroupMemberPopover 角色文案共用。 */
+const convOwnerIdForMemberUi = computed(() =>
+  Number(conversation.value?.convOwnerId || 0)
+);
 const messageSettingText = computed(() =>
   muteConversation.value ? "仅接收提醒消息" : "接收全部消息"
 );
@@ -481,89 +396,17 @@ const hasPendingChanges = computed(
 const isCurrentUserGroupOwner = computed(() => {
   const myUserId = Number(userStore.user?.userId || 0);
   if (myUserId <= 0) return false;
-  if (Number(conversation.value?.convOwnerId || 0) === myUserId) return true;
+  const oid = convOwnerIdForMemberUi.value;
+  if (oid === myUserId) return true;
   const me = members.value.find((member) => Number(member.userId) === myUserId);
-  return Number(me?.role ?? 0) === MemberRole.OWNER;
+  return me ? isGroupOwnerMember(me, oid) : false;
 });
-
-/**
- * 成员 member_status 数值；缺省按正常(1)。
- * 使用场景：列表过滤、禁言角标、群管理按钮显隐。
- */
-function getMemberEffectiveStatus(member: ConversationMemberDTO): number {
-  const s = member.memberStatus;
-  if (s === undefined || s === null) return MemberStatus.NORMAL;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : MemberStatus.NORMAL;
-}
-
-/**
- * 判断成员是否为本群群主（member_role === 2 或与 convOwnerId 一致）。
- * 使用场景：成员列表角标、资料卡「本群角色」展示；不可对群主执行踢人/禁言。
- */
-const isGroupOwnerMember = (member: ConversationMemberDTO): boolean => {
-  const ownerId = Number(conversation.value?.convOwnerId || 0);
-  if (Number(member.role) === MemberRole.OWNER) return true;
-  return ownerId > 0 && Number(member.userId) === ownerId;
-};
-
-/**
- * 判断成员是否为管理员且非群主（member_role === 1）。
- * 使用场景：成员列表「管理员」角标。
- */
-const isGroupAdminMember = (member: ConversationMemberDTO): boolean =>
-  Number(member.role) === MemberRole.ADMIN && !isGroupOwnerMember(member);
-
-/**
- * 成员在列表中的主展示名：有群昵称用群昵称，否则用户昵称，再否则回退 userId。
- * 使用场景：群成员行、悬浮资料卡标题。
- */
-const memberListLabel = (member: ConversationMemberDTO): string => {
-  const inGroup = member.memberNickname?.trim();
-  if (inGroup) return inGroup;
-  return member.userNickname?.trim() || String(member.userId);
-};
-
-/**
- * 成员头像 URL 字符串；无有效地址时返回空串，模板用 v-if 判断后绑定 :src。
- * 使用场景：成员行与资料卡头像。
- */
-const memberAvatarUrl = (member: ConversationMemberDTO | null): string => {
-  if (!member) return "";
-  return normalizeAvatarUrl(member.userAvatar || "");
-};
-
-/**
- * 列表/卡片头像占位首字母。
- * 使用场景：无头像 URL 时的圆形占位符。
- */
-const memberDisplayInitial = (member: ConversationMemberDTO): string =>
-  memberListLabel(member).charAt(0).toUpperCase() || "?";
-
-/**
- * 资料卡中「本群角色」纯文案。
- * 使用场景：悬浮矩形框内只读展示。
- */
-const memberRolePlainText = (member: ConversationMemberDTO): string => {
-  if (isGroupOwnerMember(member)) return "群主";
-  if (isGroupAdminMember(member)) return "管理员";
-  return "成员";
-};
-
-/**
- * 成员状态文案（群管理、资料卡展示）。
- */
-const memberStatusPlainText = (member: ConversationMemberDTO): string => {
-  const s = getMemberEffectiveStatus(member);
-  if (s === MemberStatus.QUIT) return "已退出";
-  if (s === MemberStatus.MUTED) return "禁言中";
-  return "正常";
-};
 
 /** 成员排序权重；用于 sortedMembersForList 中把群主、管理员排在前面。 */
 const memberSortRank = (member: ConversationMemberDTO): number => {
-  if (isGroupOwnerMember(member)) return 0;
-  if (isGroupAdminMember(member)) return 1;
+  const oid = convOwnerIdForMemberUi.value;
+  if (isGroupOwnerMember(member, oid)) return 0;
+  if (isGroupAdminMember(member, oid)) return 1;
   return 2;
 };
 
@@ -678,7 +521,8 @@ const showPopoverGroupManage = computed(() => {
   if (!isCurrentUserGroupOwner.value || isPopoverMemberSelf.value) return false;
   const m = popoverMember.value;
   if (!m) return false;
-  if (isGroupOwnerMember(m)) return false;
+  const oid = convOwnerIdForMemberUi.value;
+  if (isGroupOwnerMember(m, oid)) return false;
   return getMemberEffectiveStatus(m) !== MemberStatus.QUIT;
 });
 
@@ -938,16 +782,16 @@ const toggleMemberSearch = () => {
  * 按弹层真实高度上推 top，使底边不超过视口底（留 margin）。
  * 使用场景：`onMemberRowClick` 在 nextTick / rAF 后校正，避免按钮被裁切。
  */
+/**
+ * 将成员资料卡顶边限制在视口内，避免底部操作区被裁切。
+ * 使用场景：打开弹层后 nextTick / rAF 中调用。
+ */
 const clampMemberPopoverWithinViewportBottom = () => {
-  const el = memberPopoverPanelRef.value;
+  const el = groupMemberPopoverRef.value?.panelRef;
   if (!el) return;
-  const margin = 8;
-  const h = el.getBoundingClientRect().height;
-  const maxTop = window.innerHeight - margin - h;
-  const cur = memberPopoverPos.value.top;
-  const nextTop = Math.max(margin, Math.min(cur, maxTop));
-  if (nextTop !== cur) {
-    memberPopoverPos.value = { ...memberPopoverPos.value, top: nextTop };
+  const next = clampGroupMemberPopoverBottom(el, memberPopoverPos.value);
+  if (next.top !== memberPopoverPos.value.top) {
+    memberPopoverPos.value = { ...memberPopoverPos.value, top: next.top };
   }
 };
 
@@ -968,25 +812,7 @@ const onMemberRowClick = async (
   }
   popoverMember.value = member;
   const rect = row.getBoundingClientRect();
-  const panelW = 256;
-  /** 粗估高度仅用于首帧纵向对齐；真实高度在 clamp 里测量。 */
-  const panelHEstimate = 360;
-  const gap = 8;
-  let left = rect.right + gap;
-  if (left + panelW > window.innerWidth - gap) {
-    left = rect.left - panelW - gap;
-  }
-  if (left < gap) {
-    left = gap;
-  }
-  let top = rect.top;
-  if (top + panelHEstimate > window.innerHeight - gap) {
-    top = Math.max(gap, window.innerHeight - panelHEstimate - gap);
-  }
-  if (top < gap) {
-    top = gap;
-  }
-  memberPopoverPos.value = { top, left };
+  memberPopoverPos.value = computeMemberPopoverPosition(rect);
 
   await nextTick();
   clampMemberPopoverWithinViewportBottom();
@@ -1000,7 +826,7 @@ watchEffect((onCleanup) => {
   const onDocClick = (e: MouseEvent) => {
     const t = e.target as Node | null;
     if (!t) return;
-    if (memberPopoverPanelRef.value?.contains(t)) return;
+    if (groupMemberPopoverRef.value?.panelRef?.contains(t)) return;
     if (memberPopoverAnchorRowRef.value?.contains(t)) return;
     closeMemberPopover();
   };
@@ -1294,8 +1120,4 @@ onUnmounted(() => {
 <style scoped>
 @import "@/assets/styles/group-conv-info.css";
 @import "@/assets/styles/night/group-conv-info-night.css";
-</style>
-
-<style>
-@import "@/assets/styles/group-member-popover.css";
 </style>

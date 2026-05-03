@@ -13,6 +13,10 @@ type LocalEchoPayload =
   | {
       kind: "text";
       content: string;
+      /** 与下行 WS 一致：引用回复的目标 messageId。 */
+      replyToMessageId?: number;
+      /** 与下行 WS 一致的 @ 用户 ID 列表。 */
+      atUserIds?: number[];
     }
   | {
       kind: "file";
@@ -21,6 +25,8 @@ type LocalEchoPayload =
       fileName: string;
       fileSize: number;
       mimeType: string;
+      replyToMessageId?: number;
+      atUserIds?: number[];
     };
 
 interface LocalEchoContext {
@@ -75,6 +81,8 @@ export const useSendMessageStore = defineStore("sendMessage", () => {
             currentUserAvatar: context.currentUserAvatar || null,
             content: payload.content,
             conversationMembers: context.conversationMembers,
+            replyToMessageId: payload.replyToMessageId,
+            atUserIds: payload.atUserIds,
           })
         : buildTempFileMessage({
             convId: context.convId,
@@ -91,6 +99,8 @@ export const useSendMessageStore = defineStore("sendMessage", () => {
             fileName: payload.fileName,
             fileSize: payload.fileSize,
             mimeType: payload.mimeType,
+            replyToMessageId: payload.replyToMessageId,
+            atUserIds: payload.atUserIds,
           });
     showMessageStore.addMessage(tempMessage);
     return tempMessage;

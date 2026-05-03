@@ -603,6 +603,116 @@
   box-sizing: border-box;
 }
 
+/* 已选中「回复某条消息」时的预览条（发送成功或点关闭后移除） */
+.message-input-container .composer-reply-strip {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(55, 65, 81, 0.95);
+  background: rgba(107, 114, 128, 0.16);
+  border: 1px solid rgba(107, 114, 128, 0.22);
+  box-sizing: border-box;
+}
+
+.message-input-container .composer-reply-strip__main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.message-input-container .composer-reply-strip__label {
+  font-weight: 600;
+  color: rgba(31, 41, 55, 0.95);
+}
+
+.message-input-container .composer-reply-strip__snippet {
+  color: rgba(75, 85, 99, 0.92);
+  word-break: break-word;
+}
+
+.message-input-container .composer-reply-strip__close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(75, 85, 99, 0.85);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+}
+
+.message-input-container .composer-reply-strip__close:hover {
+  background: rgba(107, 114, 128, 0.18);
+  color: #111827;
+}
+
+/* 已选中 @ 多人时的预览条 */
+.message-input-container .composer-at-strip {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(55, 65, 81, 0.95);
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.22);
+  box-sizing: border-box;
+}
+
+.message-input-container .composer-at-strip__main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+}
+
+.message-input-container .composer-at-strip__chip {
+  font-weight: 600;
+  color: var(--theme-primary-strong, var(--theme-primary, #0284c7));
+}
+
+.message-input-container .composer-at-strip__close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(75, 85, 99, 0.85);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+}
+
+.message-input-container .composer-at-strip__close:hover {
+  background: rgba(14, 165, 233, 0.12);
+  color: #111827;
+}
+
 /* 输入行：wrapper + 右侧麦克风 */
 .message-input-container .composer-row {
   display: flex;

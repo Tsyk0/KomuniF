@@ -12,9 +12,38 @@ import type {
 
 type Sender = (payload: WebSocketClientOutboundMessage) => boolean;
 
-export class WebSocketActionHandler {
-  constructor(private readonly sender: Sender) {}
+function normalizeAtUserIds(ids: number[] | null | undefined): number[] | undefined {
+  if (!ids?.length) return undefined;
+  const out: number[] = [];
+  const seen = new Set<number>();
+  for (const raw of ids) {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0 || seen.has(n)) continue;
+    seen.add(n);
+    out.push(n);
+  }
+  return out.length ? out : undefined;
+}
 
+export class WebSocketActionHandler {
+  constructor(private readonly sender: Sender) { }
+  // 上面两行等价于：
+  // export class WebSocketActionHandler {
+  //   private readonly sender: Sender;  // ← 声明一个实例属性
+
+  //   constructor(sender: Sender) {
+  //     this.sender = sender;  // ← 把参数赋值给实例属性
+  //   }
+  // }
+  //   类比java中的构造函数：
+  //   public class WebSocketActionHandler {
+  //     private Sender sender;  // 实例属性
+
+  //     // 构造函数（没有返回类型）
+  //     public WebSocketActionHandler(Sender sender) {
+  //         this.sender = sender;  // 参数赋值给实例属性
+  //     }
+  // }
   /** 发送已构造好的上行消息。 */
   sendRaw(payload: WebSocketClientOutboundMessage): boolean {
     return this.sender(payload);
@@ -23,9 +52,15 @@ export class WebSocketActionHandler {
   /** 统一消息发送入口：按 messageType 路由到具体发送实现。 */
   sendMessageByType(request: SendMessageDTO): boolean {
     const type = (request.messageType || "text").toLowerCase();
+    const atUserIds = normalizeAtUserIds(request.atUserIds);
     switch (type) {
       case "text":
-        return this.sendTextMessage(request.convId, request.messageContent, request.replyToMessageId);
+        return this.sendTextMessage(
+          request.convId,
+          request.messageContent,
+          request.replyToMessageId,
+          atUserIds
+        );
       case "image":
       case "file":
       case "video":
@@ -33,7 +68,8 @@ export class WebSocketActionHandler {
           request.convId,
           type,
           request.messageContent,
-          request.replyToMessageId
+          request.replyToMessageId,
+          atUserIds
         );
       default:
         return false;
@@ -41,15 +77,26 @@ export class WebSocketActionHandler {
   }
 
   /** 发送文本消息。 */
-  sendTextMessage(convId: number, messageContent: string, replyToMessageId?: number): boolean {
+  sendTextMessage(
+    convId: number,
+    messageContent: string,
+    replyToMessageId?: number,
+    atUserIds?: number[]
+  ): boolean {
+    const localMessageId = `local_${Date.now()}`;
     const payload: SendMessageWSRequest = {
       action: "sendMessage",
       convId,
       messageType: "text",
       messageContent,
-      replyToMessageId,
-      localMessageId: `local_${Date.now()}`,
+      localMessageId,
     };
+    if (replyToMessageId != null && Number(replyToMessageId) > 0) {
+      payload.replyToMessageId = replyToMessageId;
+    }
+    if (atUserIds != null && atUserIds.length > 0) {
+      payload.atUserIds = [...atUserIds];
+    }
     return this.sender(payload);
   }
 
@@ -61,16 +108,23 @@ export class WebSocketActionHandler {
     convId: number,
     messageType: "image" | "file" | "video",
     messageContent: string,
-    replyToMessageId?: number
+    replyToMessageId?: number,
+    atUserIds?: number[]
   ): boolean {
+    const localMessageId = `local_${Date.now()}`;
     const payload: SendMessageWSRequest = {
       action: "sendMessage",
       convId,
       messageType,
       messageContent,
-      replyToMessageId,
-      localMessageId: `local_${Date.now()}`,
+      localMessageId,
     };
+    if (replyToMessageId != null && Number(replyToMessageId) > 0) {
+      payload.replyToMessageId = replyToMessageId;
+    }
+    if (atUserIds != null && atUserIds.length > 0) {
+      payload.atUserIds = [...atUserIds];
+    }
     return this.sender(payload);
   }
 

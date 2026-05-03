@@ -73,6 +73,7 @@ export interface SendMessageRequest extends WebSocketBaseMessage {
   messageContent: string;
   replyToMessageId?: number | null;
   localMessageId?: string;
+  /** @ 提及用户 ID；线协议驼峰，库表 at_user_ids 由服务端持久化时映射。 */
   atUserIds?: number[] | null;
 }
 

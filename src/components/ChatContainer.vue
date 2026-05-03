@@ -32,9 +32,16 @@
               </div>
               <div class="chat-details">
                 <h3 class="chat-name">{{ conversationDisplayName }}</h3>
-                <p v-if="chatStatusText || isCurrentUserMutedInGroup" class="chat-status">
-                  <template v-if="isCurrentUserMutedInGroup">您已被禁言</template>
-                  <template v-else-if="chatStatusText">{{ chatStatusText }}</template>
+                <p
+                  v-if="chatStatusText || isCurrentUserMutedInGroup"
+                  class="chat-status"
+                >
+                  <template v-if="isCurrentUserMutedInGroup"
+                    >您已被禁言</template
+                  >
+                  <template v-else-if="chatStatusText">{{
+                    chatStatusText
+                  }}</template>
                 </p>
               </div>
             </div>
@@ -119,6 +126,8 @@
                 :message="message"
                 :conv-type="currentConvTypeOrNull"
                 :flash-anchor="anchorFlashMessageId === message.messageId"
+                @start-reply="handleStartReplyMessage"
+                @start-at-mention="handleStartAtMention"
               />
 
               <!-- 没有消息的提示 -->
@@ -140,6 +149,50 @@
             role="status"
           >
             您已被禁言，无法发送消息
+          </div>
+          <div
+            v-if="!isCurrentUserMutedInGroup && pendingReplyPreview"
+            class="composer-reply-strip"
+            role="status"
+          >
+            <div class="composer-reply-strip__main">
+              <span class="composer-reply-strip__label">
+                回复 {{ pendingReplyPreview.title }}
+              </span>
+              <span class="composer-reply-strip__snippet">{{
+                pendingReplyPreview.detail
+              }}</span>
+            </div>
+            <button
+              type="button"
+              class="composer-reply-strip__close"
+              aria-label="取消回复"
+              @click="composerReplyStore.clearPendingReply()"
+            >
+              ×
+            </button>
+          </div>
+          <div
+            v-if="!isCurrentUserMutedInGroup && pendingAtStripChips.length > 0"
+            class="composer-at-strip"
+            role="status"
+          >
+            <div class="composer-at-strip__main">
+              <span
+                v-for="chip in pendingAtStripChips"
+                :key="chip.userId"
+                class="composer-at-strip__chip"
+                >@{{ chip.label }}</span
+              >
+            </div>
+            <button
+              type="button"
+              class="composer-at-strip__close"
+              aria-label="取消@提及"
+              @click="composerAtStore.clearAtTargets()"
+            >
+              ×
+            </button>
           </div>
           <div class="composer-row">
             <div class="input-wrapper">
@@ -255,6 +308,8 @@ import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
 import { MessageCircleDashed, Mic, Paperclip, Smile } from "lucide-vue-next";
 import { CircleEllipsis, Search, Video } from "lucide-vue-next";
 import { useShowMessageStore } from "@/store/message/showMessage";
+import { useComposerReplyStore } from "@/store/message/composerReply";
+import { useComposerAtStore } from "@/store/message/composerAt";
 import { useSendMessageStore } from "@/store/message/sendMessage";
 import { useFileUploadStore } from "@/store/message/fileUpload";
 import { useImagePreviewStore } from "@/store/message/imagePreview";
@@ -278,20 +333,28 @@ import {
   stopInfoPanelResizeFlow,
   bindWindowWebSocketListeners,
 } from "@/interactions/chatContainer/ChatContainerInteraction";
-import { handleRealtimeIncomingMessage } from "@/normalize/message";
+import {
+  handleRealtimeIncomingMessage,
+  flattenRealtimeNewMessagePayload,
+} from "@/normalize/message";
+import { formatQuotedMessageContentPreview } from "@/commons/utils/message-reply-content-preview";
 import type { DisplayMessage } from "@/entity/message";
+import { useFriendStore } from "@/store/friend/showFriend";
 import type { User } from "@/entity/user";
 import toast from "@/commons/utils/toast";
 import { MemberStatus } from "@/entity/conversation-member";
 
 // Store
 const showMessageStore = useShowMessageStore();
+const composerReplyStore = useComposerReplyStore();
+const composerAtStore = useComposerAtStore();
 const sendMessageStore = useSendMessageStore();
 const fileUploadStore = useFileUploadStore();
 const imagePreviewStore = useImagePreviewStore();
 const authStore = useUserStore();
 const websocketStore = useWebSocketStore();
 const conversationStore = useConvStore();
+const friendStore = useFriendStore();
 
 // Props
 const props = defineProps({
@@ -498,6 +561,106 @@ const handleAvatarError = (event: Event) => {
 const messages = computed(() => showMessageStore.messages);
 const isLoading = computed(() => showMessageStore.loading);
 
+/**
+ * 输入框上方「待回复」条：展示被引用消息发送者（备注/群昵称/昵称策略）与内容摘要。
+ * 使用场景：用户从消息气泡旁选中回复后、尚未发出下一条前。
+ */
+const pendingReplyPreview = computed(
+  (): {
+    title: string;
+    detail: string;
+  } | null => {
+    void friendStore.friends;
+    if (props.convId == null) return null;
+    if (
+      composerReplyStore.targetConvId !== props.convId ||
+      composerReplyStore.targetMessageId == null
+    ) {
+      return null;
+    }
+    const mid = Number(composerReplyStore.targetMessageId);
+    if (!Number.isFinite(mid) || mid <= 0) return null;
+    const src = showMessageStore.messages.find((m) => m.messageId === mid);
+    if (!src) {
+      return { title: "消息", detail: `引用 #${mid}` };
+    }
+    return {
+      title: showMessageStore.getSenderDisplayName(src),
+      detail: formatQuotedMessageContentPreview(src),
+    };
+  }
+);
+
+/**
+ * 输入框上方「待 @」条：展示已被选中提及的用户（群策略展示名）。
+ */
+const pendingAtStripChips = computed(
+  (): { userId: number; label: string }[] => {
+    void friendStore.friends;
+    if (props.convId == null) return [];
+    const ids = composerAtStore.getPendingAtUserIdsForConv(props.convId);
+    if (!ids?.length) return [];
+    const members = conversationStore.compressedCMMap.get(props.convId) ?? [];
+    const ct = currentConvTypeOrNull.value;
+    return ids.map((uid) => {
+      const member = members.find((m) => Number(m.userId) === Number(uid));
+      return {
+        userId: uid,
+        label: showMessageStore.resolveSenderName(
+          Number(uid),
+          member?.userNickname || "User",
+          ct ?? undefined,
+          member?.memberNickname ?? null,
+          props.convId
+        ),
+      };
+    });
+  }
+);
+
+/**
+ * 读取当前会话已选中的 reply_to_message_id，不改变 store（发送成功后再清空）。
+ */
+const takeReplyToMessageIdForCurrentConv = (): number | undefined => {
+  if (props.convId == null) return undefined;
+  const cid = Number(props.convId);
+  const tid =
+    composerReplyStore.targetConvId == null
+      ? NaN
+      : Number(composerReplyStore.targetConvId);
+  if (
+    !Number.isFinite(cid) ||
+    cid <= 0 ||
+    tid !== cid ||
+    composerReplyStore.targetMessageId == null
+  ) {
+    return undefined;
+  }
+  const n = Number(composerReplyStore.targetMessageId);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+};
+
+const handleStartReplyMessage = (msg: DisplayMessage) => {
+  if (props.convId == null || msg.convId !== props.convId) return;
+  composerReplyStore.setPendingReply(props.convId, msg.messageId);
+};
+
+/**
+ * 从消息气泡旁 @：将该条发送者加入/移出下一条要带的 atUserIds（WS/HTTP 驼峰）。
+ */
+const handleStartAtMention = (msg: DisplayMessage) => {
+  if (props.convId == null || msg.convId !== props.convId) return;
+  composerAtStore.toggleAtFromMessage(props.convId, msg.senderId);
+};
+
+watch(
+  () => props.convId,
+  () => {
+    composerReplyStore.clearPendingReply();
+    composerAtStore.clearAtTargets();
+  }
+);
+
 // 是否为群聊
 const isGroupChat = computed(() => {
   return (
@@ -556,7 +719,9 @@ const setupWebSocketEventListeners = () => {
 
   const cleanup = bindWindowWebSocketListeners({
     onNewMessage: (message) => {
-      if (message.convId === props.convId) {
+      const g = flattenRealtimeNewMessagePayload(message);
+      const cid = Number(g.convId ?? message.convId);
+      if (cid === props.convId) {
         handleIncomingWebSocketMessage(message);
       }
     },
@@ -588,13 +753,20 @@ const handleIncomingWebSocketMessage = (message: any) => {
   const currentUser = authStore.user;
   if (!currentUser?.userId) return;
 
+  const flat = flattenRealtimeNewMessagePayload(message);
+  const convIdForMembers = Number(flat.convId ?? message.convId);
+  const safeConvId =
+    Number.isFinite(convIdForMembers) && convIdForMembers > 0
+      ? convIdForMembers
+      : Number(message.convId);
+
   const box = messagesContainer.value;
   const result = handleRealtimeIncomingMessage({
     payload: message,
     currentUserId: currentUser.userId,
     currentUserAvatar: currentUser.userAvatar || null,
     conversationMembers:
-      conversationStore.compressedCMMap.get(Number(message.convId)) || [],
+      conversationStore.compressedCMMap.get(safeConvId) || [],
     hasMessage: (messageId: number) =>
       showMessageStore.messages.some((msg) => msg.messageId === messageId),
     appendMessage: (displayMessage: DisplayMessage) =>
@@ -630,7 +802,18 @@ const sendMessage = async () => {
   isSending.value = true;
 
   try {
-    console.log("发送消息:", { convId: props.convId, content });
+    /** 与下行 WS 一致的引用回复目标；仅下一条发送消费。 */
+    const replyToMessageId = takeReplyToMessageIdForCurrentConv();
+    /** 与下行 WS 一致的 @ 列表；发送成功后清空 composerAt。 */
+    const pendingAtUserIds = composerAtStore.getPendingAtUserIdsForConv(
+      props.convId
+    );
+    console.log("发送消息:", {
+      convId: props.convId,
+      content,
+      replyToMessageId,
+      pendingAtUserIds,
+    });
 
     // 1. 本地即时回显（文本与附件统一走 appendLocalMessageEcho）
     tempMessage = sendMessageStore.appendLocalMessageEcho(
@@ -646,6 +829,10 @@ const sendMessage = async () => {
       {
         kind: "text",
         content,
+        ...(replyToMessageId != null ? { replyToMessageId } : {}),
+        ...(pendingAtUserIds?.length
+          ? { atUserIds: [...pendingAtUserIds] }
+          : {}),
       }
     );
     scrollToBottom();
@@ -665,12 +852,23 @@ const sendMessage = async () => {
       convId: props.convId,
       messageType: "text",
       messageContent: content,
+      ...(replyToMessageId != null ? { replyToMessageId } : {}),
+      ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
     });
     if (!success) {
       throw new Error("WebSocket send failed");
     }
+    if (replyToMessageId != null) {
+      composerReplyStore.clearPendingReply();
+    }
+    if (pendingAtUserIds?.length) {
+      composerAtStore.clearAtTargets();
+    }
     if (tempMessage) {
-      conversationStore.syncConversationLastMessageFromSentDisplay(props.convId, tempMessage);
+      conversationStore.syncConversationLastMessageFromSentDisplay(
+        props.convId,
+        tempMessage
+      );
     }
   } catch (error) {
     console.error("发送消息失败:", error);
@@ -771,6 +969,10 @@ const sendFileMessage = async (params: {
     mimeType: params.mimeType,
   };
   const messageContent = JSON.stringify(messagePayload);
+  const replyToMessageId = takeReplyToMessageIdForCurrentConv();
+  const pendingAtUserIds = composerAtStore.getPendingAtUserIdsForConv(
+    props.convId
+  );
   const tempMessage = sendMessageStore.appendLocalMessageEcho(
     {
       convId: props.convId,
@@ -786,6 +988,8 @@ const sendFileMessage = async (params: {
       fileName: params.fileName,
       fileSize: params.fileSize,
       mimeType: params.mimeType,
+      ...(replyToMessageId != null ? { replyToMessageId } : {}),
+      ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
     }
   );
   scrollToBottom();
@@ -797,12 +1001,23 @@ const sendFileMessage = async (params: {
     convId: props.convId,
     messageType: params.messageType,
     messageContent,
+    ...(replyToMessageId != null ? { replyToMessageId } : {}),
+    ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
   });
   if (!success) {
     showMessageStore.updateMessageStatus(tempMessage.messageId, 4);
     throw new Error("附件消息发送失败");
   }
-  conversationStore.syncConversationLastMessageFromSentDisplay(props.convId, tempMessage);
+  if (replyToMessageId != null) {
+    composerReplyStore.clearPendingReply();
+  }
+  if (pendingAtUserIds?.length) {
+    composerAtStore.clearAtTargets();
+  }
+  conversationStore.syncConversationLastMessageFromSentDisplay(
+    props.convId,
+    tempMessage
+  );
 };
 
 /**
@@ -873,7 +1088,10 @@ const handleFilePicked = async (event: Event) => {
         mimeType: pickedFile.type || "application/octet-stream",
       });
       if (echoed) {
-        conversationStore.syncConversationLastMessageFromSentDisplay(props.convId, echoed);
+        conversationStore.syncConversationLastMessageFromSentDisplay(
+          props.convId,
+          echoed
+        );
       }
       return;
     }

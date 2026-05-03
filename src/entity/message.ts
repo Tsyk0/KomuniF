@@ -16,6 +16,16 @@ export interface RealMessage {
 }
 
 export interface DisplayMessage extends RealMessage {
+    /**
+     * 服务端随消息下发的「被引用发送者」展示文案。
+     * 使用场景：WS/HTTP 推送里带有引用快照时，接收端尚未加载到原消息仍能画出引用条。
+     */
+    replyQuoteAuthorHint?: string | null;
+    /**
+     * 服务端随消息下发的被引用正文摘要（一行）。
+     * 使用场景：同上，配合 replyQuoteAuthorHint 展示「发送者：摘要」。
+     */
+    replyQuoteContentHint?: string | null;
     // 前端显示需要的字段
     senderName?: string;
     senderAvatar?: string | null; // 改为 string | null 以兼容原有数据

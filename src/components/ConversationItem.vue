@@ -46,10 +46,7 @@
             </span>
           </div>
 
-          <!-- <div v-if="showMessageStatus" class="message-status">
-          <el-icon v-if="lastMessageStatus === 'sent'"><Check /></el-icon>
-          <el-icon v-if="lastMessageStatus === 'read'"><Check /></el-icon>
-        </div> -->
+
         </div>
       </div>
     </div>

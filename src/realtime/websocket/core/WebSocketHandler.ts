@@ -14,6 +14,8 @@ export class WebSocketHandler {
 
   readonly sessionManager = new WebSocketSessionManager();
   readonly actionHandler = new WebSocketActionHandler((payload) => this.send(payload));
+// (payload) => this.send(payload)是构造函数参数，是一个匿名方法，匿名方法内部有this.send(payload)方法
+// 即，handler构造时需要传递这个匿名方法，而不是构造的时候立即调用this.send(payload)
 
   /**
    * 建立连接并批量订阅会话。

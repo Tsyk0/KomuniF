@@ -597,6 +597,48 @@ html.night-mode .message-input-container {
   box-sizing: border-box;
 }
 
+html.night-mode .message-input-container .composer-reply-strip {
+  color: rgba(226, 232, 240, 0.92);
+  background: rgba(51, 65, 85, 0.45);
+  border-color: rgba(100, 116, 139, 0.35);
+}
+
+html.night-mode .message-input-container .composer-reply-strip__label {
+  color: rgba(241, 245, 249, 0.96);
+}
+
+html.night-mode .message-input-container .composer-reply-strip__snippet {
+  color: rgba(203, 213, 225, 0.9);
+}
+
+html.night-mode .message-input-container .composer-reply-strip__close {
+  color: rgba(203, 213, 225, 0.85);
+}
+
+html.night-mode .message-input-container .composer-reply-strip__close:hover {
+  background: rgba(148, 163, 184, 0.16);
+  color: #f8fafc;
+}
+
+html.night-mode .message-input-container .composer-at-strip {
+  color: rgba(226, 232, 240, 0.92);
+  background: rgba(51, 65, 85, 0.38);
+  border-color: rgba(167, 139, 250, 0.35);
+}
+
+html.night-mode .message-input-container .composer-at-strip__chip {
+  color: var(--theme-primary-soft, var(--theme-primary, #a78bfa));
+}
+
+html.night-mode .message-input-container .composer-at-strip__close {
+  color: rgba(203, 213, 225, 0.85);
+}
+
+html.night-mode .message-input-container .composer-at-strip__close:hover {
+  background: rgba(167, 139, 250, 0.12);
+  color: #f8fafc;
+}
+
 html.night-mode .message-input-container .composer-row {
   display: flex;
   align-items: center;

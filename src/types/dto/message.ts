@@ -9,6 +9,7 @@ export interface SendMessageRequest {
     messageType: string;
     messageContent: string;
     replyToMessageId?: number;
+    /** @ 提及的用户 ID 数组，如 [1, 2]（线协议与 HTTP body 均为驼峰；库表列名由服务端映射）。 */
     atUserIds?: number[];
 }
 
@@ -61,6 +62,10 @@ export interface MessageSummaryDTO {
 
   // 引用和撤回相关
   replyToMessageId?: number | null;
+  /** 被引用消息发送者展示名（服务端快照，可选） */
+  replyToSenderDisplayName?: string | null;
+  /** 被引用消息内容摘要（服务端快照，可选） */
+  replyToContentSnippet?: string | null;
   atUserIds?: number[] | null;
   recallTime?: string | null;
   // 文件消息扩展字段（后端摘要直出）

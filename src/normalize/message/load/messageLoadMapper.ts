@@ -8,12 +8,41 @@ import type {
 } from "@/types/dto/message";
 
 /**
+ * 将单条消息摘要的 snake_case 与 camelCase 对齐，便于 loadmore/锚点/边界分页与后端字段同步。
+ * 使用场景：HTTP 若仍带 `reply_to_message_id`、`at_user_ids` 等别名，映射层统一并进 DTO。
+ */
+function normalizeMessageSummaryRow(
+  row: MessageSummaryDTO | Record<string, unknown>
+): MessageSummaryDTO {
+  const r = row as Record<string, unknown>;
+  const base = { ...r } as MessageSummaryDTO;
+
+  if (base.replyToMessageId == null && r.reply_to_message_id != null) {
+    const n = Number(r.reply_to_message_id);
+    base.replyToMessageId = Number.isFinite(n) ? n : null;
+  }
+  if (base.atUserIds == null && r.at_user_ids != null) {
+    base.atUserIds = Array.isArray(r.at_user_ids)
+      ? (r.at_user_ids as number[])
+      : null;
+  }
+  if (base.replyToSenderDisplayName == null && r.reply_to_sender_display_name != null) {
+    base.replyToSenderDisplayName = String(r.reply_to_sender_display_name);
+  }
+  if (base.replyToContentSnippet == null && r.reply_to_content_snippet != null) {
+    base.replyToContentSnippet = String(r.reply_to_content_snippet);
+  }
+  return base;
+}
+
+/**
  * 统一历史消息数组兜底，保证调用方拿到可迭代数组。
  */
 export function mapHistoryMessages(
   messages: MessageSummaryDTO[] | null | undefined
 ): MessageSummaryDTO[] {
-  return Array.isArray(messages) ? messages : [];
+  if (!Array.isArray(messages)) return [];
+  return messages.map((m) => normalizeMessageSummaryRow(m));
 }
 
 /**
@@ -132,6 +161,8 @@ export function mapMessageSummaryToDisplayMessage(
     sendTime: message.sendTime,
     isRecalled: message.isRecalled,
     replyToMessageId: message.replyToMessageId,
+    replyQuoteAuthorHint: message.replyToSenderDisplayName ?? null,
+    replyQuoteContentHint: message.replyToContentSnippet ?? null,
     atUserIds: message.atUserIds,
     recallTime: message.recallTime,
     senderName: resolveMessageSenderDisplayName(

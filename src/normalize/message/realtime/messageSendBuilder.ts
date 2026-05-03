@@ -5,6 +5,19 @@ import {
   buildFileThumbnailUrl,
 } from "@/commons/utils/file-url";
 
+function normalizeAtUserIdsInput(ids?: number[] | null): number[] | undefined {
+  if (!ids?.length) return undefined;
+  const out: number[] = [];
+  const seen = new Set<number>();
+  for (const raw of ids) {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0 || seen.has(n)) continue;
+    seen.add(n);
+    out.push(n);
+  }
+  return out.length ? out : undefined;
+}
+
 /** 临时文本消息构建参数。 */
 export interface TempTextMessageBuildInput {
   /** 当前会话 ID。 */
@@ -19,6 +32,10 @@ export interface TempTextMessageBuildInput {
   content: string;
   /** 当前会话成员缓存（来自 compressedCMMap）。 */
   conversationMembers?: MessageDisplayMemberDTO[];
+  /** 被引用回复的消息 ID（与 WS sendMessage.replyToMessageId 一致）。 */
+  replyToMessageId?: number | null;
+  /** @ 提及的用户 ID 列表（与 WS sendMessage.atUserIds 一致）。 */
+  atUserIds?: number[] | null;
 }
 
 export interface TempFileMessageBuildInput {
@@ -32,6 +49,10 @@ export interface TempFileMessageBuildInput {
   messageType: "image" | "file" | "video";
   /** 业务消息 JSON 字符串。 */
   messageContent: string;
+  /** 被引用回复的消息 ID；附件与文本共用。 */
+  replyToMessageId?: number | null;
+  /** @ 提及用户 ID；附件与文本共用。 */
+  atUserIds?: number[] | null;
   /** 文件 ID。 */
   fileId: string;
   /** 文件名。 */
@@ -55,6 +76,14 @@ export function buildTempTextMessage(
   );
   const senderName = "我";
 
+  const replyId = input.replyToMessageId;
+  const replyToMessageId =
+    replyId != null && Number.isFinite(Number(replyId)) && Number(replyId) > 0
+      ? Number(replyId)
+      : undefined;
+
+  const atUserIds = normalizeAtUserIdsInput(input.atUserIds);
+
   return {
     messageId: now,
     convId: input.convId,
@@ -63,6 +92,8 @@ export function buildTempTextMessage(
     messageContent: input.content,
     messageStatus: 0,
     sendTime: new Date(now).toISOString(),
+    replyToMessageId,
+    atUserIds,
     senderName,
     senderAvatar: input.currentUserAvatar || me?.userAvatar || null,
     isSentByMe: true,
@@ -75,6 +106,12 @@ export function buildTempTextMessage(
  */
 export function buildTempFileMessage(input: TempFileMessageBuildInput): DisplayMessage {
   const now = Date.now();
+  const replyId = input.replyToMessageId;
+  const replyToMessageId =
+    replyId != null && Number.isFinite(Number(replyId)) && Number(replyId) > 0
+      ? Number(replyId)
+      : undefined;
+  const atUserIds = normalizeAtUserIdsInput(input.atUserIds);
   return {
     messageId: now,
     convId: input.convId,
@@ -83,6 +120,8 @@ export function buildTempFileMessage(input: TempFileMessageBuildInput): DisplayM
     messageContent: input.messageContent,
     messageStatus: 0,
     sendTime: new Date(now).toISOString(),
+    replyToMessageId,
+    atUserIds,
     senderName: "我",
     senderAvatar: input.currentUserAvatar || null,
     isSentByMe: true,

@@ -7,7 +7,11 @@ import type { SendMessageRequest, SendMessageResponseData } from '@/types/dto/me
 export function sendMessageApi(
     data: SendMessageRequest
 ): Promise<BaseResponse<SendMessageResponseData>> {
-    const { convId, ...payload } = data;
+    const { convId, atUserIds, ...rest } = data;
+    const payload: Record<string, unknown> = { ...rest };
+    if (atUserIds != null && Array.isArray(atUserIds) && atUserIds.length > 0) {
+        payload.atUserIds = [...atUserIds];
+    }
     return service({
         url: `/conversations/${convId}/messages`,
         method: 'post',

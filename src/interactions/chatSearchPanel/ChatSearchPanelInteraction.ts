@@ -26,6 +26,8 @@ export function mapSearchSummaryToDisplayMessage(
     messageStatus: dto.messageStatus,
     isRecalled: dto.isRecalled,
     replyToMessageId: dto.replyToMessageId == null ? null : dto.replyToMessageId,
+    replyQuoteAuthorHint: dto.replyToSenderDisplayName ?? null,
+    replyQuoteContentHint: dto.replyToContentSnippet ?? null,
     atUserIds: dto.atUserIds == null ? null : dto.atUserIds,
     sendTime: dto.sendTime,
     recallTime: dto.recallTime == null ? null : dto.recallTime,
