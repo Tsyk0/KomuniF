@@ -74,7 +74,7 @@
 }
 
 .message-item .message-reply-btn--self {
-  color: rgba(255, 255, 255, 0.92);
+  color: #64748b;
 }
 
 .message-item .message-bubble-row:hover .message-reply-btn,
@@ -91,8 +91,8 @@
 }
 
 .message-item .message-reply-btn--self:hover {
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
+  background: rgba(100, 116, 139, 0.14);
+  color: #334155;
 }
 
 /* 悬浮显示「@」按钮（与回复同规则） */
@@ -116,7 +116,7 @@
 }
 
 .message-item .message-at-btn--self {
-  color: rgba(255, 255, 255, 0.92);
+  color: #64748b;
 }
 
 .message-item .message-at-btn:hover {
@@ -125,8 +125,8 @@
 }
 
 .message-item .message-at-btn--self:hover {
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
+  background: rgba(100, 116, 139, 0.14);
+  color: #334155;
 }
 
 /* 被引用消息条：灰底半透明，位于主气泡下方 */

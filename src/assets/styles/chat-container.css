@@ -186,6 +186,12 @@
   overflow: hidden;
 }
 
+/* 消息加载期间隐藏容器，防止"先见顶端再跳底"的闪烁；
+   用 visibility 而非 display:none，保证 scrollHeight 可正常计算 */
+.messages-container.messages-loading {
+  visibility: hidden;
+}
+
 .loading-indicator {
   text-align: center;
   padding: 16px;
@@ -944,4 +950,51 @@
 /* 最后调整确保完全一致 */
 .chat-container * {
   box-sizing: border-box;
+}
+
+/* 滚到底部浮动按钮 */
+.chat-main .scroll-to-bottom-btn {
+  position: absolute;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6b7280;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-main .scroll-to-bottom-btn:hover {
+  background: rgba(107, 114, 128, 0.10);
+  color: #374151;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+}
+
+.chat-main .scroll-to-bottom-btn:active {
+  background: rgba(107, 114, 128, 0.20);
+  color: #374151;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10);
+}
+
+/* 出现/消失过渡动画 */
+.scroll-btn-fade-enter-active,
+.scroll-btn-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.scroll-btn-fade-enter-from,
+.scroll-btn-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
 }

@@ -89,9 +89,10 @@
         <!-- 消息列表区域 -->
         <div
           class="messages-container"
-          :class="{ 'search-open': isSearchOpen }"
+          :class="{ 'search-open': isSearchOpen, 'messages-loading': !isMessagesReady }"
           ref="messagesContainer"
           @scroll="
+            updateIsAtBottom();
             !isSearchOpen &&
               !isRestoringScroll &&
               scheduleMessagesScrollPagination()
@@ -140,6 +141,21 @@
             </div>
           </template>
         </div>
+
+        <!-- 滚到底部浮动按钮：仅在未处于底部且非搜索模式时显示 -->
+        <Transition name="scroll-btn-fade">
+          <button
+            v-if="!isAtBottom && !isSearchOpen"
+            class="scroll-to-bottom-btn"
+            type="button"
+            aria-label="滚到最新消息"
+            title="滚到最新消息"
+            v-ripple
+            @click="scrollToBottomSmooth"
+          >
+            <ChevronsDown :size="22" :stroke-width="2.2" />
+          </button>
+        </Transition>
 
         <!-- 发送消息区域 -->
         <div class="message-input-container">
@@ -306,7 +322,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
 import { MessageCircleDashed, Mic, Paperclip, Smile } from "lucide-vue-next";
-import { CircleEllipsis, Search, Video } from "lucide-vue-next";
+import { CircleEllipsis, Search, Video, ChevronsDown } from "lucide-vue-next";
 import { useShowMessageStore } from "@/store/message/showMessage";
 import { useComposerReplyStore } from "@/store/message/composerReply";
 import { useComposerAtStore } from "@/store/message/composerAt";
@@ -459,6 +475,13 @@ const isSearchOpen = ref(false);
 const savedScrollTop = ref(0);
 const savedWasAtBottom = ref(true);
 const isRestoringScroll = ref(false);
+/** 当前消息列表是否处于底部，控制「滚到底部」浮动按钮的显示 */
+const isAtBottom = ref(true);
+/**
+ * 消息区域是否已就绪（加载完成且 scroll 已定位到底部）。
+ * 为 false 时对用户不可见，防止"先显示顶端再跳底"的闪烁。
+ */
+const isMessagesReady = ref(false);
 /** 搜索跳锚点期间禁止「消息 watch 自动滚到底部」，避免抢滚动位置 */
 const suppressAutoScrollForAnchorJump = ref(false);
 /** 顶/底分页单次飞行，避免滚动事件连触发多次加载 */
@@ -479,6 +502,18 @@ const snapshotMessageScrollPosition = () => {
   savedScrollTop.value = el.scrollTop;
   const bottomGap = el.scrollHeight - (el.scrollTop + el.clientHeight);
   savedWasAtBottom.value = bottomGap <= 6;
+};
+
+/**
+ * 实时更新 isAtBottom 状态，供「滚到底部」按钮判断是否显示。
+ * 作用场景：每次 messages-container 触发 scroll 事件时调用，
+ * 距底部超过 80px 则认为用户离开底部，显示浮动按钮。
+ */
+const updateIsAtBottom = () => {
+  const el = messagesContainer.value;
+  if (!el) return;
+  const bottomGap = el.scrollHeight - (el.scrollTop + el.clientHeight);
+  isAtBottom.value = bottomGap <= 80;
 };
 
 const restoreMessageScrollPosition = async () => {
@@ -889,6 +924,10 @@ const sendMessage = async () => {
 const loadMessages = async () => {
   if (!props.convId) return;
 
+  // 切换会话时先隐藏容器，防止"先见顶端再跳底"的闪烁
+  isMessagesReady.value = false;
+  isAtBottom.value = true;
+
   console.log("ChatContainer: 触发加载消息，会话ID:", props.convId);
   await loadConversationMessagesAndSyncRealtime({
     convId: props.convId,
@@ -912,6 +951,12 @@ const loadMessages = async () => {
       websocketStore.connect(userId, convId),
     subscribeConversation: (convId) => websocketStore.sendSubscribe(convId),
   });
+
+  // scrollToBottom 内部用 nextTick 设置 scrollTop，再等一个 rAF 确保
+  // 浏览器已提交绘制，然后才显示容器，彻底消除"先见顶端再跳底"的闪烁。
+  await nextTick();
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  isMessagesReady.value = true;
 };
 
 /**
@@ -1170,12 +1215,23 @@ const handlePreviewMouseUp = () => {
 };
 
 /**
- * 滚动到底部
+ * 滚动到底部（瞬移）。
+ * 作用场景：初始加载、发送消息、WS 实时推送等需要立即到底的时机。
  */
 const scrollToBottom = () => {
   nextTick(() => {
     scrollContainerToBottom(messagesContainer.value);
   });
+};
+
+/**
+ * 丝滑滚动到底部，仅供「滚到底部」浮动按钮调用。
+ * 作用场景：用户主动点击按钮时，用 smooth 动画过渡避免跳屏感。
+ */
+const scrollToBottomSmooth = () => {
+  const el = messagesContainer.value;
+  if (!el) return;
+  el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
 };
 
 const startAnchorFlash = (messageId: number) => {
