@@ -16,6 +16,8 @@ export interface RealMessage {
 }
 
 export interface DisplayMessage extends RealMessage {
+    /** 前端本地临时消息唯一标识，用于等待 messageSent 回执后回填真实 messageId。 */
+    clientMessageId?: string;
     /**
      * 服务端随消息下发的「被引用发送者」展示文案。
      * 使用场景：WS/HTTP 推送里带有引用快照时，接收端尚未加载到原消息仍能画出引用条。

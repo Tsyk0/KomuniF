@@ -63,6 +63,20 @@ html.night-mode .message-item .message-at-btn--self:hover {
   color: #ffffff;
 }
 
+html.night-mode .message-item .message-recall-btn {
+  color: rgba(148, 163, 184, 0.95);
+}
+
+html.night-mode .message-item .message-recall-btn:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.16);
+  color: #e2e8f0;
+}
+
+html.night-mode .message-item .message-recall-btn--self:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
 html.night-mode .message-item .message-at-mentions-bar {
   background: rgba(51, 65, 85, 0.4);
   border-color: rgba(100, 116, 139, 0.32);

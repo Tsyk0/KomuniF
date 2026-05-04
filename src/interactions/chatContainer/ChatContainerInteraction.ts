@@ -394,6 +394,8 @@ export function bindWindowWebSocketListeners(input: {
   onNewMessage: (detail: any) => void;
   // 发送确认事件回调（当前可空实现）
   onMessageSent: (detail: any) => void;
+  // 撤回广播事件回调
+  onMessageRecalled?: (detail: any) => void;
   // 错误事件回调
   onError: (detail: any) => void;
 }): () => void {
@@ -403,15 +405,20 @@ export function bindWindowWebSocketListeners(input: {
   const handleMessageSent = (event: Event) => {
     input.onMessageSent((event as CustomEvent).detail);
   };
+  const handleMessageRecalled = (event: Event) => {
+    input.onMessageRecalled?.((event as CustomEvent).detail);
+  };
   const handleError = (event: Event) => {
     input.onError((event as CustomEvent).detail);
   };
   window.addEventListener("websocket:newMessage", handleNewMessage);
   window.addEventListener("websocket:messageSent", handleMessageSent);
+  window.addEventListener("websocket:messageRecalled", handleMessageRecalled);
   window.addEventListener("websocket:error", handleError);
   return () => {
     window.removeEventListener("websocket:newMessage", handleNewMessage);
     window.removeEventListener("websocket:messageSent", handleMessageSent);
+    window.removeEventListener("websocket:messageRecalled", handleMessageRecalled);
     window.removeEventListener("websocket:error", handleError);
   };
 }

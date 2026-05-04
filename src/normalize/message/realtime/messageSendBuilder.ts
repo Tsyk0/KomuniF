@@ -36,6 +36,8 @@ export interface TempTextMessageBuildInput {
   replyToMessageId?: number | null;
   /** @ 提及的用户 ID 列表（与 WS sendMessage.atUserIds 一致）。 */
   atUserIds?: number[] | null;
+  /** 前端生成的临时消息标识，用于和 messageSent 回执对齐。 */
+  clientMessageId?: string;
 }
 
 export interface TempFileMessageBuildInput {
@@ -61,6 +63,8 @@ export interface TempFileMessageBuildInput {
   fileSize: number;
   /** 文件 MIME。 */
   mimeType: string;
+  /** 前端生成的临时消息标识，用于和 messageSent 回执对齐。 */
+  clientMessageId?: string;
 }
 
 /**
@@ -86,6 +90,7 @@ export function buildTempTextMessage(
 
   return {
     messageId: now,
+    clientMessageId: input.clientMessageId,
     convId: input.convId,
     senderId: input.currentUserId,
     messageType: "text",
@@ -114,6 +119,7 @@ export function buildTempFileMessage(input: TempFileMessageBuildInput): DisplayM
   const atUserIds = normalizeAtUserIdsInput(input.atUserIds);
   return {
     messageId: now,
+    clientMessageId: input.clientMessageId,
     convId: input.convId,
     senderId: input.currentUserId,
     messageType: input.messageType,

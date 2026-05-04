@@ -115,6 +115,28 @@ export async function getMessageByIdFromDB(
 }
 
 /**
+ * 按 messageId 局部更新本地消息缓存。
+ */
+export async function patchMessageInDB(
+  messageId: number,
+  patch: Partial<MessageSummaryDTO>
+): Promise<void> {
+  const db = await dbPromise
+  const tx = db.transaction('messages', 'readwrite')
+  const oldRow = await tx.store.get(messageId)
+  if (!oldRow) {
+    await tx.done
+    return
+  }
+  await tx.store.put({
+    ...oldRow,
+    ...patch,
+    sendTimeMs: Date.parse((patch.sendTime || oldRow.sendTime) as string)
+  })
+  await tx.done
+}
+
+/**
  * 某会话在本地库中的全部消息（时间升序，不含已撤回）
  */
 export async function getAllMessagesForConvFromDB(

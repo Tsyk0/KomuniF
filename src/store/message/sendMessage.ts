@@ -1,18 +1,16 @@
 // src/store/message/sendMessage.ts
 import { defineStore } from "pinia";
-import { ref } from "vue";
-import type { SendMessageRequest, SendMessageResponseData } from "@/types/dto/message";
-import { sendMessageNormalized } from "@/normalize/message";
 import { buildTempFileMessage, buildTempTextMessage } from "@/normalize/message";
 import type { DisplayMessage } from "@/entity/message";
 import type { MessageDisplayMemberDTO } from "@/types/dto/conversation";
-import { useWebSocketStore } from "@/store/realtime/websocket";
 import { useShowMessageStore } from "@/store/message/showMessage";
 
 type LocalEchoPayload =
   | {
       kind: "text";
       content: string;
+      /** 前端生成的临时消息标识，用于和 messageSent 回执对齐。 */
+      clientMessageId?: string;
       /** 与下行 WS 一致：引用回复的目标 messageId。 */
       replyToMessageId?: number;
       /** 与下行 WS 一致的 @ 用户 ID 列表。 */
@@ -25,6 +23,8 @@ type LocalEchoPayload =
       fileName: string;
       fileSize: number;
       mimeType: string;
+      /** 前端生成的临时消息标识，用于和 messageSent 回执对齐。 */
+      clientMessageId?: string;
       replyToMessageId?: number;
       atUserIds?: number[];
     };
@@ -38,30 +38,7 @@ interface LocalEchoContext {
 }
 
 export const useSendMessageStore = defineStore("sendMessage", () => {
-  const webSocketStore = useWebSocketStore();
   const showMessageStore = useShowMessageStore();
-  const isSending = ref(false);
-
-  /**
-   * 双通道发送：
-   * 先尝试 WS 实时发送，再通过 HTTP 持久化，最终以 HTTP 结果为准。
-   */
-  const sendMessage = async (
-    request: SendMessageRequest
-  ): Promise<SendMessageResponseData> => {
-    isSending.value = true;
-    try {
-      // 统一入口：根据 messageType 路由到具体发送逻辑（当前仅实现 text）。
-      void webSocketStore.sendMessageByType(request);
-      const normalized = await sendMessageNormalized(request);
-      if (!normalized.success || !normalized.data) {
-        throw new Error(normalized.message || "发送消息失败");
-      }
-      return normalized.data;
-    } finally {
-      isSending.value = false;
-    }
-  };
 
   /**
    * 统一本地回显（文本 + 附件），用于“自己发送时先显示一条发送中消息”。
@@ -80,6 +57,7 @@ export const useSendMessageStore = defineStore("sendMessage", () => {
             currentUserNickname: context.currentUserNickname || null,
             currentUserAvatar: context.currentUserAvatar || null,
             content: payload.content,
+            clientMessageId: payload.clientMessageId,
             conversationMembers: context.conversationMembers,
             replyToMessageId: payload.replyToMessageId,
             atUserIds: payload.atUserIds,
@@ -99,6 +77,7 @@ export const useSendMessageStore = defineStore("sendMessage", () => {
             fileName: payload.fileName,
             fileSize: payload.fileSize,
             mimeType: payload.mimeType,
+            clientMessageId: payload.clientMessageId,
             replyToMessageId: payload.replyToMessageId,
             atUserIds: payload.atUserIds,
           });
@@ -107,8 +86,6 @@ export const useSendMessageStore = defineStore("sendMessage", () => {
   };
 
   return {
-    isSending,
-    sendMessage,
     appendLocalMessageEcho,
   };
 });

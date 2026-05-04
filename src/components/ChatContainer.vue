@@ -123,12 +123,16 @@
               <!-- 每条消息使用MessageItem组件 -->
               <MessageItem
                 v-for="message in messages"
-                :key="message.messageId"
+                :key="messageListRowKey(message)"
                 :message="message"
                 :conv-type="currentConvTypeOrNull"
+                :current-user-id="currentUserId"
+                :current-user-role="currentUserRoleInGroup"
+                :recall-loading="recallingMessageIdSet.has(message.messageId)"
                 :flash-anchor="anchorFlashMessageId === message.messageId"
                 @start-reply="handleStartReplyMessage"
                 @start-at-mention="handleStartAtMention"
+                @recall-message="handleRecallMessage"
               />
 
               <!-- 没有消息的提示 -->
@@ -327,6 +331,7 @@ import { useShowMessageStore } from "@/store/message/showMessage";
 import { useComposerReplyStore } from "@/store/message/composerReply";
 import { useComposerAtStore } from "@/store/message/composerAt";
 import { useSendMessageStore } from "@/store/message/sendMessage";
+import { useRecallMessageStore } from "@/store/message/recallMessage";
 import { useFileUploadStore } from "@/store/message/fileUpload";
 import { useImagePreviewStore } from "@/store/message/imagePreview";
 import { useUserStore } from "@/store/user/user";
@@ -358,13 +363,14 @@ import type { DisplayMessage } from "@/entity/message";
 import { useFriendStore } from "@/store/friend/showFriend";
 import type { User } from "@/entity/user";
 import toast from "@/commons/utils/toast";
-import { MemberStatus } from "@/entity/conversation-member";
+import { MemberStatus, MemberRole } from "@/entity/conversation-member";
 
 // Store
 const showMessageStore = useShowMessageStore();
 const composerReplyStore = useComposerReplyStore();
 const composerAtStore = useComposerAtStore();
 const sendMessageStore = useSendMessageStore();
+const recallMessageStore = useRecallMessageStore();
 const fileUploadStore = useFileUploadStore();
 const imagePreviewStore = useImagePreviewStore();
 const authStore = useUserStore();
@@ -495,6 +501,37 @@ let searchJumpSeq = 0;
 /** 搜索跳转后高亮锚点条（约 3s 闪烁） */
 const anchorFlashMessageId = ref<number | null>(null);
 let anchorFlashClearTimer: ReturnType<typeof setTimeout> | null = null;
+/** 正在发起撤回请求的消息 ID 集合；用于按钮加载态与防重复点击。 */
+const recallingMessageIdSet = ref(new Set<number>());
+const currentUserId = computed(() => Number(authStore.user?.userId || 0));
+/**
+ * 生成客户端临时消息标识。
+ * 使用场景：发送消息时与后端回执 clientMessageId 对齐，回填真实 messageId。
+ */
+const buildClientMessageId = (): string =>
+  `local_${Number(currentUserId.value || 0)}_${Date.now()}_${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+
+/**
+ * 消息列表 v-for 的稳定 key。
+ * 场景：messageSent 回执会把临时 messageId 换成服务端 ID；若 key 绑 messageId，Vue 会卸载旧节点再挂载新节点，气泡会闪一下。临时行优先用 clientMessageId 作 key，ACK 后仍不变，只更新 props。
+ */
+const messageListRowKey = (m: DisplayMessage): string | number => {
+  const cid = String(m.clientMessageId || "").trim();
+  return cid.length > 0 ? cid : m.messageId;
+};
+
+/**
+ * 当前用户在当前群中的角色。
+ * 使用场景：群聊中判断“管理员/群主可撤回任意成员消息”。
+ */
+const currentUserRoleInGroup = computed((): number | null => {
+  if (props.convId == null || Number(currentConvTypeOrNull.value) !== 2) return null;
+  const members = conversationStore.compressedCMMap.get(props.convId) || [];
+  const me = members.find((m) => Number(m.userId) === Number(currentUserId.value));
+  return me?.role == null ? null : Number(me.role);
+});
 
 const snapshotMessageScrollPosition = () => {
   const el = messagesContainer.value;
@@ -760,8 +797,14 @@ const setupWebSocketEventListeners = () => {
         handleIncomingWebSocketMessage(message);
       }
     },
-    // 按当前需求暂不处理 ACK，后续需要再补。
-    onMessageSent: () => {},
+    onMessageSent: (message) => {
+      handleMessageSentAck(message);
+    },
+    onMessageRecalled: (message) => {
+      const cid = Number(message?.convId);
+      if (!Number.isFinite(cid) || cid !== Number(props.convId)) return;
+      void applyIncomingMessageRecall(message);
+    },
     onError: (d) => {
       const msg =
         typeof d === "string"
@@ -816,6 +859,125 @@ const handleIncomingWebSocketMessage = (message: any) => {
 };
 
 /**
+ * 处理 messageSent 回执：按 clientMessageId 将本地临时消息回填为真实 messageId。
+ */
+const handleMessageSentAck = (payload: any) => {
+  const clientMessageId = String(
+    payload?.clientMessageId || payload?.localMessageId || ""
+  ).trim();
+  const messageId = Number(payload?.messageId);
+  if (!clientMessageId || !Number.isFinite(messageId) || messageId <= 0) return;
+  showMessageStore.reconcileTempMessageByClientMessageId({
+    clientMessageId,
+    messageId,
+    messageStatus: Number(payload?.messageStatus),
+    sendTime: payload?.sendTime,
+  });
+};
+
+/**
+ * 生成撤回占位文案。
+ * 使用场景：messageRecalled 广播到达后，按操作者/发送者关系渲染系统提示文本。
+ */
+const buildRecallPlaceholderText = (params: {
+  recalledMessage: DisplayMessage;
+  recalledByUserId: number;
+}): string => {
+  const senderId = Number(params.recalledMessage.senderId);
+  const recalledByUserId = Number(params.recalledByUserId);
+  const convId = Number(params.recalledMessage.convId);
+  const isOperatorSelf = recalledByUserId === Number(currentUserId.value);
+  const isSelfRecall = recalledByUserId === senderId;
+
+  if (isOperatorSelf && isSelfRecall) {
+    return "你撤回了一条消息";
+  }
+
+  const members = conversationStore.compressedCMMap.get(convId) || [];
+  const operatorMember = members.find(
+    (member) => Number(member.userId) === recalledByUserId
+  );
+  const operatorRole = Number(operatorMember?.role);
+  const operatorName = showMessageStore.resolveSenderName(
+    recalledByUserId,
+    operatorMember?.userNickname || "用户",
+    currentConvTypeOrNull.value ?? undefined,
+    operatorMember?.memberNickname ?? null,
+    convId
+  );
+  if (
+    !isSelfRecall &&
+    (operatorRole === MemberRole.ADMIN || operatorRole === MemberRole.OWNER)
+  ) {
+    return `管理员 ${operatorName} 撤回了一条消息`;
+  }
+
+  return `${showMessageStore.getSenderDisplayName(params.recalledMessage)} 撤回了一条消息`;
+};
+
+/**
+ * 消费撤回广播并仅更新目标消息。
+ * 使用场景：所有在线端收到 messageRecalled 后统一执行本地消息状态回写。
+ */
+const applyIncomingMessageRecall = async (payload: any) => {
+  const messageId = Number(payload?.messageId);
+  if (!Number.isFinite(messageId) || messageId <= 0) return;
+  const targetMessage = showMessageStore.messages.find(
+    (message) => Number(message.messageId) === messageId
+  );
+  if (!targetMessage || targetMessage.isRecalled) return;
+
+  const recalledByUserId = Number(payload?.recalledByUserId || 0);
+  const recallTimeRaw = payload?.recallTime;
+  const recallTime =
+    typeof recallTimeRaw === "string" && recallTimeRaw.trim()
+      ? recallTimeRaw
+      : new Date().toISOString();
+
+  await recallMessageStore.applyRecallPlaceholderToMessage({
+    messageId,
+    recallTime,
+    placeholderText: buildRecallPlaceholderText({
+      recalledMessage: targetMessage,
+      recalledByUserId,
+    }),
+  });
+  recallingMessageIdSet.value.delete(messageId);
+};
+
+/**
+ * 点击消息撤回按钮后执行二次校验与请求。
+ * 使用场景：消息操作菜单触发撤回，避免重复点击和越权请求。
+ */
+const handleRecallMessage = async (message: DisplayMessage) => {
+  if (!props.convId) return;
+  const messageId = Number(message.messageId);
+  if (!Number.isFinite(messageId) || messageId <= 0) return;
+  if (message.isRecalled || recallingMessageIdSet.value.has(messageId)) {
+    toast.error("该消息已撤回");
+    return;
+  }
+  const canRecall = recallMessageStore.canRecallMessage(message, {
+    currentUserId: Number(currentUserId.value),
+    currentUserRole: currentUserRoleInGroup.value,
+    convType: currentConvTypeOrNull.value,
+  });
+  if (!canRecall) {
+    toast.error("无权撤回该消息或已超过2分钟");
+    return;
+  }
+
+  recallingMessageIdSet.value.add(messageId);
+  const success = await recallMessageStore.requestRecallMessage(
+    Number(props.convId),
+    messageId
+  );
+  if (!success) {
+    recallingMessageIdSet.value.delete(messageId);
+  }
+};
+
+/**
  * 发送消息（优先使用WebSocket）- 修复超时逻辑
  */
 const sendMessage = async () => {
@@ -837,6 +999,7 @@ const sendMessage = async () => {
   isSending.value = true;
 
   try {
+    const clientMessageId = buildClientMessageId();
     /** 与下行 WS 一致的引用回复目标；仅下一条发送消费。 */
     const replyToMessageId = takeReplyToMessageIdForCurrentConv();
     /** 与下行 WS 一致的 @ 列表；发送成功后清空 composerAt。 */
@@ -864,6 +1027,7 @@ const sendMessage = async () => {
       {
         kind: "text",
         content,
+        clientMessageId,
         ...(replyToMessageId != null ? { replyToMessageId } : {}),
         ...(pendingAtUserIds?.length
           ? { atUserIds: [...pendingAtUserIds] }
@@ -887,6 +1051,7 @@ const sendMessage = async () => {
       convId: props.convId,
       messageType: "text",
       messageContent: content,
+      clientMessageId,
       ...(replyToMessageId != null ? { replyToMessageId } : {}),
       ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
     });
@@ -1013,6 +1178,7 @@ const sendFileMessage = async (params: {
     fileSize: params.fileSize,
     mimeType: params.mimeType,
   };
+  const clientMessageId = buildClientMessageId();
   const messageContent = JSON.stringify(messagePayload);
   const replyToMessageId = takeReplyToMessageIdForCurrentConv();
   const pendingAtUserIds = composerAtStore.getPendingAtUserIdsForConv(
@@ -1028,6 +1194,7 @@ const sendFileMessage = async (params: {
     },
     {
       kind: "file",
+      clientMessageId,
       messageType: params.messageType,
       fileId: params.fileId,
       fileName: params.fileName,
@@ -1046,6 +1213,7 @@ const sendFileMessage = async (params: {
     convId: props.convId,
     messageType: params.messageType,
     messageContent,
+    clientMessageId,
     ...(replyToMessageId != null ? { replyToMessageId } : {}),
     ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
   });

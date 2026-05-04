@@ -1,8 +1,11 @@
 <!-- File: src/components/MessageItem.vue -->
 <template>
   <div class="message-item" :data-message-id="String(message.messageId)">
+    <div v-if="message.isRecalled" class="message-recalled-line">
+      <span class="message-recalled-pill">{{ message.messageContent }}</span>
+    </div>
     <!-- 他人发送的消息 -->
-    <div v-if="!isSentByMe" class="message-wrapper message-left">
+    <div v-else-if="!isSentByMe" class="message-wrapper message-left">
       <div
         ref="avatarLeftSectionRef"
         class="avatar-section left"
@@ -87,6 +90,16 @@
             <div v-else class="message-text">{{ message.messageContent }}</div>
             <div class="message-time">{{ formatTime(message.sendTime) }}</div>
           </div>
+          <!-- 他人消息：气泡右侧从左到右 @ → 回复 → 撤回（与本人侧 撤回→回复→@ 中心对称） -->
+          <button
+            type="button"
+            class="message-at-btn"
+            title="@该发送者"
+            aria-label="@该发送者"
+            @click="emitStartAtMention"
+          >
+            <AtSign :size="22" :stroke-width="2.2" />
+          </button>
           <button
             type="button"
             class="message-reply-btn"
@@ -97,13 +110,15 @@
             <Reply :size="22" :stroke-width="2.2" />
           </button>
           <button
+            v-if="canRecallCurrentMessage"
             type="button"
-            class="message-at-btn"
-            title="@该发送者"
-            aria-label="@该发送者"
-            @click="emitStartAtMention"
+            class="message-recall-btn"
+            :disabled="recallLoading"
+            title="撤回"
+            aria-label="撤回"
+            @click="emitRecallMessage"
           >
-            <AtSign :size="22" :stroke-width="2.2" />
+            <Trash :size="22" :stroke-width="2.2" />
           </button>
         </div>
         <div v-if="replyQuoteDisplay" class="message-reply-quote">
@@ -129,14 +144,17 @@
     <div v-else class="message-wrapper message-right message-sent">
       <div class="message-body-col message-body-col--self">
         <div class="message-bubble-row message-bubble-row--self">
+          <!-- 本人消息：气泡左侧从左到右 撤回 → 回复 → @（与他人侧 @→回复→撤回 中心对称） -->
           <button
+            v-if="canRecallCurrentMessage"
             type="button"
-            class="message-at-btn message-at-btn--self"
-            title="@该发送者"
-            aria-label="@该发送者"
-            @click="emitStartAtMention"
+            class="message-recall-btn message-recall-btn--self"
+            :disabled="recallLoading"
+            title="撤回"
+            aria-label="撤回"
+            @click="emitRecallMessage"
           >
-            <AtSign :size="22" :stroke-width="2.2" />
+            <Trash :size="22" :stroke-width="2.2" />
           </button>
           <button
             type="button"
@@ -146,6 +164,15 @@
             @click="emitStartReply"
           >
             <Reply :size="22" :stroke-width="2.2" />
+          </button>
+          <button
+            type="button"
+            class="message-at-btn message-at-btn--self"
+            title="@该发送者"
+            aria-label="@该发送者"
+            @click="emitStartAtMention"
+          >
+            <AtSign :size="22" :stroke-width="2.2" />
           </button>
           <div
             class="message-bubble sent"
@@ -308,7 +335,7 @@ import {
   watchEffect,
   nextTick,
 } from "vue";
-import { AtSign, Play, Reply, X } from "lucide-vue-next";
+import { AtSign, Play, Reply, Trash, X } from "lucide-vue-next";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import {
   buildFileDownloadUrl,
@@ -353,6 +380,12 @@ interface Props {
   flashAnchor?: boolean;
   /** 1 单聊 2 群聊；与 ChatContainer 当前会话一致 */
   convType?: number | null;
+  /** 当前登录用户 ID；用于撤回权限计算。 */
+  currentUserId?: number | null;
+  /** 当前登录用户在当前群中的角色（0 成员 1 管理员 2 群主）。 */
+  currentUserRole?: number | null;
+  /** 当前消息是否正处于撤回请求中。 */
+  recallLoading?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -361,6 +394,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   "start-reply": [message: DisplayMessage];
   "start-at-mention": [message: DisplayMessage];
+  "recall-message": [message: DisplayMessage];
 }>();
 
 const showMessageStore = useShowMessageStore();
@@ -405,6 +439,29 @@ const onAvatarError = () => {
 };
 
 const isSentByMe = computed(() => props.message.isSentByMe);
+const recallLoading = computed(() => !!props.recallLoading);
+
+/**
+ * 判断当前消息是否可撤回。
+ * 使用场景：控制消息操作区是否显示撤回按钮。
+ */
+const canRecallCurrentMessage = computed(() => {
+  if (props.message.isRecalled) return false;
+  const currentUserId = Number(props.currentUserId);
+  if (!Number.isFinite(currentUserId) || currentUserId <= 0) return false;
+
+  const sendTimeMs = Date.parse(props.message.sendTime || "");
+  const withinTwoMinutes =
+    Number.isFinite(sendTimeMs) && Date.now() - sendTimeMs <= 2 * 60 * 1000;
+  const isSender = Number(props.message.senderId) === currentUserId;
+  if (Number(resolvedConvType.value) === 1) {
+    return isSender && withinTwoMinutes;
+  }
+
+  const role = Number(props.currentUserRole);
+  const isAdmin = role === 1 || role === 2;
+  return (isSender && withinTwoMinutes) || isAdmin;
+});
 
 /**
  * 当本条消息带有 replyToMessageId 时显示引用条：
@@ -468,6 +525,11 @@ const emitStartReply = () => {
 
 const emitStartAtMention = () => {
   emit("start-at-mention", props.message);
+};
+
+const emitRecallMessage = () => {
+  if (recallLoading.value || !canRecallCurrentMessage.value) return;
+  emit("recall-message", props.message);
 };
 
 /** 左侧头像区域 DOM；用于计算资料卡 fixed 位置与 document 点击判断。 */

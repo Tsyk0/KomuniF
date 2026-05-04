@@ -58,6 +58,7 @@ export class WebSocketActionHandler {
         return this.sendTextMessage(
           request.convId,
           request.messageContent,
+          request.clientMessageId,
           request.replyToMessageId,
           atUserIds
         );
@@ -68,6 +69,7 @@ export class WebSocketActionHandler {
           request.convId,
           type,
           request.messageContent,
+          request.clientMessageId,
           request.replyToMessageId,
           atUserIds
         );
@@ -80,10 +82,11 @@ export class WebSocketActionHandler {
   sendTextMessage(
     convId: number,
     messageContent: string,
+    clientMessageId?: string,
     replyToMessageId?: number,
     atUserIds?: number[]
   ): boolean {
-    const localMessageId = `local_${Date.now()}`;
+    const localMessageId = clientMessageId || `local_${Date.now()}`;
     const payload: SendMessageWSRequest = {
       action: "sendMessage",
       convId,
@@ -108,10 +111,11 @@ export class WebSocketActionHandler {
     convId: number,
     messageType: "image" | "file" | "video",
     messageContent: string,
+    clientMessageId?: string,
     replyToMessageId?: number,
     atUserIds?: number[]
   ): boolean {
-    const localMessageId = `local_${Date.now()}`;
+    const localMessageId = clientMessageId || `local_${Date.now()}`;
     const payload: SendMessageWSRequest = {
       action: "sendMessage",
       convId,

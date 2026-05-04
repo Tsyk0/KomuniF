@@ -8,7 +8,7 @@ const TEXT_PREVIEW_MAX = 140;
  */
 export function formatQuotedMessageContentPreview(message: DisplayMessage): string {
   if (message.isRecalled) {
-    return "[消息已撤回]";
+    return "原消息已撤回";
   }
   const t = (message.messageType || "text").toLowerCase();
   if (t === "image") {

@@ -172,6 +172,51 @@ export const useShowMessageStore = defineStore("message", () => {
   };
 
   /**
+   * 按 clientMessageId 回填服务端 messageId 与状态。
+   * 使用场景：收到 messageSent 回执后，将本地临时消息与入库结果对齐。
+   */
+  const reconcileTempMessageByClientMessageId = (input: {
+    clientMessageId: string;
+    messageId: number;
+    messageStatus?: number;
+    sendTime?: number | string;
+  }) => {
+    const clientMessageId = String(input.clientMessageId || "").trim();
+    const serverMessageId = Number(input.messageId);
+    if (!clientMessageId || !Number.isFinite(serverMessageId) || serverMessageId <= 0) {
+      return false;
+    }
+    const index = messages.value.findIndex(
+      (item) => String(item.clientMessageId || "").trim() === clientMessageId
+    );
+    if (index < 0) return false;
+    const current = messages.value[index];
+    const nextStatus = Number(input.messageStatus);
+    const normalizedSendTime =
+      typeof input.sendTime === "number"
+        ? new Date(input.sendTime).toISOString()
+        : typeof input.sendTime === "string" && input.sendTime.trim()
+        ? input.sendTime
+        : current.sendTime;
+    messages.value[index] = {
+      ...current,
+      messageId: serverMessageId,
+      messageStatus: Number.isFinite(nextStatus) ? nextStatus : current.messageStatus,
+      sendTime: normalizedSendTime,
+    };
+    /**
+     * newMessage 可能比 messageSent 先到，列表里已有一条同 messageId 的广播行；
+     * 回填临时行后会出现重复 ID，去重保留当前合并行（含 clientMessageId 与本地展示状态）。
+     */
+    const keepIdx = index;
+    messages.value = messages.value.filter(
+      (m, i) => m.messageId !== serverMessageId || i === keepIdx
+    );
+    sortMessagesByTime();
+    return true;
+  };
+
+  /**
    * 获取当前列表中“最新一条”消息。
    * 用于底部分页（after 边界加载）时提供 boundaryMessageId。
    */
@@ -438,6 +483,7 @@ export const useShowMessageStore = defineStore("message", () => {
     addMessages,
     replaceTempMessage,
     updateMessageStatus,
+    reconcileTempMessageByClientMessageId,
     mergeMessages,
     getLatestMessage,
     getOldestMessage,

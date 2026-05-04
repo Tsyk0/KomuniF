@@ -193,6 +193,9 @@ export class WebSocketHandler {
         break;
       case "messageRecalled":
         realtimeEventBus.emit("messageRecalled", message);
+        window.dispatchEvent(
+          new CustomEvent("websocket:messageRecalled", { detail: message })
+        );
         break;
       case "userTyping":
         realtimeEventBus.emit("userTyping", message);

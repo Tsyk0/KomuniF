@@ -4,7 +4,6 @@ export * from "./realtime/messageRealtimeMapper";
 export * from "./realtime/messageReceiveService";
 export * from "./realtime/messageSendBuilder";
 export * from "./search/messageSearchService";
-export * from "./send/sendMessageService";
-export * from "./send/sendMessageMapper";
 export * from "./upload/fileUploadService";
 export * from "./preview/imagePreviewService";
+export * from "./recall/messageRecallService";
