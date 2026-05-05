@@ -416,7 +416,17 @@ const currentFriendId = computed(() => {
 
 const notificationUnreadCount = computed(() => notificationStore.unreadCount);
 const flushOnPageHide = () => {
+  conversationStore.flushWsReadMessageReportOnPageHide();
   conversationStore.flushAllPendingReadProgressOnPageUnload();
+};
+
+/**
+ * 页签隐藏时补发 WS 已读游标（与 pagehide 一致，避免切换标签后长时间未上报）。
+ * 使用场景：`visibilitychange` 且 `document.hidden`。
+ */
+const handleVisibilityChange = () => {
+  if (typeof document === "undefined" || !document.hidden) return;
+  conversationStore.flushWsReadMessageReportOnPageHide();
 };
 
 /**
@@ -735,11 +745,13 @@ onMounted(() => {
   loadSidebarWidth();
   window.addEventListener("pagehide", flushOnPageHide);
   window.addEventListener("beforeunload", flushOnPageHide);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 });
 
 onUnmounted(() => {
   window.removeEventListener("pagehide", flushOnPageHide);
   window.removeEventListener("beforeunload", flushOnPageHide);
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 </script>
 

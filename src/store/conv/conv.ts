@@ -3,6 +3,7 @@ import type {
   ConversationSummaryDTO,
   MessageDisplayMemberDTO,
 } from "@/types/dto/conversation";
+import type { ReadReceiptMemberDTO } from "@/types/dto/message";
 import {
   loadConversationsNormalized,
   loadConversationMembersNormalized,
@@ -17,7 +18,87 @@ import {
 import type { DisplayMessage } from "@/entity/message";
 import { useUserStore } from "@/store/user/user";
 import { useFriendStore } from "@/store/friend/showFriend";
+import { useWebSocketStore } from "@/store/realtime/websocket";
 import { MemberRole } from "@/entity/conversation-member";
+
+/** WS `readMessage` 按需上报：新消息后延迟（毫秒），计时器不随新消息重置。 */
+const WS_READ_MESSAGE_REPORT_DELAY_MS = 2000;
+
+/**
+ * 当前聊天视图的已读游标 WS 上报运行态（模块级，避免 Pinia 序列化定时器）。
+ * 使用场景：`onChatViewportReadyForWsReadReport` 与 `newMessage` 驱动的 2s 计时器。
+ */
+interface WsReadMessageReportRuntimeState {
+  convId: number;
+  lastReportedMessageId: number;
+  pendingReportMessageId: number;
+  reportTimerId: ReturnType<typeof setTimeout> | null;
+}
+
+let wsReadMessageReportState: WsReadMessageReportRuntimeState | null = null;
+
+/**
+ * 清除 WS 已读上报计时器引用。
+ * 使用场景：退出会话、pagehide 立即上报前。
+ */
+function clearWsReadMessageReportTimer(): void {
+  const s = wsReadMessageReportState;
+  if (!s?.reportTimerId) return;
+  clearTimeout(s.reportTimerId);
+  s.reportTimerId = null;
+}
+
+/**
+ * 计时器到期：若 pending 与上次上报不同则发送 `readMessage`。
+ * 使用场景：`WS_READ_MESSAGE_REPORT_DELAY_MS` 到期回调（不重置计时器，自然结束）。
+ */
+function runWsReadMessageReportTimerTick(): void {
+  const s = wsReadMessageReportState;
+  if (!s) return;
+  s.reportTimerId = null;
+  if (s.pendingReportMessageId <= 0) return;
+  if (s.pendingReportMessageId === s.lastReportedMessageId) return;
+  const ws = useWebSocketStore();
+  const ok = ws.sendReadReceipt(s.pendingReportMessageId, s.convId);
+  if (ok) {
+    s.lastReportedMessageId = s.pendingReportMessageId;
+    useConvStore().trackConversationReadProgress(s.convId, s.pendingReportMessageId);
+  }
+}
+
+/**
+ * 退出会话时：清计时器，若有未上报游标则立即发 WS，并销毁运行态。
+ * 使用场景：`notifyConversationExited`、删除会话。
+ */
+function finalizeWsReadMessageReportOnLeave(convId: number): void {
+  const s = wsReadMessageReportState;
+  if (!s || s.convId !== convId) return;
+  clearWsReadMessageReportTimer();
+  if (s.pendingReportMessageId > s.lastReportedMessageId && s.pendingReportMessageId > 0) {
+    const ws = useWebSocketStore();
+    if (ws.sendReadReceipt(s.pendingReportMessageId, convId)) {
+      useConvStore().trackConversationReadProgress(convId, s.pendingReportMessageId);
+    }
+  }
+  wsReadMessageReportState = null;
+}
+
+/**
+ * 页面隐藏时：立即补发未同步的 WS 已读游标，保留运行态以便用户回到页签后继续。
+ * 使用场景：`pagehide` / `visibilitychange` 兜底。
+ */
+function flushWsReadMessageReportPendingForPageHide(convId: number): void {
+  const s = wsReadMessageReportState;
+  if (!s || s.convId !== convId) return;
+  clearWsReadMessageReportTimer();
+  if (s.pendingReportMessageId > s.lastReportedMessageId && s.pendingReportMessageId > 0) {
+    const ws = useWebSocketStore();
+    if (ws.sendReadReceipt(s.pendingReportMessageId, convId)) {
+      s.lastReportedMessageId = s.pendingReportMessageId;
+      useConvStore().trackConversationReadProgress(convId, s.pendingReportMessageId);
+    }
+  }
+}
 
 interface ConversationUnreadRuntimeState {
   /** 会话列表接口返回的未读基准值。 */
@@ -30,6 +111,14 @@ interface ConversationUnreadRuntimeState {
   pendingLastReadMessageId: number;
 }
 
+interface ConversationReadReceiptRuntimeState {
+  latestOwnMessageId: number;
+  readCount: number;
+  readMembers: ReadReceiptMemberDTO[];
+  updatedAt: number;
+  lastFetchedAt: number;
+}
+
 export const useConvStore = defineStore("conv", {
   state: () => ({
     conversations: [] as ConversationSummaryDTO[],
@@ -37,6 +126,7 @@ export const useConvStore = defineStore("conv", {
     compressedCMMap: new Map<number, MessageDisplayMemberDTO[]>(),
     conversationMap: new Map<number, ConversationSummaryDTO>(),
     unreadRuntimeMap: new Map<number, ConversationUnreadRuntimeState>(),
+    readReceiptRuntimeMap: new Map<number, ConversationReadReceiptRuntimeState>(),
   }),
 
   getters: {
@@ -74,6 +164,270 @@ export const useConvStore = defineStore("conv", {
       this.conversations.forEach((item) => {
         this.conversationMap.set(item.convId, item);
       });
+    },
+
+    /**
+     * 获取会话已读回执运行态；用于消息气泡下方已读展示与弹窗列表。
+     * 使用场景：进入会话后读取缓存，以及实时消息已读广播增量更新。
+     */
+    getOrCreateReadReceiptRuntime(convId: number): ConversationReadReceiptRuntimeState {
+      const existing = this.readReceiptRuntimeMap.get(convId);
+      if (existing) return existing;
+      const created: ConversationReadReceiptRuntimeState = {
+        latestOwnMessageId: 0,
+        readCount: 0,
+        readMembers: [],
+        updatedAt: 0,
+        lastFetchedAt: 0,
+      };
+      this.readReceiptRuntimeMap.set(convId, created);
+      return created;
+    },
+
+    /**
+     * 进入/切换会话后同步“我发送的最新消息 ID”到回执缓存，变化时自动清空旧回执。
+     * 使用场景：消息列表加载完成后，从展示消息中找出本人最新一条并驱动回执查询。
+     */
+    syncLatestOwnMessageForReadReceipt(convId: number, latestOwnMessageId: number | null) {
+      const runtime = this.getOrCreateReadReceiptRuntime(convId);
+      const normalizedId = Math.max(0, Number(latestOwnMessageId || 0));
+      if (runtime.latestOwnMessageId === normalizedId) return;
+      runtime.latestOwnMessageId = normalizedId;
+      runtime.readCount = 0;
+      runtime.readMembers = [];
+      runtime.updatedAt = Date.now();
+      runtime.lastFetchedAt = 0;
+    },
+
+    /**
+     * 清空会话的已读回执缓存。
+     * 使用场景：本人发送新消息后，旧消息回执立即隐藏，等待新消息回执重新累积。
+     */
+    clearConversationReadReceipt(convId: number) {
+      const runtime = this.getOrCreateReadReceiptRuntime(convId);
+      runtime.latestOwnMessageId = 0;
+      runtime.readCount = 0;
+      runtime.readMembers = [];
+      runtime.updatedAt = Date.now();
+      runtime.lastFetchedAt = 0;
+    },
+
+    /**
+     * 拉取会话最新消息已读回执（带短期缓存，默认 8 秒内复用）。
+     * 使用场景：进入会话后首次展示已读回执，或弹窗打开时主动刷新最新成员列表。
+     */
+    async refreshConversationReadReceipt(
+      convId: number,
+      options?: {
+        force?: boolean;
+        limit?: number;
+        offset?: number;
+      }
+    ) {
+      const runtime = this.getOrCreateReadReceiptRuntime(convId);
+      const force = !!options?.force;
+      const offset = Math.max(0, Number(options?.offset || 0));
+      const limit = Math.max(1, Number(options?.limit || 50));
+      const now = Date.now();
+      if (!force && offset === 0 && now - runtime.lastFetchedAt < 8000) {
+        return runtime;
+      }
+      try {
+        const response = await conversationReadApi.getLatestReadReceipt({
+          convId,
+          limit,
+          offset,
+        });
+        if (response.code !== 200) return runtime;
+        const data = response.data;
+        if (!data || Number(data.messageId) <= 0) {
+          runtime.latestOwnMessageId = 0;
+          runtime.readCount = 0;
+          runtime.readMembers = [];
+          runtime.updatedAt = Date.now();
+          runtime.lastFetchedAt = Date.now();
+          return runtime;
+        }
+        const incomingMembers = Array.isArray(data.readMembers) ? data.readMembers : [];
+        if (offset > 0) {
+          const seen = new Set<number>();
+          const merged = [...runtime.readMembers, ...incomingMembers].filter((member) => {
+            const uid = Number(member.userId);
+            if (!Number.isFinite(uid) || uid <= 0 || seen.has(uid)) return false;
+            seen.add(uid);
+            return true;
+          });
+          runtime.readMembers = merged.sort(
+            (a, b) => Date.parse(b.readTime || "") - Date.parse(a.readTime || "")
+          );
+        } else {
+          runtime.readMembers = incomingMembers.sort(
+            (a, b) => Date.parse(b.readTime || "") - Date.parse(a.readTime || "")
+          );
+        }
+        runtime.latestOwnMessageId = Math.max(0, Number(data.messageId || 0));
+        runtime.readCount = Math.max(0, Number(data.readCount || 0));
+        runtime.updatedAt = Date.now();
+        runtime.lastFetchedAt = Date.now();
+      } catch {
+        // 静默失败，不影响消息主链路。
+      }
+      return runtime;
+    },
+
+    /**
+     * 消费 WS messageRead 广播并对当前会话回执做增量合并。
+     * 使用场景：有人读了当前会话里“我发送的最新消息”时，头像与人数实时增加。
+     */
+    applyReadReceiptFromRealtimePayload(payload: Record<string, unknown>) {
+      const raw = payload as Record<string, any>;
+      const convId = Number(raw.convId);
+      const lastReadMessageId = Number(raw.lastReadMessageId);
+      const userId = Number(raw.userId);
+      if (!Number.isFinite(convId) || convId <= 0) return;
+      if (!Number.isFinite(lastReadMessageId) || lastReadMessageId <= 0) return;
+      if (!Number.isFinite(userId) || userId <= 0) return;
+      const runtime = this.readReceiptRuntimeMap.get(convId);
+      if (!runtime) return;
+      if (runtime.latestOwnMessageId <= 0) return;
+      if (runtime.latestOwnMessageId !== lastReadMessageId) return;
+      const exists = runtime.readMembers.some((member) => Number(member.userId) === userId);
+      if (exists) return;
+
+      const authStore = useUserStore();
+      const currentUserId = Number(authStore.user?.userId || 0);
+      const members = this.compressedCMMap.get(convId) || [];
+      const memberRow = members.find((m) => Number(m.userId) === userId);
+
+      let userNickname: string;
+      let userAvatar: string | null;
+
+      if (Number(userId) === currentUserId && authStore.user) {
+        userNickname =
+          (authStore.user.userNickname || "").trim() ||
+          (authStore.user.userEmail || "").trim() ||
+          "我";
+        userAvatar =
+          typeof authStore.user.userAvatar === "string"
+            ? authStore.user.userAvatar
+            : null;
+      } else if (memberRow) {
+        userNickname =
+          (memberRow.memberNickname || "").trim() ||
+          (memberRow.userNickname || "").trim() ||
+          "用户";
+        userAvatar =
+          typeof memberRow.userAvatar === "string" ? memberRow.userAvatar : null;
+      } else {
+        userNickname = String(raw.userNickname || raw.nickname || "用户");
+        userAvatar =
+          typeof raw.userAvatar === "string" ? raw.userAvatar : null;
+      }
+
+      let readTimeIso: string;
+      if (typeof raw.readTime === "number" && Number.isFinite(raw.readTime)) {
+        readTimeIso = new Date(raw.readTime).toISOString();
+      } else if (typeof raw.readTime === "string" && raw.readTime.trim()) {
+        readTimeIso = raw.readTime;
+      } else {
+        readTimeIso = new Date().toISOString();
+      }
+
+      runtime.readMembers.unshift({
+        userId,
+        userNickname,
+        userAvatar,
+        readTime: readTimeIso,
+      });
+      runtime.readMembers.sort(
+        (a, b) => Date.parse(b.readTime || "") - Date.parse(a.readTime || "")
+      );
+      runtime.readCount = Math.max(runtime.readCount + 1, runtime.readMembers.length);
+      runtime.updatedAt = Date.now();
+    },
+
+    /**
+     * 聊天区消息列表就绪：立即 WS 上报当前最新已持久化 messageId，不启动 2s 计时器。
+     * 使用场景：`ChatContainer` 首屏/切换会话加载完成且 `isMessagesReady` 之后。
+     */
+    onChatViewportReadyForWsReadReport(convId: number, latestPersistedMessageId: number) {
+      const cid = Number(convId);
+      if (!Number.isFinite(cid) || cid <= 0) return;
+      if (wsReadMessageReportState && wsReadMessageReportState.convId !== cid) {
+        finalizeWsReadMessageReportOnLeave(wsReadMessageReportState.convId);
+      }
+      clearWsReadMessageReportTimer();
+      let mid = Math.max(0, Number(latestPersistedMessageId || 0));
+      if (wsReadMessageReportState?.convId === cid) {
+        mid = Math.max(mid, wsReadMessageReportState.pendingReportMessageId);
+      }
+      if (mid <= 0) {
+        wsReadMessageReportState = {
+          convId: cid,
+          lastReportedMessageId: 0,
+          pendingReportMessageId: 0,
+          reportTimerId: null,
+        };
+        return;
+      }
+      wsReadMessageReportState = {
+        convId: cid,
+        pendingReportMessageId: mid,
+        lastReportedMessageId: 0,
+        reportTimerId: null,
+      };
+      const ws = useWebSocketStore();
+      const ok = ws.sendReadReceipt(mid, cid);
+      if (ok) {
+        wsReadMessageReportState.lastReportedMessageId = mid;
+        this.trackConversationReadProgress(cid, mid);
+      }
+    },
+
+    /**
+     * 当前会话内收到 WS `newMessage`：更新 pending；若无计时器则启动 2s（不重置已有计时器）。
+     * 使用场景：`bindConversationRealtimeLastMessageListener` 与未读增量并行调用。
+     */
+    applyNewMessageWsReadReportFromRealtimePayload(payload: Record<string, unknown>) {
+      const raw = payload as Record<string, any>;
+      const convId = Number(raw.convId ?? raw.data?.convId ?? raw.message?.convId);
+      const messageId = Number(raw.messageId ?? raw.data?.messageId ?? raw.message?.messageId);
+      if (!Number.isFinite(convId) || convId <= 0) return;
+      if (!Number.isFinite(messageId) || messageId <= 0) return;
+      if (this.currentConversation?.convId !== convId) return;
+
+      let s = wsReadMessageReportState;
+      if (!s || s.convId !== convId) {
+        wsReadMessageReportState = {
+          convId,
+          pendingReportMessageId: messageId,
+          lastReportedMessageId: 0,
+          reportTimerId: null,
+        };
+        s = wsReadMessageReportState;
+        const ws = useWebSocketStore();
+        if (ws.sendReadReceipt(messageId, convId)) {
+          s.lastReportedMessageId = messageId;
+          this.trackConversationReadProgress(convId, messageId);
+        }
+        return;
+      }
+
+      s.pendingReportMessageId = Math.max(s.pendingReportMessageId, messageId);
+      if (s.reportTimerId != null) return;
+      s.reportTimerId = window.setTimeout(() => {
+        runWsReadMessageReportTimerTick();
+      }, WS_READ_MESSAGE_REPORT_DELAY_MS);
+    },
+
+    /**
+     * 页面隐藏/关闭前补发 WS 已读游标（不销毁运行态，避免回到页签后状态丢失）。
+     * 使用场景：`pagehide` / `visibilitychange` 与 HTTP beacon 并行兜底。
+     */
+    flushWsReadMessageReportOnPageHide() {
+      const convId = this.currentConversation?.convId;
+      if (convId == null) return;
+      flushWsReadMessageReportPendingForPageHide(convId);
     },
 
     async loadConversations() {
@@ -193,6 +547,7 @@ export const useConvStore = defineStore("conv", {
      * 使用场景：切会话/关闭详情页前保存当前位置，保证下次登录未读数正确。
      */
     async notifyConversationExited(convId: number) {
+      finalizeWsReadMessageReportOnLeave(convId);
       await this.flushConversationReadProgress(convId);
     },
 
@@ -206,7 +561,7 @@ export const useConvStore = defineStore("conv", {
       if (runtime.pendingLastReadMessageId <= runtime.lastReadMessageId) return;
       const nextReadId = runtime.pendingLastReadMessageId;
       await conversationReadApi.markConversationRead(convId, {
-        lastReadMessageId: nextReadId,
+        messageId: nextReadId,
       });
       runtime.lastReadMessageId = nextReadId;
       runtime.baseUnreadCount = 0;
@@ -226,7 +581,7 @@ export const useConvStore = defineStore("conv", {
         if (runtime.pendingLastReadMessageId <= runtime.lastReadMessageId) return;
         const nextReadId = runtime.pendingLastReadMessageId;
         const sent = conversationReadApi.sendMarkConversationReadBeacon(convId, {
-          lastReadMessageId: nextReadId,
+          messageId: nextReadId,
         });
         if (!sent) return;
         runtime.lastReadMessageId = nextReadId;
@@ -481,6 +836,7 @@ export const useConvStore = defineStore("conv", {
      * 使用场景：退出群聊后，立即从会话列表删除该项并清理相关缓存。
      */
     removeConversationLocal(convId: number) {
+      finalizeWsReadMessageReportOnLeave(convId);
       const nextConversations = this.conversations.filter(
         (conversation) => conversation.convId !== convId
       );
@@ -488,6 +844,7 @@ export const useConvStore = defineStore("conv", {
       this.conversationMap.delete(convId);
       this.compressedCMMap.delete(convId);
       this.unreadRuntimeMap.delete(convId);
+      this.readReceiptRuntimeMap.delete(convId);
       if (this.currentConversation?.convId === convId) {
         this.currentConversation = null;
       }
@@ -510,6 +867,8 @@ export const useConvStore = defineStore("conv", {
         .map((conversation) => conversation.convId);
       if (deletingConvIds.length === 0) return;
 
+      deletingConvIds.forEach((id) => finalizeWsReadMessageReportOnLeave(id));
+
       this.conversations = this.conversations.filter(
         (conversation) => !deletingConvIds.includes(conversation.convId)
       );
@@ -517,6 +876,7 @@ export const useConvStore = defineStore("conv", {
         this.conversationMap.delete(convId);
         this.compressedCMMap.delete(convId);
         this.unreadRuntimeMap.delete(convId);
+        this.readReceiptRuntimeMap.delete(convId);
       });
       if (
         this.currentConversation &&
@@ -541,11 +901,15 @@ export const useConvStore = defineStore("conv", {
     },
 
     resetConversations() {
+      if (wsReadMessageReportState) {
+        finalizeWsReadMessageReportOnLeave(wsReadMessageReportState.convId);
+      }
       this.conversations = [];
       this.currentConversation = null;
       this.conversationMap.clear();
       this.compressedCMMap.clear();
       this.unreadRuntimeMap.clear();
+      this.readReceiptRuntimeMap.clear();
     },
 
     // 过渡期兼容旧方法命名
@@ -561,6 +925,7 @@ export const useConvStore = defineStore("conv", {
 /** 防止 HMR 或重复初始化导致同一事件注册多次监听器。 */
 let conversationRealtimeLastMessageListenerBound = false;
 let conversationReconnectSyncBound = false;
+let conversationReadReceiptRealtimeBound = false;
 
 /**
  * 订阅实时 `newMessage` 并同步更新会话列表中的最后一条消息摘要。
@@ -573,7 +938,16 @@ export function bindConversationRealtimeLastMessageListener(): void {
     const convStore = useConvStore();
     convStore.applyLastMessageFromRealtimePayload(payload);
     convStore.applyUnreadDeltaFromRealtimePayload(payload);
+    convStore.applyNewMessageWsReadReportFromRealtimePayload(payload);
   });
+
+  if (!conversationReadReceiptRealtimeBound) {
+    conversationReadReceiptRealtimeBound = true;
+    realtimeEventBus.on("messageRead", (payload) => {
+      const convStore = useConvStore();
+      convStore.applyReadReceiptFromRealtimePayload(payload);
+    });
+  }
 
   if (conversationReconnectSyncBound) return;
   conversationReconnectSyncBound = true;

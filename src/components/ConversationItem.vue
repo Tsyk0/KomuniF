@@ -27,10 +27,9 @@
         <div class="conversation-header">
           <div class="conversation-title-row">
             <span class="conversation-name">{{ displayName }}</span>
-            <span
-              v-if="showMutedInList"
-              class="conversation-muted-tag"
-            >禁言</span>
+            <span v-if="showMutedInList" class="conversation-muted-tag"
+              >禁言</span
+            >
           </div>
           <span class="conversation-time">{{ lastMessageTime }}</span>
         </div>
@@ -52,7 +51,6 @@
           >
             {{ unreadBadgeText }}
           </span>
-
         </div>
       </div>
     </div>
@@ -112,7 +110,9 @@ const avatarText = computed(() => {
  * 从文件类消息的 messageContent JSON 中取出 fileName（含后缀）；解析失败时返回 null。
  * 使用场景：会话列表最后一条为 file 类型时生成「[文件名]」预览。
  */
-function parseFileNameFromMessageContent(messageContent: string): string | null {
+function parseFileNameFromMessageContent(
+  messageContent: string
+): string | null {
   try {
     const payload = JSON.parse(messageContent) as { fileName?: string };
     const name = payload.fileName?.trim();
@@ -185,7 +185,9 @@ const lastMessageSender = computed(() => {
     authStore.user?.userId,
     {
       convType: props.conversation.convType,
-      conversationMembers: convStore.compressedCMMap.get(props.conversation.convId),
+      conversationMembers: convStore.compressedCMMap.get(
+        props.conversation.convId
+      ),
     }
   );
 });

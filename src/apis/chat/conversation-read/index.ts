@@ -1,8 +1,9 @@
 import service from "../../service";
 import type { BaseResponse } from "@/types/dto/base";
+import type { LatestReadReceiptResponse } from "@/types/dto/message";
 
 export interface MarkConversationReadPayload {
-  lastReadMessageId: number;
+  messageId: number;
 }
 
 /**
@@ -57,9 +58,26 @@ export function sendMarkConversationReadBeacon(
   }
 }
 
+/**
+ * 获取当前用户在会话内「自己发送的最新一条消息」已读详情。
+ * 使用场景：进入会话后渲染已读回执区域，以及弹窗分页加载。
+ */
+export function getLatestReadReceiptApi(params: {
+  convId: number;
+  limit?: number;
+  offset?: number;
+}): Promise<LatestReadReceiptResponse> {
+  return service({
+    url: "/message/latest/read-receipt",
+    method: "get",
+    params,
+  });
+}
+
 export const conversationReadApi = {
   markConversationRead: markConversationReadApi,
   sendMarkConversationReadBeacon,
+  getLatestReadReceipt: getLatestReadReceiptApi,
 };
 
 export default conversationReadApi;

@@ -168,3 +168,32 @@ export interface MessagesBoundaryPageResponse {
   data: MessagesBoundaryPageResponseData;
   timestamp?: number;
 }
+
+/**
+ * 单个已读成员快照。
+ */
+export interface ReadReceiptMemberDTO {
+  userId: number;
+  userNickname: string;
+  userAvatar: string | null;
+  readTime: string;
+}
+
+/**
+ * 会话「我发送的最新一条消息」已读详情。
+ */
+export interface LatestReadReceiptDTO {
+  messageId: number;
+  readCount: number;
+  readMembers: ReadReceiptMemberDTO[];
+}
+
+/**
+ * GET /message/latest/read-receipt 响应结构。
+ */
+export interface LatestReadReceiptResponse {
+  code: number;
+  message: string;
+  data: LatestReadReceiptDTO | null;
+  timestamp?: number;
+}

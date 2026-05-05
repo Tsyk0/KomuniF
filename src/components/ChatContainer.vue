@@ -89,13 +89,16 @@
         <!-- 消息列表区域 -->
         <div
           class="messages-container"
-          :class="{ 'search-open': isSearchOpen, 'messages-loading': !isMessagesReady }"
+          :class="{
+            'search-open': isSearchOpen,
+            'messages-loading': !isMessagesReady,
+          }"
           ref="messagesContainer"
           @scroll="
             updateIsAtBottom();
             !isSearchOpen &&
               !isRestoringScroll &&
-              scheduleMessagesScrollPagination()
+              scheduleMessagesScrollPagination();
           "
         >
           <!-- 搜索打开时：只显示搜索面板（通过 v-if 彻底隐藏原消息列表） -->
@@ -121,19 +124,25 @@
             <!-- 消息列表 -->
             <div class="messages-list">
               <!-- 每条消息使用MessageItem组件 -->
-              <MessageItem
-                v-for="message in messages"
-                :key="messageListRowKey(message)"
-                :message="message"
-                :conv-type="currentConvTypeOrNull"
-                :current-user-id="currentUserId"
-                :current-user-role="currentUserRoleInGroup"
-                :recall-loading="recallingMessageIdSet.has(message.messageId)"
-                :flash-anchor="anchorFlashMessageId === message.messageId"
-                @start-reply="handleStartReplyMessage"
-                @start-at-mention="handleStartAtMention"
-                @recall-message="handleRecallMessage"
-              />
+              <div v-for="message in messages" :key="messageListRowKey(message)">
+                <MessageItem
+                  :message="message"
+                  :conv-type="currentConvTypeOrNull"
+                  :current-user-id="currentUserId"
+                  :current-user-role="currentUserRoleInGroup"
+                  :recall-loading="recallingMessageIdSet.has(message.messageId)"
+                  :flash-anchor="anchorFlashMessageId === message.messageId"
+                  @start-reply="handleStartReplyMessage"
+                  @start-at-mention="handleStartAtMention"
+                  @recall-message="handleRecallMessage"
+                />
+                <MessageReadReceipt
+                  v-if="shouldShowReadReceiptForMessage(message.messageId)"
+                  :read-count="currentConvReadReceipt.readCount"
+                  :members="currentConvReadReceipt.readMembers"
+                  @click="openReadReceiptDialog"
+                />
+              </div>
 
               <!-- 没有消息的提示 -->
               <div
@@ -320,6 +329,15 @@
         </div>
       </div>
     </Teleport>
+    <ReadReceiptMemberListDialog
+      :visible="readReceiptDialogVisible"
+      :members="currentConvReadReceipt.readMembers"
+      :total-count="currentConvReadReceipt.readCount"
+      :has-more="currentConvReadReceipt.readMembers.length < currentConvReadReceipt.readCount"
+      :loading-more="readReceiptDialogLoadingMore"
+      @close="readReceiptDialogVisible = false"
+      @load-more="loadMoreReadReceiptMembers"
+    />
   </div>
 </template>
 
@@ -338,6 +356,8 @@ import { useUserStore } from "@/store/user/user";
 import { useConvStore } from "@/store/conv/conv";
 import { useWebSocketStore } from "@/store/realtime/websocket";
 import MessageItem from "./MessageItem.vue";
+import MessageReadReceipt from "./MessageReadReceipt.vue";
+import ReadReceiptMemberListDialog from "./ReadReceiptMemberListDialog.vue";
 import ChatSearchPanel from "./ChatSearchPanel.vue";
 import GroupConvInfo from "./GroupConvInfo.vue";
 import SingleConvInfo from "./SingleConvInfo.vue";
@@ -504,6 +524,8 @@ let anchorFlashClearTimer: ReturnType<typeof setTimeout> | null = null;
 /** 正在发起撤回请求的消息 ID 集合；用于按钮加载态与防重复点击。 */
 const recallingMessageIdSet = ref(new Set<number>());
 const currentUserId = computed(() => Number(authStore.user?.userId || 0));
+const readReceiptDialogVisible = ref(false);
+const readReceiptDialogLoadingMore = ref(false);
 /**
  * 生成客户端临时消息标识。
  * 使用场景：发送消息时与后端回执 clientMessageId 对齐，回填真实 messageId。
@@ -523,13 +545,29 @@ const messageListRowKey = (m: DisplayMessage): string | number => {
 };
 
 /**
+ * 判断消息是否已持久化到后端（可用于 mark-read 上报游标）。
+ * 使用场景：过滤本地发送中的临时消息，避免把临时 messageId 当作已读游标提交。
+ */
+const isPersistedServerMessage = (message: DisplayMessage | null | undefined): boolean => {
+  if (!message) return false;
+  const messageId = Number(message.messageId);
+  if (!Number.isFinite(messageId) || messageId <= 0) return false;
+  // 发送中的本人本地回显（messageStatus=0）尚未落库，不能用于 mark-read。
+  if (message.isSentByMe && Number(message.messageStatus) === 0) return false;
+  return true;
+};
+
+/**
  * 当前用户在当前群中的角色。
  * 使用场景：群聊中判断“管理员/群主可撤回任意成员消息”。
  */
 const currentUserRoleInGroup = computed((): number | null => {
-  if (props.convId == null || Number(currentConvTypeOrNull.value) !== 2) return null;
+  if (props.convId == null || Number(currentConvTypeOrNull.value) !== 2)
+    return null;
   const members = conversationStore.compressedCMMap.get(props.convId) || [];
-  const me = members.find((m) => Number(m.userId) === Number(currentUserId.value));
+  const me = members.find(
+    (m) => Number(m.userId) === Number(currentUserId.value)
+  );
   return me?.role == null ? null : Number(me.role);
 });
 
@@ -690,6 +728,83 @@ const pendingAtStripChips = computed(
   }
 );
 
+const currentConvReadReceipt = computed(() => {
+  if (!props.convId) {
+    return {
+      latestOwnMessageId: 0,
+      readCount: 0,
+      readMembers: [],
+      updatedAt: 0,
+      lastFetchedAt: 0,
+    };
+  }
+  return conversationStore.getOrCreateReadReceiptRuntime(props.convId);
+});
+
+const latestSelfMessageIdInList = computed(() => {
+  const myId = Number(currentUserId.value || 0);
+  if (myId <= 0) return 0;
+  for (let i = showMessageStore.messages.length - 1; i >= 0; i -= 1) {
+    const row = showMessageStore.messages[i];
+    if (Number(row.senderId) === myId) return Number(row.messageId || 0);
+  }
+  return 0;
+});
+
+/**
+ * 判断指定消息是否应渲染已读回执条。
+ * 使用场景：消息列表逐条渲染时，只在“本人最新一条消息”下方显示已读组件。
+ */
+const shouldShowReadReceiptForMessage = (messageId: number): boolean => {
+  const runtime = currentConvReadReceipt.value;
+  if (runtime.readCount <= 0) return false;
+  return Number(runtime.latestOwnMessageId) === Number(messageId);
+};
+
+/**
+ * 按当前消息列表同步回执目标消息并拉取已读详情。
+ * 使用场景：进入会话、消息列表变化（本人发送新消息）后刷新该会话回执缓存。
+ */
+const syncAndRefreshReadReceiptForCurrentConv = async () => {
+  if (!props.convId) return;
+  const latestOwnMessageId = Number(latestSelfMessageIdInList.value || 0);
+  conversationStore.syncLatestOwnMessageForReadReceipt(
+    props.convId,
+    latestOwnMessageId || null
+  );
+  if (latestOwnMessageId <= 0) return;
+  await conversationStore.refreshConversationReadReceipt(props.convId, {
+    offset: 0,
+    limit: 50,
+  });
+};
+
+/**
+ * 打开已读成员弹窗。
+ * 使用场景：用户点击消息下方已读条时展开完整成员列表。
+ */
+const openReadReceiptDialog = () => {
+  readReceiptDialogVisible.value = true;
+};
+
+/**
+ * 已读成员弹窗分页加载。
+ * 使用场景：已读成员数量较大时，点击“加载更多”按 offset 拉取下一页。
+ */
+const loadMoreReadReceiptMembers = async () => {
+  if (!props.convId || readReceiptDialogLoadingMore.value) return;
+  readReceiptDialogLoadingMore.value = true;
+  try {
+    await conversationStore.refreshConversationReadReceipt(props.convId, {
+      force: true,
+      limit: 50,
+      offset: currentConvReadReceipt.value.readMembers.length,
+    });
+  } finally {
+    readReceiptDialogLoadingMore.value = false;
+  }
+};
+
 /**
  * 读取当前会话已选中的 reply_to_message_id，不改变 store（发送成功后再清空）。
  */
@@ -730,6 +845,15 @@ watch(
   () => {
     composerReplyStore.clearPendingReply();
     composerAtStore.clearAtTargets();
+    readReceiptDialogVisible.value = false;
+  }
+);
+
+watch(
+  () => [props.convId, latestSelfMessageIdInList.value, isMessagesReady.value] as const,
+  ([convId, , ready]) => {
+    if (!convId || !ready) return;
+    void syncAndRefreshReadReceiptForCurrentConv();
   }
 );
 
@@ -853,10 +977,10 @@ const handleIncomingWebSocketMessage = (message: any) => {
   });
   if (!result.added) return;
   console.log("将WebSocket消息添加到Store:", result.displayMessage);
-  if (result.displayMessage?.messageId && props.convId) {
+  if (props.convId && isPersistedServerMessage(result.displayMessage)) {
     conversationStore.trackConversationReadProgress(
       props.convId,
-      result.displayMessage.messageId
+      Number(result.displayMessage!.messageId)
     );
   }
   if (result.shouldScrollToBottom) {
@@ -918,7 +1042,9 @@ const buildRecallPlaceholderText = (params: {
     return `管理员 ${operatorName} 撤回了一条消息`;
   }
 
-  return `${showMessageStore.getSenderDisplayName(params.recalledMessage)} 撤回了一条消息`;
+  return `${showMessageStore.getSenderDisplayName(
+    params.recalledMessage
+  )} 撤回了一条消息`;
 };
 
 /**
@@ -1050,6 +1176,7 @@ const sendMessage = async () => {
           : {}),
       }
     );
+    conversationStore.clearConversationReadReceipt(props.convId);
     scrollToBottom();
 
     // 2. 清空输入框
@@ -1138,10 +1265,16 @@ const loadMessages = async () => {
   await nextTick();
   await new Promise<void>((r) => requestAnimationFrame(() => r()));
   isMessagesReady.value = true;
-  const latestMessageId = showMessageStore.getLatestMessage()?.messageId;
-  if (latestMessageId && props.convId) {
-    conversationStore.trackConversationReadProgress(props.convId, latestMessageId);
+  const latestMessage = showMessageStore.getLatestMessage();
+  let latestPersistedId = 0;
+  if (props.convId && isPersistedServerMessage(latestMessage)) {
+    latestPersistedId = Number(latestMessage!.messageId);
+    conversationStore.trackConversationReadProgress(props.convId, latestPersistedId);
   }
+  if (props.convId) {
+    conversationStore.onChatViewportReadyForWsReadReport(props.convId, latestPersistedId);
+  }
+  await syncAndRefreshReadReceiptForCurrentConv();
 };
 
 /**
@@ -1224,6 +1357,7 @@ const sendFileMessage = async (params: {
       ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
     }
   );
+  conversationStore.clearConversationReadReceipt(props.convId);
   scrollToBottom();
 
   if (!websocketStore.isConnected) {
@@ -1283,6 +1417,7 @@ const appendLocalFileMessageEcho = (params: {
       mimeType: params.mimeType,
     }
   );
+  conversationStore.clearConversationReadReceipt(props.convId);
   scrollToBottom();
   return echoed;
 };
