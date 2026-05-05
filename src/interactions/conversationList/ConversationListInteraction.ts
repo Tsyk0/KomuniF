@@ -43,8 +43,8 @@ export async function openConversationByClick(input: {
   clearMessages: () => void;
   // 加载会话消息
   loadMessages: (convId: number) => Promise<void>;
-  // 标记会话已读
-  markConversationRead: (convId: number) => void;
+  // 进入会话并清空本地未读展示
+  notifyConversationEntered: (convId: number) => void;
   // 通知父组件“会话被点击”
   emitConversationClick: (convId: number) => void;
 }): Promise<void> {
@@ -53,7 +53,7 @@ export async function openConversationByClick(input: {
   if (isSwitchingConversation) {
     input.clearMessages();
   }
+  input.notifyConversationEntered(input.convId);
   await input.loadMessages(input.convId);
-  input.markConversationRead(input.convId);
   input.emitConversationClick(input.convId);
 }

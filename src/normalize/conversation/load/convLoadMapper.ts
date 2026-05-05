@@ -58,6 +58,9 @@ export function normalizeConversationSummary(
   const normalized: ConversationSummaryDTO = {
     ...conv,
     displayStatus: normalizeDisplayStatusField(conv.displayStatus),
+    lastReadMessageId: Number.isFinite(Number(conv.lastReadMessageId))
+      ? Math.max(0, Number(conv.lastReadMessageId))
+      : 0,
     unreadCount: Number.isFinite(Number(conv.unreadCount))
       ? Math.max(0, Number(conv.unreadCount))
       : 0,

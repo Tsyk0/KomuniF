@@ -853,6 +853,12 @@ const handleIncomingWebSocketMessage = (message: any) => {
   });
   if (!result.added) return;
   console.log("将WebSocket消息添加到Store:", result.displayMessage);
+  if (result.displayMessage?.messageId && props.convId) {
+    conversationStore.trackConversationReadProgress(
+      props.convId,
+      result.displayMessage.messageId
+    );
+  }
   if (result.shouldScrollToBottom) {
     scrollToBottom();
   }
@@ -934,13 +940,23 @@ const applyIncomingMessageRecall = async (payload: any) => {
       ? recallTimeRaw
       : new Date().toISOString();
 
+  const placeholderText = buildRecallPlaceholderText({
+    recalledMessage: targetMessage,
+    recalledByUserId,
+  });
   await recallMessageStore.applyRecallPlaceholderToMessage({
     messageId,
     recallTime,
-    placeholderText: buildRecallPlaceholderText({
-      recalledMessage: targetMessage,
-      recalledByUserId,
-    }),
+    placeholderText,
+  });
+  conversationStore.applyConversationLastMessageRecall({
+    convId: Number(targetMessage.convId),
+    messageId,
+    placeholderText,
+    recallTime,
+    senderId: Number(targetMessage.senderId),
+    originalMessageContent: targetMessage.messageContent,
+    originalSendTime: targetMessage.sendTime,
   });
   recallingMessageIdSet.value.delete(messageId);
 };
@@ -1122,6 +1138,10 @@ const loadMessages = async () => {
   await nextTick();
   await new Promise<void>((r) => requestAnimationFrame(() => r()));
   isMessagesReady.value = true;
+  const latestMessageId = showMessageStore.getLatestMessage()?.messageId;
+  if (latestMessageId && props.convId) {
+    conversationStore.trackConversationReadProgress(props.convId, latestMessageId);
+  }
 };
 
 /**

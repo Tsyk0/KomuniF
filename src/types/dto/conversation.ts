@@ -65,6 +65,8 @@ export interface ConversationSummaryDTO {
   // 会话成员相关
   privateDisplayName: string | null; // 用户设置的私有显示名称
   unreadCount: number;               // 未读消息数
+  /** 当前用户在该会话最后已读消息 ID（为空时按 0 处理）。 */
+  lastReadMessageId?: number;
   /** 单聊时对方用户 ID（好友 userId），由会话摘要接口返回 */
   targetUserId?: number;
   /** 单聊对端信息（群聊通常为 null/undefined）。 */

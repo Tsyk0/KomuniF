@@ -230,7 +230,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, reactive, watch } from "vue";
 import {
   Bell,
   LogOut,
@@ -415,12 +415,30 @@ const currentFriendId = computed(() => {
 });
 
 const notificationUnreadCount = computed(() => notificationStore.unreadCount);
+const flushOnPageHide = () => {
+  conversationStore.flushAllPendingReadProgressOnPageUnload();
+};
+
+/**
+ * 同步当前会话已读游标到后端（仅在存在当前会话时执行）。
+ * 使用场景：切会话、切到其他主视图、退出登录前，确保已读位置不丢失。
+ */
+const flushCurrentConversationReadProgress = async () => {
+  const currentConvId = conversationStore.currentConversation?.convId;
+  if (!currentConvId) return;
+  try {
+    await conversationStore.notifyConversationExited(currentConvId);
+  } catch (error) {
+    console.warn("同步会话已读位置失败:", error);
+  }
+};
 
 const toggleTheme = () => {
   themeStore.toggleTheme();
 };
 
-const goToChat = () => {
+const goToChat = async () => {
+  await flushCurrentConversationReadProgress();
   if (convCreateStore.active) {
     convCreateStore.exit(false);
   }
@@ -431,7 +449,8 @@ const goToChat = () => {
   conversationStore.clearCurrentConversation();
 };
 
-const goToFriends = () => {
+const goToFriends = async () => {
+  await flushCurrentConversationReadProgress();
   if (convCreateStore.active) {
     convCreateStore.exit(false);
   }
@@ -442,6 +461,7 @@ const goToFriends = () => {
 };
 
 const goToNotifications = async () => {
+  await flushCurrentConversationReadProgress();
   if (convCreateStore.active) {
     convCreateStore.exit(false);
   }
@@ -461,6 +481,7 @@ const exitConvCreate = () => {
   convCreateStore.exit(false);
   currentListView.value = restore;
   currentMainView.value = null;
+  void flushCurrentConversationReadProgress();
   conversationStore.clearCurrentConversation();
   selectedFriend.value = null;
 };
@@ -632,13 +653,18 @@ const handleConversationClick = (convId) => {
     return;
   }
 
+  const oldConvId = conversationStore.currentConversation?.convId || null;
+  if (oldConvId && oldConvId !== id) {
+    void conversationStore.notifyConversationExited(oldConvId);
+  }
   console.log("HomeView: 设置当前会话ID:", id);
   conversationStore.setCurrentConversation(id);
   currentMainView.value = null;
   selectedFriend.value = null;
 };
 
-const clearCurrentConversation = () => {
+const clearCurrentConversation = async () => {
+  await flushCurrentConversationReadProgress();
   conversationStore.clearCurrentConversation();
   currentMainView.value = null;
 };
@@ -672,11 +698,13 @@ const startNewChat = () => {
   convCreateStore.setPanel("group");
   currentMainView.value = null;
   selectedFriend.value = null;
+  void flushCurrentConversationReadProgress();
   conversationStore.clearCurrentConversation();
 };
 
 const handleLogout = async () => {
   try {
+    await flushCurrentConversationReadProgress();
     await runHomeLogoutFlow({
       confirmLogout: () => confirm("确定要退出登录吗？"),
       resetConvCreate: () => convCreateStore.exit(true),
@@ -705,6 +733,13 @@ onMounted(() => {
   }
 
   loadSidebarWidth();
+  window.addEventListener("pagehide", flushOnPageHide);
+  window.addEventListener("beforeunload", flushOnPageHide);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("pagehide", flushOnPageHide);
+  window.removeEventListener("beforeunload", flushOnPageHide);
 });
 </script>
 

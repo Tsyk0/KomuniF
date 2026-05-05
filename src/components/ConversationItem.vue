@@ -45,7 +45,13 @@
               {{ lastMessageContent }}
             </span>
           </div>
-
+          <span
+            v-if="unreadBadgeText"
+            class="conversation-unread-badge"
+            aria-label="未读消息"
+          >
+            {{ unreadBadgeText }}
+          </span>
 
         </div>
       </div>
@@ -160,6 +166,14 @@ const lastMessageContent = computed(() => {
   const lastMsg = props.conversation.lastMessage;
   if (!lastMsg) return "[No messages]";
   return buildLastMessagePreviewBody(lastMsg);
+});
+
+/** 会话项未读红点文案：0 隐藏，1-99 显示数字，>=100 显示 99+。 */
+const unreadBadgeText = computed(() => {
+  const unread = Math.max(0, Number(props.conversation.unreadCount || 0));
+  if (unread <= 0) return "";
+  if (unread >= 100) return "99+";
+  return String(unread);
 });
 
 const lastMessageSender = computed(() => {

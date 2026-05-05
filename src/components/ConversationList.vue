@@ -169,7 +169,7 @@ const handleConversationClick = async (convId: number) => {
       selectConversation: (id) => convStore.selectConversation(id),
       clearMessages: () => showMessageStore.clearMessages(),
       loadMessages: (id) => showMessageStore.loadMessages(id),
-      markConversationRead: (id) => convStore.markConversationRead(id),
+      notifyConversationEntered: (id) => convStore.notifyConversationEntered(id),
       emitConversationClick: (id) => emit("conversation-click", id),
     });
   } catch (error) {

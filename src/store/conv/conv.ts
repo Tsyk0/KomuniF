@@ -9,6 +9,7 @@ import {
 } from "@/normalize/conversation";
 import { normalizeConversationSummary } from "@/normalize/conversation/load/convLoadMapper";
 import { realtimeEventBus } from "@/realtime/websocket";
+import { conversationReadApi } from "@/apis/chat/conversation-read";
 import {
   mapRealtimePayloadToLastMessageInfo,
   mapDisplayMessageToLastMessageInfo,
@@ -18,12 +19,24 @@ import { useUserStore } from "@/store/user/user";
 import { useFriendStore } from "@/store/friend/showFriend";
 import { MemberRole } from "@/entity/conversation-member";
 
+interface ConversationUnreadRuntimeState {
+  /** 会话列表接口返回的未读基准值。 */
+  baseUnreadCount: number;
+  /** 在线期间前端本地累计的未读增量。 */
+  localIncrement: number;
+  /** 后端已同步的最后已读游标。 */
+  lastReadMessageId: number;
+  /** 前端待同步到后端的已读游标。 */
+  pendingLastReadMessageId: number;
+}
+
 export const useConvStore = defineStore("conv", {
   state: () => ({
     conversations: [] as ConversationSummaryDTO[],
     currentConversation: null as ConversationSummaryDTO | null,
     compressedCMMap: new Map<number, MessageDisplayMemberDTO[]>(),
     conversationMap: new Map<number, ConversationSummaryDTO>(),
+    unreadRuntimeMap: new Map<number, ConversationUnreadRuntimeState>(),
   }),
 
   getters: {
@@ -35,6 +48,25 @@ export const useConvStore = defineStore("conv", {
     setConversations(conversations: ConversationSummaryDTO[]) {
       this.conversations = conversations;
       this.rebuildConversationMap();
+      this.rebuildUnreadRuntimeStateFromConversations();
+    },
+
+    /**
+     * 基于会话摘要重建本地未读运行态（基准值 + 本地增量 + 游标）。
+     * 使用场景：登录首屏拉取/WS 断线重连后重拉会话列表时，重置本地增量并对齐后端口径。
+     */
+    rebuildUnreadRuntimeStateFromConversations() {
+      this.unreadRuntimeMap.clear();
+      this.conversations.forEach((conv) => {
+        const baseUnreadCount = Math.max(0, Number(conv.unreadCount || 0));
+        const lastReadMessageId = Math.max(0, Number(conv.lastReadMessageId || 0));
+        this.unreadRuntimeMap.set(conv.convId, {
+          baseUnreadCount,
+          localIncrement: 0,
+          lastReadMessageId,
+          pendingLastReadMessageId: lastReadMessageId,
+        });
+      });
     },
 
     rebuildConversationMap() {
@@ -60,6 +92,11 @@ export const useConvStore = defineStore("conv", {
         this.conversations.unshift(updated);
       }
       this.conversationMap.set(convId, updated);
+      const runtime = this.getOrCreateUnreadRuntime(convId);
+      runtime.baseUnreadCount = Math.max(0, Number(updated.unreadCount || 0));
+      runtime.localIncrement = 0;
+      runtime.lastReadMessageId = Math.max(0, Number(updated.lastReadMessageId || 0));
+      runtime.pendingLastReadMessageId = runtime.lastReadMessageId;
 
       if (this.currentConversation?.convId === convId) {
         this.currentConversation = updated;
@@ -67,20 +104,155 @@ export const useConvStore = defineStore("conv", {
     },
 
     selectConversation(convId: number | null) {
+      const previousConvId = this.currentConversation?.convId ?? null;
+      if (previousConvId && previousConvId !== convId) {
+        void this.notifyConversationExited(previousConvId);
+      }
       if (convId == null) {
         this.currentConversation = null;
         return;
       }
       this.currentConversation =
         this.conversations.find((item) => item.convId === convId) || null;
+      this.notifyConversationEntered(convId);
       if (this.currentConversation?.convType === 2) {
         void this.loadCompressedCM(convId);
       }
     },
 
     markConversationRead(convId: number) {
-      const conv = this.conversations.find((item) => item.convId === convId);
-      if (conv) conv.unreadCount = 0;
+      const runtime = this.getOrCreateUnreadRuntime(convId);
+      runtime.baseUnreadCount = 0;
+      runtime.localIncrement = 0;
+      const conv = this.conversationMap.get(convId);
+      const fallbackLastMessageId = Math.max(0, Number(conv?.lastMessage?.messageId || 0));
+      runtime.pendingLastReadMessageId = Math.max(
+        runtime.pendingLastReadMessageId,
+        fallbackLastMessageId
+      );
+      this.patchConversationLocal(convId, {
+        unreadCount: 0,
+      });
+    },
+
+    /**
+     * 标记“用户进入会话”，并立即清空该会话本地未读展示。
+     * 使用场景：点击会话项进入聊天页时，红点无需等待后端接口即可立即消失。
+     */
+    notifyConversationEntered(convId: number) {
+      this.markConversationRead(convId);
+    },
+
+    /**
+     * 记录当前会话内最新已读消息游标（仅前进）。
+     * 使用场景：会话内收到新消息或加载消息后，用最大 messageId 更新待同步游标。
+     */
+    trackConversationReadProgress(convId: number, messageId: number) {
+      const normalizedMessageId = Number(messageId);
+      if (!Number.isFinite(normalizedMessageId) || normalizedMessageId <= 0) return;
+      const runtime = this.getOrCreateUnreadRuntime(convId);
+      runtime.pendingLastReadMessageId = Math.max(
+        runtime.pendingLastReadMessageId,
+        normalizedMessageId
+      );
+    },
+
+    /**
+     * 处理新消息到达时的未读计数变更（当前会话不加未读，非当前会话本地增量 +1）。
+     * 使用场景：WS `newMessage` 到达后，前端本地实时维护红点，不频繁请求后端。
+     */
+    applyUnreadDeltaFromRealtimePayload(payload: Record<string, unknown>) {
+      const raw = payload as Record<string, any>;
+      const convId = Number(raw.convId ?? raw.data?.convId ?? raw.message?.convId);
+      const messageId = Number(raw.messageId ?? raw.data?.messageId ?? raw.message?.messageId);
+      if (!Number.isFinite(convId) || convId <= 0) return;
+
+      const runtime = this.getOrCreateUnreadRuntime(convId);
+      if (this.currentConversation?.convId === convId) {
+        this.trackConversationReadProgress(convId, messageId);
+        this.patchConversationLocal(convId, { unreadCount: 0 });
+        return;
+      }
+
+      if (
+        Number.isFinite(messageId) &&
+        messageId > 0 &&
+        messageId <= runtime.lastReadMessageId
+      ) {
+        return;
+      }
+
+      runtime.localIncrement += 1;
+      this.patchConversationLocal(convId, {
+        unreadCount: runtime.baseUnreadCount + runtime.localIncrement,
+      });
+    },
+
+    /**
+     * 退出会话时同步该会话已读游标（仅当 pending > lastRead 时调用后端）。
+     * 使用场景：切会话/关闭详情页前保存当前位置，保证下次登录未读数正确。
+     */
+    async notifyConversationExited(convId: number) {
+      await this.flushConversationReadProgress(convId);
+    },
+
+    /**
+     * 同步指定会话的已读游标到后端；成功后推进 lastRead 并清空本地增量。
+     * 使用场景：会话退出路径、显式兜底同步前的单会话提交。
+     */
+    async flushConversationReadProgress(convId: number): Promise<void> {
+      const runtime = this.unreadRuntimeMap.get(convId);
+      if (!runtime) return;
+      if (runtime.pendingLastReadMessageId <= runtime.lastReadMessageId) return;
+      const nextReadId = runtime.pendingLastReadMessageId;
+      await conversationReadApi.markConversationRead(convId, {
+        lastReadMessageId: nextReadId,
+      });
+      runtime.lastReadMessageId = nextReadId;
+      runtime.baseUnreadCount = 0;
+      runtime.localIncrement = 0;
+      this.patchConversationLocal(convId, {
+        unreadCount: 0,
+        lastReadMessageId: nextReadId,
+      });
+    },
+
+    /**
+     * 页面关闭/刷新阶段批量兜底同步所有待提交已读游标。
+     * 使用场景：beforeunload/pagehide 触发时尽力保留已读进度。
+     */
+    flushAllPendingReadProgressOnPageUnload() {
+      this.unreadRuntimeMap.forEach((runtime, convId) => {
+        if (runtime.pendingLastReadMessageId <= runtime.lastReadMessageId) return;
+        const nextReadId = runtime.pendingLastReadMessageId;
+        const sent = conversationReadApi.sendMarkConversationReadBeacon(convId, {
+          lastReadMessageId: nextReadId,
+        });
+        if (!sent) return;
+        runtime.lastReadMessageId = nextReadId;
+        runtime.baseUnreadCount = 0;
+        runtime.localIncrement = 0;
+      });
+    },
+
+    /**
+     * 获取会话未读运行态；不存在时按当前摘要值构造默认态。
+     * 使用场景：WS 新消息、进入会话、退出上报等统一读取/更新本地计数状态。
+     */
+    getOrCreateUnreadRuntime(convId: number): ConversationUnreadRuntimeState {
+      const existing = this.unreadRuntimeMap.get(convId);
+      if (existing) return existing;
+      const conv = this.conversationMap.get(convId);
+      const baseUnreadCount = Math.max(0, Number(conv?.unreadCount || 0));
+      const lastReadMessageId = Math.max(0, Number(conv?.lastReadMessageId || 0));
+      const created: ConversationUnreadRuntimeState = {
+        baseUnreadCount,
+        localIncrement: 0,
+        lastReadMessageId,
+        pendingLastReadMessageId: lastReadMessageId,
+      };
+      this.unreadRuntimeMap.set(convId, created);
+      return created;
     },
 
     getConversationById(convId: number): ConversationSummaryDTO | undefined {
@@ -98,6 +270,56 @@ export const useConvStore = defineStore("conv", {
       this.patchConversationLocal(convId, {
         lastMessage,
         updateTime: lastMessage.sendTime,
+      });
+    },
+
+    /**
+     * 当会话最后一条消息被撤回时，回写会话摘要里的 lastMessage 预览。
+     * 使用场景：收到 messageRecalled 广播后，同步刷新 ConversationItem 与 Pinia 中的最后一条文案。
+     */
+    applyConversationLastMessageRecall(input: {
+      convId: number;
+      messageId: number;
+      placeholderText: string;
+      recallTime?: string | null;
+      senderId?: number;
+      originalMessageContent?: string | null;
+      originalSendTime?: string | null;
+    }) {
+      const convId = Number(input.convId);
+      const messageId = Number(input.messageId);
+      if (!Number.isFinite(convId) || convId <= 0) return;
+      if (!Number.isFinite(messageId) || messageId <= 0) return;
+      const current = this.conversationMap.get(convId);
+      if (!current?.lastMessage) return;
+      const idMatched = Number(current.lastMessage.messageId) === messageId;
+      const senderMatched =
+        Number(input.senderId) > 0 &&
+        Number(current.lastMessage.senderId) === Number(input.senderId);
+      const contentMatched =
+        typeof input.originalMessageContent === "string" &&
+        input.originalMessageContent.length > 0 &&
+        String(current.lastMessage.messageContent || "") ===
+          String(input.originalMessageContent);
+      const currentSendTimeMs = Date.parse(current.lastMessage.sendTime || "");
+      const originalSendTimeMs = Date.parse(input.originalSendTime || "");
+      const timeLikelyMatched =
+        Number.isFinite(currentSendTimeMs) &&
+        Number.isFinite(originalSendTimeMs) &&
+        Math.abs(currentSendTimeMs - originalSendTimeMs) <= 120000;
+      const fallbackMatched = senderMatched && contentMatched && timeLikelyMatched;
+      if (!idMatched && !fallbackMatched) return;
+
+      const patchedLastMessage = {
+        ...current.lastMessage,
+        messageId,
+        messageType: "system",
+        messageContent: input.placeholderText,
+      };
+      this.patchConversationLocal(convId, {
+        lastMessage: patchedLastMessage,
+        updateTime:
+          (input.recallTime || "").trim() || current.updateTime || patchedLastMessage.sendTime,
       });
     },
 
@@ -265,6 +487,7 @@ export const useConvStore = defineStore("conv", {
       this.conversations = nextConversations;
       this.conversationMap.delete(convId);
       this.compressedCMMap.delete(convId);
+      this.unreadRuntimeMap.delete(convId);
       if (this.currentConversation?.convId === convId) {
         this.currentConversation = null;
       }
@@ -293,6 +516,7 @@ export const useConvStore = defineStore("conv", {
       deletingConvIds.forEach((convId) => {
         this.conversationMap.delete(convId);
         this.compressedCMMap.delete(convId);
+        this.unreadRuntimeMap.delete(convId);
       });
       if (
         this.currentConversation &&
@@ -309,6 +533,10 @@ export const useConvStore = defineStore("conv", {
     },
 
     clearCurrentConversation() {
+      const previousConvId = this.currentConversation?.convId ?? null;
+      if (previousConvId) {
+        void this.notifyConversationExited(previousConvId);
+      }
       this.currentConversation = null;
     },
 
@@ -317,6 +545,7 @@ export const useConvStore = defineStore("conv", {
       this.currentConversation = null;
       this.conversationMap.clear();
       this.compressedCMMap.clear();
+      this.unreadRuntimeMap.clear();
     },
 
     // 过渡期兼容旧方法命名
@@ -331,6 +560,7 @@ export const useConvStore = defineStore("conv", {
 
 /** 防止 HMR 或重复初始化导致同一事件注册多次监听器。 */
 let conversationRealtimeLastMessageListenerBound = false;
+let conversationReconnectSyncBound = false;
 
 /**
  * 订阅实时 `newMessage` 并同步更新会话列表中的最后一条消息摘要。
@@ -340,7 +570,15 @@ export function bindConversationRealtimeLastMessageListener(): void {
   if (conversationRealtimeLastMessageListenerBound) return;
   conversationRealtimeLastMessageListenerBound = true;
   realtimeEventBus.on("newMessage", (payload) => {
-    useConvStore().applyLastMessageFromRealtimePayload(payload);
+    const convStore = useConvStore();
+    convStore.applyLastMessageFromRealtimePayload(payload);
+    convStore.applyUnreadDeltaFromRealtimePayload(payload);
+  });
+
+  if (conversationReconnectSyncBound) return;
+  conversationReconnectSyncBound = true;
+  realtimeEventBus.on("connected", () => {
+    void useConvStore().loadConversations();
   });
 }
 
