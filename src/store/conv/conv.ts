@@ -225,6 +225,8 @@ export const useConvStore = defineStore("conv", {
       }
     ) {
       const runtime = this.getOrCreateReadReceiptRuntime(convId);
+      const authStore = useUserStore();
+      const currentUserId = Number(authStore.user?.userId || 0);
       const force = !!options?.force;
       const offset = Math.max(0, Number(options?.offset || 0));
       const limit = Math.max(1, Number(options?.limit || 50));
@@ -248,7 +250,9 @@ export const useConvStore = defineStore("conv", {
           runtime.lastFetchedAt = Date.now();
           return runtime;
         }
-        const incomingMembers = Array.isArray(data.readMembers) ? data.readMembers : [];
+        const incomingMembers = (Array.isArray(data.readMembers) ? data.readMembers : []).filter(
+          (member) => Number(member.userId) !== currentUserId
+        );
         if (offset > 0) {
           const seen = new Set<number>();
           const merged = [...runtime.readMembers, ...incomingMembers].filter((member) => {
@@ -266,7 +270,7 @@ export const useConvStore = defineStore("conv", {
           );
         }
         runtime.latestOwnMessageId = Math.max(0, Number(data.messageId || 0));
-        runtime.readCount = Math.max(0, Number(data.readCount || 0));
+        runtime.readCount = Math.max(0, Number(data.readCount || 0) - 1);
         runtime.updatedAt = Date.now();
         runtime.lastFetchedAt = Date.now();
       } catch {
@@ -287,15 +291,15 @@ export const useConvStore = defineStore("conv", {
       if (!Number.isFinite(convId) || convId <= 0) return;
       if (!Number.isFinite(lastReadMessageId) || lastReadMessageId <= 0) return;
       if (!Number.isFinite(userId) || userId <= 0) return;
+      const authStore = useUserStore();
+      const currentUserId = Number(authStore.user?.userId || 0);
+      if (userId === currentUserId) return;
       const runtime = this.readReceiptRuntimeMap.get(convId);
       if (!runtime) return;
       if (runtime.latestOwnMessageId <= 0) return;
       if (runtime.latestOwnMessageId !== lastReadMessageId) return;
       const exists = runtime.readMembers.some((member) => Number(member.userId) === userId);
       if (exists) return;
-
-      const authStore = useUserStore();
-      const currentUserId = Number(authStore.user?.userId || 0);
       const members = this.compressedCMMap.get(convId) || [];
       const memberRow = members.find((m) => Number(m.userId) === userId);
 
@@ -318,6 +322,24 @@ export const useConvStore = defineStore("conv", {
           "用户";
         userAvatar =
           typeof memberRow.userAvatar === "string" ? memberRow.userAvatar : null;
+      } else if (Number(this.conversationMap.get(convId)?.convType) === 1) {
+        const conv = this.conversationMap.get(convId);
+        const peer = conv?.peer;
+        const friendStore = useFriendStore();
+        const friend = friendStore.friends.find(
+          (f) => Number(f.friendId) === userId || Number(f.userId) === userId
+        );
+        userNickname =
+          (friend?.displayName || "").trim() ||
+          (friend?.remarkName || "").trim() ||
+          (peer?.peerRemarkName || "").trim() ||
+          (peer?.peerNickname || "").trim() ||
+          "用户";
+        userAvatar =
+          (typeof friend?.avatar === "string" && friend.avatar) ||
+          (typeof peer?.peerAvatar === "string" && peer.peerAvatar) ||
+          (typeof conv?.convAvatar === "string" && conv.convAvatar) ||
+          null;
       } else {
         userNickname = String(raw.userNickname || raw.nickname || "用户");
         userAvatar =
