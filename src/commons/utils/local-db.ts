@@ -74,6 +74,8 @@ export async function findConversationIdsByKeywordFromDB(
   const normalized = (keyword || '').trim().toLowerCase()
   if (!normalized) return []
 
+  const TEXT_MESSAGE_TYPE = 'text'
+
   const db = await dbPromise
   const tx = db.transaction('messages', 'readonly')
   const all = await tx.store.getAll()
@@ -85,6 +87,8 @@ export async function findConversationIdsByKeywordFromDB(
 
   for (const msg of all) {
     if (convFilter && !convFilter.has(msg.convId)) continue
+
+    if (String((msg as any).messageType || '').toLowerCase() !== TEXT_MESSAGE_TYPE) continue
 
     const content = (msg.messageContent || '').toLowerCase()
     if (!content.includes(normalized)) continue
@@ -194,8 +198,11 @@ export async function searchMessagesInConvFromDB(
     return { messages: [], total: 0 }
   }
 
+  const TEXT_MESSAGE_TYPE = 'text'
+
   const ordered = await getAllMessagesForConvFromDB(convId)
   const hits = ordered.filter((m) => {
+    if (String(m.messageType || '').toLowerCase() !== TEXT_MESSAGE_TYPE) return false
     const text = [
       m.messageContent,
       m.displayName,

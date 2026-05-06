@@ -1,6 +1,11 @@
 <!-- File: src/components/ChatSearchPanel.vue -->
 <template>
-  <div class="chat-search-overlay" role="dialog" aria-label="搜索消息" @keydown.esc.prevent="emitClose">
+  <div
+    class="chat-search-overlay"
+    role="dialog"
+    aria-label="搜索消息"
+    @keydown.esc.prevent="emitClose"
+  >
     <div class="chat-search-panel" @click.stop>
       <div class="chat-search-top">
         <div class="chat-search-input-wrap">
@@ -23,7 +28,12 @@
           </button>
         </div>
 
-        <button class="chat-search-close" type="button" title="关闭" @click="emitClose">
+        <button
+          class="chat-search-close"
+          type="button"
+          title="关闭"
+          @click="emitClose"
+        >
           关闭
         </button>
       </div>
@@ -42,14 +52,23 @@
             @select="onSelectResult"
           />
 
-          <div v-if="results.length === 0" class="chat-search-hint">未找到相关消息</div>
+          <div v-if="results.length === 0" class="chat-search-hint">
+            未找到相关消息
+          </div>
 
           <div v-if="canLoadMore" class="chat-search-more">
-            <button type="button" class="chat-search-more-btn" :disabled="loadingMore" @click="loadMore">
+            <button
+              type="button"
+              class="chat-search-more-btn"
+              :disabled="loadingMore"
+              @click="loadMore"
+            >
               <span v-if="!loadingMore">加载更多</span>
               <span v-else>加载中...</span>
             </button>
-            <div class="chat-search-meta">已加载 {{ results.length }} / {{ total }}</div>
+            <div class="chat-search-meta">
+              已加载 {{ results.length }} / {{ total }}
+            </div>
           </div>
         </div>
       </div>
@@ -61,7 +80,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
-import ChatSearchResultItem from "@/components/ChatSearchResultItem.vue";
+// @ts-ignore - Vetur 对 <script setup> 的默认导出识别有误（实际由 shims-vue.d.ts 兜底）
+import ChatSearchResultItem from "./ChatSearchResultItem.vue";
 import type { DisplayMessage } from "@/entity/message";
 import { useShowMessageStore } from "@/store/message/showMessage";
 import { searchMessagesInConvFromDB } from "@/commons/utils/local-db";
@@ -102,7 +122,9 @@ const error = ref<string | null>(null);
 /** 当前关键词下，结果是否完全来自 IndexedDB（加载更多也只翻本地） */
 const searchSource = ref<"local" | "remote">("remote");
 
-const convTypeOrNull = computed(() => (props.convType == null ? null : props.convType));
+const convTypeOrNull = computed(() =>
+  props.convType == null ? null : props.convType
+);
 
 const effectivePageSize = computed(() =>
   props.pageSize == null ? 20 : props.pageSize
@@ -120,7 +142,14 @@ const hintText = computed(() => {
   return "";
 });
 
-const canLoadMore = computed(() => results.value.length > 0 && results.value.length < total.value);
+const canLoadMore = computed(() => {
+  if (results.value.length === 0) return false;
+  // local：total 为过滤后的真实命中数，可直接对比
+  if (searchSource.value === "local") return results.value.length < total.value;
+  // remote：我们会在前端过滤掉非 text，results.length 不再等价于后端 total；
+  // 用“页码是否到头”判断是否还能继续拉取下一页。
+  return page.value * effectivePageSize.value < total.value;
+});
 
 const cancelInFlight = () => {
   if (abortController) {
@@ -158,7 +187,6 @@ const runSearch = async (nextPage: number) => {
   const requestId = ++latestRequestId;
   cancelInFlight();
   abortController = new AbortController();
-
   const isLoadMore = nextPage > 1;
   error.value = null;
   if (isLoadMore) loadingMore.value = true;
@@ -200,7 +228,7 @@ const runSearch = async (nextPage: number) => {
     }
   }
 };
-
+// 防抖（debounce）搜索调度器：用户输入停止 300ms 才真正触发 runSearch(1)，避免每敲一个字就发一次请求
 const scheduleSearch = () => {
   if (debounceTimer) {
     window.clearTimeout(debounceTimer);

@@ -9,19 +9,22 @@
     @keydown.enter.prevent="emitSelect"
     @keydown.space.prevent="emitSelect"
   >
-    <div class="avatar">
-      <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" @error="onImgError" />
-      <span v-else class="avatar-fallback">{{ fallbackChar }}</span>
+    <div class="left">
+      <div class="avatar">
+        <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" @error="onImgError" />
+        <span v-else class="avatar-fallback">{{ fallbackChar }}</span>
+      </div>
     </div>
 
-    <div class="content">
-      <div class="top-row">
-        <div class="name" :title="displayName">{{ displayName }}</div>
-        <div class="time">{{ timeText }}</div>
-      </div>
+    <div class="main">
+      <div class="strategy-name" :title="strategyName">{{ strategyName }}</div>
       <div class="message" :title="message.messageContent">
         {{ message.messageContent }}
       </div>
+    </div>
+
+    <div class="right">
+      <div class="time">{{ timeText }}</div>
     </div>
   </div>
 </template>
@@ -30,6 +33,7 @@
 import { computed, ref, watch } from "vue";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import { useConvStore } from "@/store/conv/conv";
+import { useShowMessageStore } from "@/store/message/showMessage";
 import { useUserStore } from "@/store/user/user";
 import type { DisplayMessage } from "@/entity/message";
 
@@ -45,6 +49,7 @@ const emit = defineEmits<{
 const rippleOpts = { color: "var(--sli-ripple-color)", duration: 520 };
 
 const convStore = useConvStore();
+const showMessageStore = useShowMessageStore();
 const authStore = useUserStore();
 
 const emitSelect = () => {
@@ -57,8 +62,10 @@ const displayName = computed(
     String(props.message.senderId == null ? "" : props.message.senderId)
 );
 
+const strategyName = computed(() => showMessageStore.getSenderDisplayName(props.message));
+
 const fallbackChar = computed(() => {
-  const n = displayName.value || "";
+  const n = strategyName.value || displayName.value || "";
   return n ? n.charAt(0) : "?";
 });
 
@@ -99,9 +106,12 @@ const timeText = computed(() => {
   if (!t) return "";
   try {
     const d = new Date(t);
+    const yyyy = d.getFullYear().toString();
+    const mmPart = (d.getMonth() + 1).toString().padStart(2, "0");
+    const dd = d.getDate().toString().padStart(2, "0");
     const hh = d.getHours().toString().padStart(2, "0");
     const mm = d.getMinutes().toString().padStart(2, "0");
-    return `${hh}:${mm}`;
+    return `${yyyy}-${mmPart}-${dd} ${hh}:${mm}`;
   } catch {
     return "";
   }
@@ -110,8 +120,19 @@ const timeText = computed(() => {
 
 <style scoped>
 .search-result-item {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   gap: 12px;
   outline: none;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.03);
+  position: relative;
+  box-sizing: border-box;
+  height: auto;
+  min-height: 0;
+  width: 100%;
 }
 
 .search-result-item:focus-visible {
@@ -142,43 +163,58 @@ const timeText = computed(() => {
   font-size: 14px;
 }
 
-.content {
-  flex: 1;
+.left {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-shrink: 0;
   min-width: 0;
 }
 
-.top-row {
+.main {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.name {
+.strategy-name {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: rgba(0, 0, 0, 0.75);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+
+.message {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.35;
+  max-width: 100%;
 }
 
 .time {
   font-size: 12px;
   color: rgba(0, 0, 0, 0.45);
   flex-shrink: 0;
-}
-
-.message {
-  margin-top: 4px;
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.85);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-html.night-mode .name {
+html.night-mode .strategy-name {
   color: rgba(226, 232, 240, 0.9);
 }
 

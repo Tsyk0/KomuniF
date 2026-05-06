@@ -1,17 +1,23 @@
 /**
  * ChatSearchPanelInteraction
  * - 存放 ChatSearchPanel 的搜索交互方法。
- * - 负责关键词搜索、本地优先、远端回退、分页与竞态控制。
+ * - 负责关键词搜索、远端优先、本地兜底、分页与竞态控制。
  *
  * 方法目录（方法：功能）
  * - mapSearchSummaryToDisplayMessage：将搜索接口消息 DTO 转成可渲染消息对象。
- * - runChatMessageSearch：执行搜索流程（本地优先、远端回退、加载更多、竞态保护）。
+ * - runChatMessageSearch：执行搜索流程（远端优先、本地兜底、加载更多、竞态保护）。
  * - buildChatSearchEmptyState：构建清空关键词后的初始状态。
  * - mapChatSearchErrorMessage：统一提取搜索错误文案。
  */
 
 import type { DisplayMessage } from "@/entity/message";
 import type { MessageSummaryDTO } from "@/types/dto/message";
+
+const TEXT_MESSAGE_TYPE = "text";
+
+function isTextMessage(dto: { messageType?: string } | null | undefined): boolean {
+  return String(dto?.messageType || "").toLowerCase() === TEXT_MESSAGE_TYPE;
+}
 
 /** MessageSummaryDTO -> DisplayMessage（供搜索结果列表渲染）。 */
 export function mapSearchSummaryToDisplayMessage(
@@ -37,7 +43,7 @@ export function mapSearchSummaryToDisplayMessage(
   };
 }
 
-/** 搜索请求统一执行（本地优先，远端回退）。 */
+/** 搜索请求统一执行（远端优先，本地兜底）。 */
 export async function runChatMessageSearch(input: {
   // 搜索关键词
   keyword: string;
@@ -94,34 +100,44 @@ export async function runChatMessageSearch(input: {
   }
 
   const isLoadMore = input.nextPage > 1;
-  if (!isLoadMore) {
-    const localFirst = await input.searchLocal(
-      input.convId,
-      kw,
-      1,
-      input.pageSize
-    );
+  try {
+    const resp = await input.searchRemote({
+      keyword: kw,
+      convId: input.convId,
+      page: input.nextPage,
+      pageSize: input.pageSize,
+      signal: input.signal,
+    });
     if (input.requestId !== input.latestRequestId) {
       return {
         requestMatched: false,
-        source: input.searchSource,
+        source: "remote",
         results: input.results,
         total: 0,
         page: input.nextPage,
       };
     }
-    if (localFirst.total > 0) {
-      return {
-        requestMatched: true,
-        source: "local",
-        results: localFirst.messages.map(mapSearchSummaryToDisplayMessage),
-        total: localFirst.total,
-        page: 1,
-      };
+    const incomingRaw = (resp.data?.messages || []) as MessageSummaryDTO[];
+    // 需求：搜索结果只展示文本消息；image/video/file 等类型不参与匹配（远端无法控制匹配时，前端做过滤兜底）
+    const incoming = incomingRaw
+      .filter(isTextMessage)
+      .map(mapSearchSummaryToDisplayMessage);
+    const totalFromResp = resp.data?.total == null ? 0 : resp.data.total;
+    const pageFromResp = resp.data?.page == null ? input.nextPage : resp.data.page;
+    return {
+      requestMatched: true,
+      source: "remote",
+      results: isLoadMore ? input.results.concat(incoming) : incoming,
+      total: totalFromResp,
+      page: pageFromResp,
+    };
+  } catch (error: unknown) {
+    const err = error as { name?: string; code?: string };
+    // 主动取消请求不走本地兜底，避免产生过期结果闪烁
+    if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED" || err?.name === "AbortError") {
+      throw error;
     }
-  }
 
-  if (isLoadMore && input.searchSource === "local") {
     const localPage = await input.searchLocal(
       input.convId,
       kw,
@@ -140,42 +156,13 @@ export async function runChatMessageSearch(input: {
     return {
       requestMatched: true,
       source: "local",
-      results: input.results.concat(
-        localPage.messages.map(mapSearchSummaryToDisplayMessage)
-      ),
+      results: isLoadMore
+        ? input.results.concat(localPage.messages.map(mapSearchSummaryToDisplayMessage))
+        : localPage.messages.map(mapSearchSummaryToDisplayMessage),
       total: localPage.total,
       page: input.nextPage,
     };
   }
-
-  const resp = await input.searchRemote({
-    keyword: kw,
-    convId: input.convId,
-    page: input.nextPage,
-    pageSize: input.pageSize,
-    signal: input.signal,
-  });
-  if (input.requestId !== input.latestRequestId) {
-    return {
-      requestMatched: false,
-      source: "remote",
-      results: input.results,
-      total: 0,
-      page: input.nextPage,
-    };
-  }
-  const incoming = ((resp.data?.messages || []) as MessageSummaryDTO[]).map(
-    mapSearchSummaryToDisplayMessage
-  );
-  const totalFromResp = resp.data?.total == null ? 0 : resp.data.total;
-  const pageFromResp = resp.data?.page == null ? input.nextPage : resp.data.page;
-  return {
-    requestMatched: true,
-    source: "remote",
-    results: isLoadMore ? input.results.concat(incoming) : incoming,
-    total: totalFromResp,
-    page: pageFromResp,
-  };
 }
 
 /** 构建清空关键词后的初始状态。 */
