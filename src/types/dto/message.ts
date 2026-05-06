@@ -8,7 +8,7 @@ export interface SendMessageRequest {
     convId: number;
     messageType: string;
     messageContent: string;
-    /** 前端本地临时消息标识（对应 WS localMessageId/clientMessageId）。 */
+    /** 前端本地临时消息标识（对应 WS clientMessageId）。 */
     clientMessageId?: string;
     replyToMessageId?: number;
     /** @ 提及的用户 ID 数组，如 [1, 2]（线协议与 HTTP body 均为驼峰；库表列名由服务端映射）。 */

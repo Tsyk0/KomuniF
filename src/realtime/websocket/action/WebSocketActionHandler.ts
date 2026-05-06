@@ -86,18 +86,19 @@ export class WebSocketActionHandler {
     replyToMessageId?: number,
     atUserIds?: number[]
   ): boolean {
-    const localMessageId = clientMessageId || `local_${Date.now()}`;
+    const normalizedClientMessageId = clientMessageId || `client_${Date.now()}`;
     const payload: SendMessageWSRequest = {
       action: "sendMessage",
       convId,
       messageType: "text",
       messageContent,
-      localMessageId,
+      clientMessageId: normalizedClientMessageId,
     };
     if (replyToMessageId != null && Number(replyToMessageId) > 0) {
       payload.replyToMessageId = replyToMessageId;
     }
     if (atUserIds != null && atUserIds.length > 0) {
+      payload.mentionedUserIds = [...atUserIds];
       payload.atUserIds = [...atUserIds];
     }
     return this.sender(payload);
@@ -115,18 +116,19 @@ export class WebSocketActionHandler {
     replyToMessageId?: number,
     atUserIds?: number[]
   ): boolean {
-    const localMessageId = clientMessageId || `local_${Date.now()}`;
+    const normalizedClientMessageId = clientMessageId || `client_${Date.now()}`;
     const payload: SendMessageWSRequest = {
       action: "sendMessage",
       convId,
       messageType,
       messageContent,
-      localMessageId,
+      clientMessageId: normalizedClientMessageId,
     };
     if (replyToMessageId != null && Number(replyToMessageId) > 0) {
       payload.replyToMessageId = replyToMessageId;
     }
     if (atUserIds != null && atUserIds.length > 0) {
+      payload.mentionedUserIds = [...atUserIds];
       payload.atUserIds = [...atUserIds];
     }
     return this.sender(payload);
@@ -139,14 +141,20 @@ export class WebSocketActionHandler {
   }
 
   /** 发送撤回消息动作。 */
-  sendRecallMessage(messageId: number): boolean {
+  sendRecallMessage(messageId: number, convId?: number): boolean {
     const payload: RecallMessageRequest = { action: "recallMessage", messageId };
+    if (convId != null && Number.isFinite(Number(convId)) && Number(convId) > 0) {
+      payload.convId = Number(convId);
+    }
     return this.sender(payload);
   }
 
   /** 发送输入中动作。 */
-  sendTyping(convId: number): boolean {
+  sendTyping(convId: number, isCancel?: boolean): boolean {
     const payload: TypingClientRequest = { action: "typing", convId };
+    if (typeof isCancel === "boolean") {
+      payload.isCancel = isCancel;
+    }
     return this.sender(payload);
   }
 

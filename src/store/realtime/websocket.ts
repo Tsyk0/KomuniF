@@ -63,8 +63,8 @@ export const useWebSocketStore = defineStore("websocket", () => {
     handler.actionHandler.sendReadMessage(messageId, convId);
 
   /** 发送撤回动作。 */
-  const sendRecallMessage = (messageId: number, _convId: number) =>
-    handler.actionHandler.sendRecallMessage(messageId);
+  const sendRecallMessage = (messageId: number, convId: number) =>
+    handler.actionHandler.sendRecallMessage(messageId, convId);
 
   return {
     isConnected,

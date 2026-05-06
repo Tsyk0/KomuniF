@@ -160,6 +160,7 @@ export function mapRealtimeIncomingToDisplayMessage(
   // 4) 组装统一展示消息：保证下游组件/Store 使用同一数据结构。
   return {
     messageId,
+    clientMessageId: String(payload.clientMessageId || "").trim() || undefined,
     convId,
     senderId,
     messageType: payload.messageType || "text",

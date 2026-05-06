@@ -223,6 +223,35 @@
               ×
             </button>
           </div>
+          <div
+            v-if="!isCurrentUserMutedInGroup && pendingFileDrafts.length > 0"
+            class="composer-file-strip"
+            role="status"
+          >
+            <div class="composer-file-strip__title">
+              待发送附件（回车统一发送）
+            </div>
+            <div class="composer-file-strip__list">
+              <div
+                v-for="draft in pendingFileDrafts"
+                :key="draft.localDraftId"
+                class="composer-file-strip__item"
+              >
+                <span class="composer-file-strip__name">{{ draft.fileName }}</span>
+                <span class="composer-file-strip__meta">{{
+                  formatPendingFileSize(draft.fileSize)
+                }}</span>
+                <button
+                  type="button"
+                  class="composer-file-strip__remove"
+                  :aria-label="`移除附件 ${draft.fileName}`"
+                  @click="removePendingFileDraft(draft.localDraftId)"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          </div>
           <div class="composer-row">
             <div class="input-wrapper">
               <button
@@ -526,14 +555,27 @@ const recallingMessageIdSet = ref(new Set<number>());
 const currentUserId = computed(() => Number(authStore.user?.userId || 0));
 const readReceiptDialogVisible = ref(false);
 const readReceiptDialogLoadingMore = ref(false);
+/** 文件发送防重入锁；避免 input change/用户连击导致同一文件触发两次发送链路。 */
+const fileMessageSendInFlight = ref(false);
+type PendingFileDraft = {
+  localDraftId: string;
+  messageType: "image" | "file" | "video";
+  fileId: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+};
+const pendingFileDrafts = ref<PendingFileDraft[]>([]);
 /**
  * 生成客户端临时消息标识。
  * 使用场景：发送消息时与后端回执 clientMessageId 对齐，回填真实 messageId。
  */
 const buildClientMessageId = (): string =>
-  `local_${Number(currentUserId.value || 0)}_${Date.now()}_${Math.random()
+  `client_${Number(currentUserId.value || 0)}_${Date.now()}_${Math.random()
     .toString(36)
     .slice(2, 8)}`;
+const buildPendingFileDraftId = (): string =>
+  `draft_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 /**
  * 消息列表 v-for 的稳定 key。
@@ -644,12 +686,25 @@ const firstChar = computed(() => {
 
 const canSend = computed(() => {
   return (
-    messageText.value.trim().length > 0 &&
+    (messageText.value.trim().length > 0 || pendingFileDrafts.value.length > 0) &&
     props.convId &&
     !isSending.value &&
     !isCurrentUserMutedInGroup.value
   );
 });
+
+const formatPendingFileSize = (rawSize: number): string => {
+  if (rawSize < 1024) return `${rawSize} B`;
+  if (rawSize < 1024 * 1024) return `${(rawSize / 1024).toFixed(1)} KB`;
+  if (rawSize < 1024 * 1024 * 1024)
+    return `${(rawSize / 1024 / 1024).toFixed(1)} MB`;
+  return `${(rawSize / 1024 / 1024 / 1024).toFixed(1)} GB`;
+};
+const removePendingFileDraft = (localDraftId: string) => {
+  pendingFileDrafts.value = pendingFileDrafts.value.filter(
+    (draft) => draft.localDraftId !== localDraftId
+  );
+};
 
 /** 当前会话在线人数（有后端下发且为当前会话时显示，否则不显示该区域） */
 const chatStatusText = computed(() => {
@@ -845,6 +900,7 @@ watch(
   () => {
     composerReplyStore.clearPendingReply();
     composerAtStore.clearAtTargets();
+    pendingFileDrafts.value = [];
     readReceiptDialogVisible.value = false;
   }
 );
@@ -971,9 +1027,42 @@ const handleIncomingWebSocketMessage = (message: any) => {
       conversationStore.compressedCMMap.get(safeConvId) || [],
     hasMessage: (messageId: number) =>
       showMessageStore.messages.some((msg) => msg.messageId === messageId),
-    appendMessage: (displayMessage: DisplayMessage) =>
-      showMessageStore.addMessage(displayMessage),
+    appendMessage: (displayMessage: DisplayMessage) => {
+      const cid = String(displayMessage.clientMessageId || "").trim();
+      if (displayMessage.isSentByMe && cid) {
+        const merged = showMessageStore.reconcileTempMessageByClientMessageId({
+          clientMessageId: cid,
+          messageId: Number(displayMessage.messageId),
+          messageStatus: Number(displayMessage.messageStatus),
+          sendTime: displayMessage.sendTime,
+        });
+        if (merged) return true;
+      }
+      return showMessageStore.addMessage(displayMessage);
+    },
     isNearBottom: box ? isContainerNearBottom(box) : false,
+  });
+  const flatDebug = flattenRealtimeNewMessagePayload(message);
+  console.log("[file-msg-debug] ws:newMessage received", {
+    action: message?.action,
+    convId: Number(flatDebug?.convId ?? message?.convId),
+    messageId: Number(flatDebug?.messageId),
+    senderId: Number(flatDebug?.senderId),
+    messageType: String(flatDebug?.messageType || ""),
+    clientMessageId: String(flatDebug?.clientMessageId || "").trim(),
+    fileId:
+      flatDebug?.fileId ??
+      (() => {
+        try {
+          const c = String(flatDebug?.messageContent || "");
+          if (!c) return null;
+          const p = JSON.parse(c) as { fileId?: string };
+          return p?.fileId || null;
+        } catch {
+          return null;
+        }
+      })(),
+    added: result.added,
   });
   if (!result.added) return;
   console.log("将WebSocket消息添加到Store:", result.displayMessage);
@@ -992,10 +1081,15 @@ const handleIncomingWebSocketMessage = (message: any) => {
  * 处理 messageSent 回执：按 clientMessageId 将本地临时消息回填为真实 messageId。
  */
 const handleMessageSentAck = (payload: any) => {
-  const clientMessageId = String(
-    payload?.clientMessageId || payload?.localMessageId || ""
-  ).trim();
+  const clientMessageId = String(payload?.clientMessageId || "").trim();
   const messageId = Number(payload?.messageId);
+  console.log("[file-msg-debug] ws:messageSent ack", {
+    convId: Number(payload?.convId),
+    messageId,
+    clientMessageId,
+    messageType: String(payload?.messageType || ""),
+    fileId: payload?.fileId ?? null,
+  });
   if (!clientMessageId || !Number.isFinite(messageId) || messageId <= 0) return;
   showMessageStore.reconcileTempMessageByClientMessageId({
     clientMessageId,
@@ -1122,14 +1216,18 @@ const handleRecallMessage = async (message: DisplayMessage) => {
 /**
  * 发送消息（优先使用WebSocket）- 修复超时逻辑
  */
-const sendMessage = async () => {
+const sendTextMessage = async (input?: {
+  content?: string;
+  replyToMessageId?: number;
+  atUserIds?: number[];
+}) => {
   if (!canSend.value || !props.convId) return;
   if (isCurrentUserMutedInGroup.value) {
     toast.error("您已被禁言，无法发送消息");
     return;
   }
 
-  const content = messageText.value.trim();
+  const content = (input?.content ?? messageText.value).trim();
   const currentUser = authStore.user;
 
   if (!currentUser?.userId) {
@@ -1143,11 +1241,10 @@ const sendMessage = async () => {
   try {
     const clientMessageId = buildClientMessageId();
     /** 与下行 WS 一致的引用回复目标；仅下一条发送消费。 */
-    const replyToMessageId = takeReplyToMessageIdForCurrentConv();
-    /** 与下行 WS 一致的 @ 列表；发送成功后清空 composerAt。 */
-    const pendingAtUserIds = composerAtStore.getPendingAtUserIdsForConv(
-      props.convId
-    );
+    const replyToMessageId =
+      input?.replyToMessageId ?? takeReplyToMessageIdForCurrentConv();
+    const pendingAtUserIds =
+      input?.atUserIds ?? composerAtStore.getPendingAtUserIdsForConv(props.convId);
     console.log("发送消息:", {
       convId: props.convId,
       content,
@@ -1179,10 +1276,7 @@ const sendMessage = async () => {
     conversationStore.clearConversationReadReceipt(props.convId);
     scrollToBottom();
 
-    // 2. 清空输入框
-    messageText.value = "";
-
-    // 3. MVP 阶段仅保留 WebSocket 发送，不做 HTTP 降级。
+    // 2. MVP 阶段仅保留 WebSocket 发送，不做 HTTP 降级。
     if (!websocketStore.isConnected) {
       console.log("WebSocket未连接，尝试连接...");
       await initWebSocket();
@@ -1201,12 +1295,6 @@ const sendMessage = async () => {
     if (!success) {
       throw new Error("WebSocket send failed");
     }
-    if (replyToMessageId != null) {
-      composerReplyStore.clearPendingReply();
-    }
-    if (pendingAtUserIds?.length) {
-      composerAtStore.clearAtTargets();
-    }
     if (tempMessage) {
       conversationStore.syncConversationLastMessageFromSentDisplay(
         props.convId,
@@ -1223,6 +1311,50 @@ const sendMessage = async () => {
     connectionError.value = "消息发送失败，请检查网络连接";
   } finally {
     isSending.value = false;
+  }
+};
+
+const sendComposerBatch = async () => {
+  if (!canSend.value || !props.convId) return;
+  try {
+    const content = messageText.value.trim();
+    const drafts = [...pendingFileDrafts.value];
+    const replyToMessageId = takeReplyToMessageIdForCurrentConv();
+    const pendingAtUserIds = composerAtStore.getPendingAtUserIdsForConv(
+      props.convId
+    );
+
+    if (content) {
+      await sendTextMessage({
+        content,
+        replyToMessageId,
+        atUserIds: pendingAtUserIds,
+      });
+    }
+
+    for (const draft of drafts) {
+      await sendFileMessage({
+        messageType: draft.messageType,
+        fileId: draft.fileId,
+        fileName: draft.fileName,
+        fileSize: draft.fileSize,
+        mimeType: draft.mimeType,
+        ...(replyToMessageId != null ? { replyToMessageId } : {}),
+        ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
+      });
+    }
+
+    messageText.value = "";
+    pendingFileDrafts.value = [];
+    if (replyToMessageId != null) {
+      composerReplyStore.clearPendingReply();
+    }
+    if (pendingAtUserIds?.length) {
+      composerAtStore.clearAtTargets();
+    }
+  } catch (error) {
+    console.error("统一发送失败:", error);
+    toast.error("发送失败，请稍后重试");
   }
 };
 
@@ -1283,7 +1415,7 @@ const loadMessages = async () => {
 const handleEnterKey = (event: KeyboardEvent) => {
   if (event.key === "Enter" && !event.shiftKey && canSend.value) {
     event.preventDefault();
-    sendMessage();
+    void sendComposerBatch();
   }
 };
 
@@ -1319,6 +1451,8 @@ const sendFileMessage = async (params: {
   fileName: string;
   fileSize: number;
   mimeType: string;
+  replyToMessageId?: number;
+  atUserIds?: number[];
 }) => {
   if (!props.convId || !authStore.user?.userId) return;
   if (isCurrentUserMutedInGroup.value) {
@@ -1333,10 +1467,10 @@ const sendFileMessage = async (params: {
   };
   const clientMessageId = buildClientMessageId();
   const messageContent = JSON.stringify(messagePayload);
-  const replyToMessageId = takeReplyToMessageIdForCurrentConv();
-  const pendingAtUserIds = composerAtStore.getPendingAtUserIdsForConv(
-    props.convId
-  );
+  const replyToMessageId =
+    params.replyToMessageId ?? takeReplyToMessageIdForCurrentConv();
+  const pendingAtUserIds =
+    params.atUserIds ?? composerAtStore.getPendingAtUserIdsForConv(props.convId);
   const tempMessage = sendMessageStore.appendLocalMessageEcho(
     {
       convId: props.convId,
@@ -1359,6 +1493,14 @@ const sendFileMessage = async (params: {
   );
   conversationStore.clearConversationReadReceipt(props.convId);
   scrollToBottom();
+  console.log("[file-msg-debug] append local file echo", {
+    convId: props.convId,
+    tempMessageId: tempMessage.messageId,
+    clientMessageId,
+    messageType: params.messageType,
+    fileId: params.fileId,
+    fileName: params.fileName,
+  });
 
   if (!websocketStore.isConnected) {
     await initWebSocket();
@@ -1371,55 +1513,21 @@ const sendFileMessage = async (params: {
     ...(replyToMessageId != null ? { replyToMessageId } : {}),
     ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
   });
+  console.log("[file-msg-debug] send ws file message", {
+    convId: props.convId,
+    success,
+    clientMessageId,
+    messageType: params.messageType,
+    fileId: params.fileId,
+  });
   if (!success) {
     showMessageStore.updateMessageStatus(tempMessage.messageId, 4);
     throw new Error("附件消息发送失败");
-  }
-  if (replyToMessageId != null) {
-    composerReplyStore.clearPendingReply();
-  }
-  if (pendingAtUserIds?.length) {
-    composerAtStore.clearAtTargets();
   }
   conversationStore.syncConversationLastMessageFromSentDisplay(
     props.convId,
     tempMessage
   );
-};
-
-/**
- * 仅做本地附件消息回显（不触发 WS 发送）。
- * 使用场景：秒传命中时，后端已持久化并广播给他人，但当前端需要立即看到自己的消息。
- * 返回：回显后的展示消息，供同步会话列表最后一条摘要；未满足前置条件时返回 undefined。
- */
-const appendLocalFileMessageEcho = (params: {
-  messageType: "image" | "file" | "video";
-  fileId: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-}): DisplayMessage | undefined => {
-  if (!props.convId || !authStore.user?.userId) return undefined;
-  const echoed = sendMessageStore.appendLocalMessageEcho(
-    {
-      convId: props.convId,
-      currentUserId: authStore.user.userId,
-      currentUserNickname: authStore.user.userNickname || null,
-      currentUserAvatar: authStore.user.userAvatar || null,
-      conversationMembers: conversationStore.compressedCMMap.get(props.convId),
-    },
-    {
-      kind: "file",
-      messageType: params.messageType,
-      fileId: params.fileId,
-      fileName: params.fileName,
-      fileSize: params.fileSize,
-      mimeType: params.mimeType,
-    }
-  );
-  conversationStore.clearConversationReadReceipt(props.convId);
-  scrollToBottom();
-  return echoed;
 };
 
 /**
@@ -1440,30 +1548,36 @@ const handleFilePicked = async (event: Event) => {
   }
 
   try {
+    if (fileMessageSendInFlight.value) {
+      console.warn("[file-msg-debug] duplicate file pick ignored", {
+        convId: props.convId,
+        name: pickedFile.name,
+        size: pickedFile.size,
+      });
+      return;
+    }
+    fileMessageSendInFlight.value = true;
     const messageType = resolveMessageTypeByFile(pickedFile);
+    console.log("[file-msg-debug] file selected", {
+      convId: props.convId,
+      name: pickedFile.name,
+      size: pickedFile.size,
+      mimeType: pickedFile.type || "application/octet-stream",
+      messageType,
+    });
     const uploadResult = await fileUploadStore.uploadFile({
       file: pickedFile,
       convId: props.convId,
       mimeType: pickedFile.type || "application/octet-stream",
     });
-    if (uploadResult.instantUpload) {
-      // 秒传命中时，后端已写消息并推送给其他端；当前端本端做即时回显但不重复发送。
-      const echoed = appendLocalFileMessageEcho({
-        messageType,
-        fileId: uploadResult.fileId,
-        fileName: pickedFile.name,
-        fileSize: pickedFile.size,
-        mimeType: pickedFile.type || "application/octet-stream",
-      });
-      if (echoed) {
-        conversationStore.syncConversationLastMessageFromSentDisplay(
-          props.convId,
-          echoed
-        );
-      }
-      return;
-    }
-    await sendFileMessage({
+    console.log("[file-msg-debug] upload completed, append pending file draft", {
+      convId: props.convId,
+      fileId: uploadResult.fileId,
+      messageType,
+      instantUpload: !!uploadResult.instantUpload,
+    });
+    pendingFileDrafts.value.push({
+      localDraftId: buildPendingFileDraftId(),
       messageType,
       fileId: uploadResult.fileId,
       fileName: pickedFile.name,
@@ -1474,6 +1588,7 @@ const handleFilePicked = async (event: Event) => {
     console.error("附件上传失败:", error);
     connectionError.value = "附件上传失败，请稍后重试";
   } finally {
+    fileMessageSendInFlight.value = false;
     input.value = "";
   }
 };
@@ -1902,5 +2017,54 @@ html.night-mode .header-upload-progress-inner {
 
 .image-preview-origin:active {
   cursor: grabbing;
+}
+
+.composer-file-strip {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgb(64 158 255 / 8%);
+}
+
+.composer-file-strip__title {
+  font-size: 12px;
+  color: #606266;
+  margin-bottom: 6px;
+}
+
+.composer-file-strip__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.composer-file-strip__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.composer-file-strip__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.composer-file-strip__meta {
+  font-size: 12px;
+  color: #909399;
+}
+
+.composer-file-strip__remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: #909399;
 }
 </style>

@@ -72,8 +72,11 @@ export interface SendMessageRequest extends WebSocketBaseMessage {
   messageType: MessageType;
   messageContent: string;
   replyToMessageId?: number | null;
-  localMessageId?: string;
-  /** @ 提及用户 ID；线协议驼峰，库表 at_user_ids 由服务端持久化时映射。 */
+  /** 后端当前协议字段：用于 messageSent 回执与本地临时消息对账。 */
+  clientMessageId?: string;
+  /** @ 提及用户 ID（当前后端协议字段）。 */
+  mentionedUserIds?: number[] | null;
+  /** 兼容旧字段：历史实现使用 atUserIds。 */
   atUserIds?: number[] | null;
 }
 
@@ -85,6 +88,7 @@ export interface ReadMessageRequest {
 
 export interface RecallMessageRequest {
   action: "recallMessage";
+  convId?: number;
   messageId: number;
 }
 
@@ -101,6 +105,7 @@ export interface UnsubscribeRequest {
 export interface TypingClientRequest {
   action: "typing";
   convId: number;
+  isCancel?: boolean;
 }
 
 export type WebSocketClientOutboundMessage =
