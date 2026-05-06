@@ -76,6 +76,22 @@
           maxlength="50"
         />
       </section>
+
+      <section class="single-section">
+        <div class="single-item-title">会话设置</div>
+        <div class="settings-row">
+          <span class="settings-label">设为置顶</span>
+          <el-switch v-model="pinConversation" :disabled="archivedConversation" />
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">归档会话</span>
+          <el-switch v-model="archivedConversation" />
+        </div>
+        <div class="settings-row settings-row--status">
+          <span class="settings-label">会话展示状态</span>
+          <span class="settings-status">{{ displayStatusText }}</span>
+        </div>
+      </section>
     </div>
 
     <div
@@ -138,9 +154,11 @@ import toast from "@/commons/utils/toast";
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import { useFriendStore } from "@/store/friend/showFriend";
 import { useUserStore } from "@/store/user/user";
+import { useConvStore } from "@/store/conv/conv";
 import { useConversationInfoStore } from "@/store/conversationInfo/conversationInfo";
 import { syncFriendRemarkToStores } from "@/interactions/friendRemark/syncFriendRemarkToStores";
 import { loadFriendInfoNormalized } from "@/normalize/friend";
+import { ConversationMemberDisplayStatus } from "@/types/dto/conversation";
 import type { FriendListItem, FriendProfileDTO } from "@/types/dto/friend";
 import { FriendRelationStatus } from "@/types/dto/friend";
 import {
@@ -175,6 +193,7 @@ const emit = defineEmits<{
 
 const friendStore = useFriendStore();
 const userStore = useUserStore();
+const convStore = useConvStore();
 const conversationInfoStore = useConversationInfoStore();
 const loading = ref(false);
 const isApplying = ref(false);
@@ -185,6 +204,10 @@ const editableRemark = ref("");
 const editableGroup = ref("");
 const initialRemark = ref("");
 const initialGroup = ref("");
+const conversationDisplayStatus = ref<number>(ConversationMemberDisplayStatus.DEFAULT);
+const initialConversationDisplayStatus = ref<number>(
+  ConversationMemberDisplayStatus.DEFAULT
+);
 
 const displayName = computed(() => {
   if (!friendInfo.value) return "未知用户";
@@ -214,8 +237,51 @@ const friendOnlineStatusText = computed(() => {
 const hasPendingChanges = computed(
   () =>
     editableRemark.value !== initialRemark.value ||
-    editableGroup.value !== initialGroup.value
+    editableGroup.value !== initialGroup.value ||
+    conversationDisplayStatus.value !== initialConversationDisplayStatus.value
 );
+const pinConversation = computed({
+  get: () => conversationDisplayStatus.value === ConversationMemberDisplayStatus.PINNED,
+  set: (nextPinned: boolean) => {
+    conversationDisplayStatus.value = nextPinned
+      ? ConversationMemberDisplayStatus.PINNED
+      : ConversationMemberDisplayStatus.DEFAULT;
+  },
+});
+const archivedConversation = computed({
+  get: () => conversationDisplayStatus.value === ConversationMemberDisplayStatus.HIDDEN,
+  set: (nextArchived: boolean) => {
+    conversationDisplayStatus.value = nextArchived
+      ? ConversationMemberDisplayStatus.HIDDEN
+      : ConversationMemberDisplayStatus.DEFAULT;
+  },
+});
+const displayStatusText = computed(() => {
+  if (conversationDisplayStatus.value === ConversationMemberDisplayStatus.PINNED) {
+    return "已置顶";
+  }
+  if (conversationDisplayStatus.value === ConversationMemberDisplayStatus.HIDDEN) {
+    return "已归档";
+  }
+  return "默认显示";
+});
+const activeSingleConversation = computed(() => {
+  const peerId = Number(props.friendId || 0);
+  if (!Number.isFinite(peerId) || peerId <= 0) return null;
+  const current = convStore.currentConversation;
+  const currentPeerId = Number(current?.peer?.peerUserId || current?.targetUserId || 0);
+  if (current && Number(current.convType) === 1 && currentPeerId === peerId) {
+    return current;
+  }
+  return (
+    convStore.conversations.find((row) => {
+      if (Number(row.convType) !== 1) return false;
+      const rowPeerId = Number(row.peer?.peerUserId || row.targetUserId || 0);
+      return rowPeerId === peerId;
+    }) || null
+  );
+});
+const targetConversationId = computed(() => activeSingleConversation.value?.convId ?? null);
 
 /**
  * 是否为「侧栏好友」关系（relationStatus 0/1）；用于单聊详情文案与删除/添加按钮。
@@ -296,6 +362,7 @@ function mapProfileToSingleConvViewModel(profile: FriendProfileDTO): FriendInfoV
 const handleCancel = () => {
   editableRemark.value = initialRemark.value;
   editableGroup.value = initialGroup.value;
+  conversationDisplayStatus.value = initialConversationDisplayStatus.value;
 };
 
 /**
@@ -305,6 +372,7 @@ const handleCancel = () => {
 const handleApply = async () => {
   const targetFriendId = Number(props.friendId || 0);
   if (!Number.isFinite(targetFriendId) || targetFriendId <= 0 || isApplying.value) return;
+  const targetConvId = Number(targetConversationId.value || 0);
   const payload: { remarkName?: string | null; friendGroup?: string | null } = {};
   const nextRemark = editableRemark.value.trim();
   const nextGroup = editableGroup.value.trim();
@@ -314,18 +382,31 @@ const handleApply = async () => {
   if (nextGroup !== initialGroup.value.trim()) {
     payload.friendGroup = nextGroup === "" ? null : nextGroup;
   }
-  if (Object.keys(payload).length === 0) return;
+  const hasDisplayStatusChange =
+    conversationDisplayStatus.value !== initialConversationDisplayStatus.value;
+  if (Object.keys(payload).length === 0 && !hasDisplayStatusChange) return;
 
   isApplying.value = true;
   try {
-    await conversationInfoStore.updateFriendRemark(targetFriendId, payload);
-    syncFriendRemarkToStores(
-      targetFriendId,
-      editableRemark.value.trim(),
-      editableGroup.value.trim()
-    );
+    if (Object.keys(payload).length > 0) {
+      await conversationInfoStore.updateFriendRemark(targetFriendId, payload);
+      syncFriendRemarkToStores(
+        targetFriendId,
+        editableRemark.value.trim(),
+        editableGroup.value.trim()
+      );
+    }
+    if (hasDisplayStatusChange && Number.isFinite(targetConvId) && targetConvId > 0) {
+      await conversationInfoStore.updateConversationMemberNames(targetConvId, {
+        displayStatus: conversationDisplayStatus.value,
+      });
+      convStore.patchConversationLocal(targetConvId, {
+        displayStatus: conversationDisplayStatus.value,
+      });
+    }
     initialRemark.value = editableRemark.value;
     initialGroup.value = editableGroup.value;
+    initialConversationDisplayStatus.value = conversationDisplayStatus.value;
     toast.success("单聊资料已保存");
   } catch (applyError) {
     console.error("保存单聊资料失败:", applyError);
@@ -420,8 +501,15 @@ const loadSingleConversationInfo = async () => {
     }
     initialRemark.value = friendInfo.value?.remarkName || "";
     initialGroup.value = friendInfo.value?.friendGroup || friendInfo.value?.group || "";
+    const displayStatusRaw = activeSingleConversation.value?.displayStatus;
+    initialConversationDisplayStatus.value =
+      Number(displayStatusRaw) === ConversationMemberDisplayStatus.PINNED ||
+      Number(displayStatusRaw) === ConversationMemberDisplayStatus.HIDDEN
+        ? Number(displayStatusRaw)
+        : ConversationMemberDisplayStatus.DEFAULT;
     editableRemark.value = initialRemark.value;
     editableGroup.value = initialGroup.value;
+    conversationDisplayStatus.value = initialConversationDisplayStatus.value;
   } finally {
     loading.value = false;
   }

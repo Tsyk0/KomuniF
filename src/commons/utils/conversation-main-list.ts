@@ -18,7 +18,7 @@ function coerceConversationMemberDisplayStatus(raw: unknown): number {
 }
 
 /**
- * 按会话更新时间新在前比较；时间相同则按 convId 降序，保证稳定次序。
+ * 按会话更新时间新在前比较；时间相同则按未读数高在前，保证同时间下更重要会话优先。
  * 使用场景：置顶组内、默认组内的二级排序。
  */
 function compareConversationSummaryRecency(
@@ -30,7 +30,7 @@ function compareConversationSummaryRecency(
   if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) {
     return tb - ta;
   }
-  return Number(b.convId) - Number(a.convId);
+  return Number(b.unreadCount || 0) - Number(a.unreadCount || 0);
 }
 
 /**

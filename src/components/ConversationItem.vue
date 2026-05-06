@@ -27,6 +27,20 @@
         <div class="conversation-header">
           <div class="conversation-title-row">
             <span class="conversation-name">{{ displayName }}</span>
+            <Pin
+              v-if="showPinnedIcon"
+              class="conversation-status-icon"
+              :size="14"
+              :stroke-width="2"
+              aria-label="置顶会话"
+            />
+            <PinOff
+              v-else-if="showArchivedIcon"
+              class="conversation-status-icon"
+              :size="14"
+              :stroke-width="2"
+              aria-label="归档会话"
+            />
             <span v-if="showMutedInList" class="conversation-muted-tag"
               >禁言</span
             >
@@ -59,6 +73,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { Pin, PinOff } from "lucide-vue-next";
 
 /** 与侧栏统一列表项 CSS 变量 --sli-ripple-color 对齐的点击水波纹（日间略深天蓝、夜间由变量覆盖为紫）。 */
 const rippleOpts = { color: "var(--sli-ripple-color)", duration: 520 };
@@ -68,8 +83,10 @@ import { getConversationDisplayName } from "@/commons/utils/conversation-display
 import { resolveLastMessageSenderLabel } from "@/commons/utils/conversation-last-message-sender";
 import type {
   ConversationSummaryDTO,
+  ConversationMemberDisplayStatusValue,
   LastMessageInfo,
 } from "@/types/dto/conversation";
+import { ConversationMemberDisplayStatus } from "@/types/dto/conversation";
 import { useUserStore } from "@/store/user/user";
 import { useFriendStore } from "@/store/friend/showFriend";
 import { useConvStore } from "@/store/conv/conv";
@@ -95,6 +112,26 @@ const showMutedInList = computed(() => {
   if (Number(c.convType) !== 2) return false;
   return Number(c.memberStatus) === MemberStatus.MUTED;
 });
+
+/** 会话展示状态（0 置顶，1 默认，2 归档）；非法值回退默认。 */
+const displayStatus = computed<ConversationMemberDisplayStatusValue>(() => {
+  const n = Number(props.conversation.displayStatus);
+  if (
+    n === ConversationMemberDisplayStatus.PINNED ||
+    n === ConversationMemberDisplayStatus.DEFAULT ||
+    n === ConversationMemberDisplayStatus.HIDDEN
+  ) {
+    return n;
+  }
+  return ConversationMemberDisplayStatus.DEFAULT;
+});
+
+const showPinnedIcon = computed(
+  () => displayStatus.value === ConversationMemberDisplayStatus.PINNED
+);
+const showArchivedIcon = computed(
+  () => displayStatus.value === ConversationMemberDisplayStatus.HIDDEN
+);
 
 const avatar = computed(() => {
   return props.conversation.convAvatar || "";

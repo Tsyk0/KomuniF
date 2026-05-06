@@ -11,6 +11,11 @@ export type UpdateConversationMemberNamesPayload = {
   memberNickname?: string | null;
   privateDisplayName?: string | null;
   /**
+   * 当前用户在会话中的展示状态：0 置顶、1 默认、2 归档。
+   * 使用场景：群聊/单聊 convinfo 更新会话展示位，驱动会话侧栏置顶与归档显隐。
+   */
+  displayStatus?: number;
+  /**
    * 清空群内昵称标记。
    * 使用场景：仅清空昵称时，不传新值，通过 clear 标记让后端执行清空。
    */

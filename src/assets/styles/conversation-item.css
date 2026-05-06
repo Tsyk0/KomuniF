@@ -119,6 +119,11 @@
   line-height: 1.2;
 }
 
+.conversation-status-icon {
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
 .group-badge {
   font-size: 10px;
   background: linear-gradient(135deg, #0084ff, #0056cc);

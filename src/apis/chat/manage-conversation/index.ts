@@ -9,6 +9,12 @@ export interface UpdateConversationMemberNamesPayload {
   memberNickname?: string | null;
   privateDisplayName?: string | null;
   /**
+   * 当前用户在会话内的展示状态：
+   * 0 置顶、1 默认、2 归档。
+   * 使用场景：PATCH /conversations/{convId}/members/me/names 同步会话展示位。
+   */
+  displayStatus?: number;
+  /**
    * 清空群内昵称标记。
    * 使用场景：用户将“我的本群昵称”清空时，后端通过该标记识别清空操作。
    */

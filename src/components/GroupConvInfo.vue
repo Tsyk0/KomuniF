@@ -84,15 +84,15 @@
       <section class="group-section">
         <div class="settings-row">
           <span class="settings-label">设为置顶</span>
-          <el-switch v-model="pinConversation" />
+          <el-switch v-model="pinConversation" :disabled="archivedConversation" />
         </div>
         <div class="settings-row">
-          <span class="settings-label">消息免打扰</span>
-          <el-switch v-model="muteConversation" />
+          <span class="settings-label">归档会话</span>
+          <el-switch v-model="archivedConversation" />
         </div>
         <div class="settings-row settings-row--status">
-          <span class="settings-label">群消息设置</span>
-          <span class="settings-status">{{ messageSettingText }}</span>
+          <span class="settings-label">会话展示状态</span>
+          <span class="settings-status">{{ displayStatusText }}</span>
         </div>
       </section>
 
@@ -312,7 +312,10 @@ import type {
   ConversationEntity,
   ConversationMemberDTO,
 } from "@/types/dto/conversation-member";
-import type { ConversationSummaryDTO } from "@/types/dto/conversation";
+import {
+  ConversationMemberDisplayStatus,
+  type ConversationSummaryDTO,
+} from "@/types/dto/conversation";
 import { FriendRelationStatus, type FriendListItem } from "@/types/dto/friend";
 import { MemberStatus } from "@/entity/conversation-member";
 import { GROUP_CONV_MEMBERS_REFRESH_EVENT } from "@/interactions/realtime/groupConvMemberManageInteraction";
@@ -364,14 +367,14 @@ const memberPopoverActionLoading = ref(false);
 const editableNotice = ref("");
 const editableMyNickname = ref("");
 const editableGroupRemark = ref("");
-const pinConversation = ref(false);
-const muteConversation = ref(false);
+const conversationDisplayStatus = ref<number>(ConversationMemberDisplayStatus.DEFAULT);
 
 const initialNotice = ref("");
 const initialMyNickname = ref("");
 const initialGroupRemark = ref("");
-const initialPinConversation = ref(false);
-const initialMuteConversation = ref(false);
+const initialConversationDisplayStatus = ref<number>(
+  ConversationMemberDisplayStatus.DEFAULT
+);
 
 const groupAvatarUrl = computed(() =>
   normalizeAvatarUrl(conversation.value?.convAvatar || "")
@@ -382,16 +385,37 @@ const groupNumber = computed(() => conversation.value?.convId || "-");
 const convOwnerIdForMemberUi = computed(() =>
   Number(conversation.value?.convOwnerId || 0)
 );
-const messageSettingText = computed(() =>
-  muteConversation.value ? "仅接收提醒消息" : "接收全部消息"
-);
+const pinConversation = computed({
+  get: () => conversationDisplayStatus.value === ConversationMemberDisplayStatus.PINNED,
+  set: (nextPinned: boolean) => {
+    conversationDisplayStatus.value = nextPinned
+      ? ConversationMemberDisplayStatus.PINNED
+      : ConversationMemberDisplayStatus.DEFAULT;
+  },
+});
+const archivedConversation = computed({
+  get: () => conversationDisplayStatus.value === ConversationMemberDisplayStatus.HIDDEN,
+  set: (nextArchived: boolean) => {
+    conversationDisplayStatus.value = nextArchived
+      ? ConversationMemberDisplayStatus.HIDDEN
+      : ConversationMemberDisplayStatus.DEFAULT;
+  },
+});
+const displayStatusText = computed(() => {
+  if (conversationDisplayStatus.value === ConversationMemberDisplayStatus.PINNED) {
+    return "已置顶";
+  }
+  if (conversationDisplayStatus.value === ConversationMemberDisplayStatus.HIDDEN) {
+    return "已归档";
+  }
+  return "默认显示";
+});
 const hasPendingChanges = computed(
   () =>
     editableNotice.value !== initialNotice.value ||
     editableMyNickname.value !== initialMyNickname.value ||
     editableGroupRemark.value !== initialGroupRemark.value ||
-    pinConversation.value !== initialPinConversation.value ||
-    muteConversation.value !== initialMuteConversation.value
+    conversationDisplayStatus.value !== initialConversationDisplayStatus.value
 );
 const isCurrentUserGroupOwner = computed(() => {
   const myUserId = Number(userStore.user?.userId || 0);
@@ -931,6 +955,9 @@ const syncLocalChangesToPinia = () => {
       summaryPatch.convName = conversation.value.convName;
     }
   }
+  if (conversationDisplayStatus.value !== initialConversationDisplayStatus.value) {
+    summaryPatch.displayStatus = conversationDisplayStatus.value;
+  }
   if (Object.keys(summaryPatch).length > 0) {
     conversationStore.patchConversationLocal(convId, summaryPatch);
   }
@@ -967,8 +994,7 @@ const handleCancel = () => {
   editableNotice.value = initialNotice.value;
   editableMyNickname.value = initialMyNickname.value;
   editableGroupRemark.value = initialGroupRemark.value;
-  pinConversation.value = initialPinConversation.value;
-  muteConversation.value = initialMuteConversation.value;
+  conversationDisplayStatus.value = initialConversationDisplayStatus.value;
 };
 
 /**
@@ -987,6 +1013,7 @@ const handleApply = async () => {
     const memberPayload: {
       memberNickname?: string | null;
       privateDisplayName?: string | null;
+      displayStatus?: number;
       clearMemberNickname?: boolean;
       clearPrivateDisplayName?: boolean;
     } = {};
@@ -1006,6 +1033,9 @@ const handleApply = async () => {
         memberPayload.privateDisplayName = normalizedGroupRemark;
       }
     }
+    if (conversationDisplayStatus.value !== initialConversationDisplayStatus.value) {
+      memberPayload.displayStatus = conversationDisplayStatus.value;
+    }
     /** 群聊备注变更标识；用于提交成功后主动刷新会话摘要，确保 convName 与后端一致。 */
     const shouldRefreshConversationSummary =
       editableGroupRemark.value !== initialGroupRemark.value;
@@ -1022,8 +1052,7 @@ const handleApply = async () => {
     initialNotice.value = editableNotice.value;
     initialMyNickname.value = editableMyNickname.value;
     initialGroupRemark.value = editableGroupRemark.value;
-    initialPinConversation.value = pinConversation.value;
-    initialMuteConversation.value = muteConversation.value;
+    initialConversationDisplayStatus.value = conversationDisplayStatus.value;
     if (shouldRefreshConversationSummary) {
       await conversationStore.refreshConversationById(props.convId);
     }
@@ -1048,14 +1077,18 @@ const initEditableFields = () => {
   initialGroupRemark.value =
     conversationStore.getConversationById(Number(props.convId))
       ?.privateDisplayName || "";
-  initialPinConversation.value = false;
-  initialMuteConversation.value = false;
+  const displayStatusRaw = conversationStore.getConversationById(Number(props.convId))
+    ?.displayStatus;
+  initialConversationDisplayStatus.value =
+    Number(displayStatusRaw) === ConversationMemberDisplayStatus.PINNED ||
+    Number(displayStatusRaw) === ConversationMemberDisplayStatus.HIDDEN
+      ? Number(displayStatusRaw)
+      : ConversationMemberDisplayStatus.DEFAULT;
 
   editableNotice.value = initialNotice.value;
   editableMyNickname.value = initialMyNickname.value;
   editableGroupRemark.value = initialGroupRemark.value;
-  pinConversation.value = initialPinConversation.value;
-  muteConversation.value = initialMuteConversation.value;
+  conversationDisplayStatus.value = initialConversationDisplayStatus.value;
 };
 
 /**
