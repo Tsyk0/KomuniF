@@ -1324,7 +1324,10 @@ const sendComposerBatch = async () => {
       props.convId
     );
 
-    if (content) {
+    // 混合发送约定：
+    // - 存在待发文件时，输入框文本不单独发 text 消息，而是挂到每条非文本 messageContent.textbtw。
+    // - 仅无待发文件时，才走纯文本发送。
+    if (content && drafts.length === 0) {
       await sendTextMessage({
         content,
         replyToMessageId,
@@ -1339,6 +1342,7 @@ const sendComposerBatch = async () => {
         fileName: draft.fileName,
         fileSize: draft.fileSize,
         mimeType: draft.mimeType,
+        ...(content ? { textByTheWay: content } : {}),
         ...(replyToMessageId != null ? { replyToMessageId } : {}),
         ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
       });
@@ -1451,6 +1455,8 @@ const sendFileMessage = async (params: {
   fileName: string;
   fileSize: number;
   mimeType: string;
+  /** 非文本消息附带文案（后端标准字段）。 */
+  textByTheWay?: string;
   replyToMessageId?: number;
   atUserIds?: number[];
 }) => {
@@ -1464,6 +1470,13 @@ const sendFileMessage = async (params: {
     fileName: params.fileName,
     fileSize: params.fileSize,
     mimeType: params.mimeType,
+    ...(params.textByTheWay?.trim()
+      ? {
+          textByTheWay: params.textByTheWay.trim(),
+          // 兼容后端旧别名（后端会归一化到 textByTheWay）。
+          textbtw: params.textByTheWay.trim(),
+        }
+      : {}),
   };
   const clientMessageId = buildClientMessageId();
   const messageContent = JSON.stringify(messagePayload);
@@ -1487,6 +1500,9 @@ const sendFileMessage = async (params: {
       fileName: params.fileName,
       fileSize: params.fileSize,
       mimeType: params.mimeType,
+      ...(params.textByTheWay?.trim()
+        ? { textByTheWay: params.textByTheWay.trim() }
+        : {}),
       ...(replyToMessageId != null ? { replyToMessageId } : {}),
       ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
     }

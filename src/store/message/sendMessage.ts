@@ -23,6 +23,8 @@ type LocalEchoPayload =
       fileName: string;
       fileSize: number;
       mimeType: string;
+      /** 非文本消息附带文案（写入 messageContent.textByTheWay/textbtw）。 */
+      textByTheWay?: string;
       /** 前端生成的临时消息标识，用于和 messageSent 回执对齐。 */
       clientMessageId?: string;
       replyToMessageId?: number;
@@ -72,6 +74,12 @@ export const useSendMessageStore = defineStore("sendMessage", () => {
               fileName: payload.fileName,
               fileSize: payload.fileSize,
               mimeType: payload.mimeType,
+              ...(payload.textByTheWay?.trim()
+                ? {
+                    textByTheWay: payload.textByTheWay.trim(),
+                    textbtw: payload.textByTheWay.trim(),
+                  }
+                : {}),
             }),
             fileId: payload.fileId,
             fileName: payload.fileName,

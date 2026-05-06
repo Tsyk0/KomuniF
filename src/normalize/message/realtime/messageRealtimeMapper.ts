@@ -97,6 +97,32 @@ function extractAtUserIds(p: Record<string, any>): number[] | undefined {
   return uniq.length ? uniq : undefined;
 }
 
+function mergeByTheWayIntoMessageContent(
+  messageType: string,
+  rawMessageContent: unknown,
+  payload: Record<string, any>
+): string {
+  const content =
+    typeof rawMessageContent === "string" ? rawMessageContent : String(rawMessageContent || "");
+  const t = String(messageType || "text").toLowerCase();
+  if (t === "text") return content;
+  const byTheWay =
+    (typeof payload.textByTheWay === "string" && payload.textByTheWay.trim()) ||
+    (typeof payload.textbtw === "string" && payload.textbtw.trim()) ||
+    "";
+  if (!byTheWay) return content;
+  try {
+    const parsed = JSON.parse(content || "{}") as Record<string, unknown>;
+    return JSON.stringify({
+      ...parsed,
+      textByTheWay: byTheWay,
+      textbtw: byTheWay,
+    });
+  } catch {
+    return content;
+  }
+}
+
 /**
  * WS 入站消息映射的最小运行上下文。
  * 约定：优先使用当前会话的成员缓存（compressedCMMap）解析名称和头像。
@@ -156,6 +182,12 @@ export function mapRealtimeIncomingToDisplayMessage(
   const replyHints = extractReplyQuoteHints(payload);
   const replyToMessageId = extractReplyToMessageId(payload);
   const atUserIds = extractAtUserIds(payload);
+  const messageType = payload.messageType || "text";
+  const messageContent = mergeByTheWayIntoMessageContent(
+    messageType,
+    payload.messageContent || payload.content || "",
+    payload
+  );
 
   // 4) 组装统一展示消息：保证下游组件/Store 使用同一数据结构。
   return {
@@ -163,8 +195,8 @@ export function mapRealtimeIncomingToDisplayMessage(
     clientMessageId: String(payload.clientMessageId || "").trim() || undefined,
     convId,
     senderId,
-    messageType: payload.messageType || "text",
-    messageContent: payload.messageContent || payload.content || "",
+    messageType,
+    messageContent,
     messageStatus: Number(payload.messageStatus) || 1,
     sendTime,
     replyToMessageId,
@@ -225,11 +257,17 @@ export function mapRealtimePayloadToLastMessageInfo(
     ? new Date(payload.sendTime).toISOString()
     : new Date().toISOString();
 
+  const messageType = payload.messageType || "text";
+  const messageContent = mergeByTheWayIntoMessageContent(
+    messageType,
+    payload.messageContent || payload.content || "",
+    payload
+  );
   return {
     messageId,
     senderId,
-    messageType: payload.messageType || "text",
-    messageContent: payload.messageContent || payload.content || "",
+    messageType,
+    messageContent,
     senderDisplayName,
     senderAvatar,
     sendTime,

@@ -88,6 +88,9 @@
               </button>
             </template>
             <div v-else class="message-text">{{ message.messageContent }}</div>
+            <div v-if="isAttachmentMessage && attachmentByTheWayText" class="message-text">
+              {{ attachmentByTheWayText }}
+            </div>
             <div class="message-time">{{ formatTime(message.sendTime) }}</div>
           </div>
           <!-- 他人消息：气泡右侧从左到右 @ → 回复 → 撤回（与本人侧 撤回→回复→@ 中心对称） -->
@@ -233,6 +236,9 @@
               </button>
             </template>
             <div v-else class="message-text">{{ message.messageContent }}</div>
+            <div v-if="isAttachmentMessage && attachmentByTheWayText" class="message-text">
+              {{ attachmentByTheWayText }}
+            </div>
             <div class="message-time">{{ formatTime(message.sendTime) }}</div>
           </div>
         </div>
@@ -341,6 +347,7 @@ import {
   buildFileDownloadUrl,
   buildFileThumbnailUrl,
 } from "@/commons/utils/file-url";
+import { extractByTheWayTextFromMessageContent } from "@/commons/utils/message-by-the-way";
 import { useShowMessageStore } from "@/store/message/showMessage";
 import { useImagePreviewStore } from "@/store/message/imagePreview";
 import { useConvStore } from "@/store/conv/conv";
@@ -956,6 +963,11 @@ const fileDisplayMimeType = computed(
     props.message.fileMimeType || parsedFilePayload.value?.mimeType || "file/*"
 );
 const fileCardIcon = computed(() => "📄");
+const attachmentByTheWayText = computed(() =>
+  isAttachmentMessage.value
+    ? extractByTheWayTextFromMessageContent(props.message.messageContent)
+    : ""
+);
 
 /**
  * 打开图片原图。

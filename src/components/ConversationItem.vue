@@ -63,6 +63,7 @@ import { computed } from "vue";
 /** 与侧栏统一列表项 CSS 变量 --sli-ripple-color 对齐的点击水波纹（日间略深天蓝、夜间由变量覆盖为紫）。 */
 const rippleOpts = { color: "var(--sli-ripple-color)", duration: 520 };
 import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import { extractByTheWayTextFromMessageContent } from "@/commons/utils/message-by-the-way";
 import { getConversationDisplayName } from "@/commons/utils/conversation-display";
 import { resolveLastMessageSenderLabel } from "@/commons/utils/conversation-last-message-sender";
 import type {
@@ -152,7 +153,8 @@ function buildLastMessagePreviewBody(lastMsg: LastMessageInfo): string {
     const fileName =
       parseFileNameFromMessageContent(lastMsg.messageContent) ?? "文件";
     const displayName = truncateFileNameForPreview(fileName);
-    return `[${displayName}]`;
+    const btw = extractByTheWayTextFromMessageContent(lastMsg.messageContent);
+    return btw ? `[${displayName}] ${btw}` : `[${displayName}]`;
   }
 
   const content = lastMsg.messageContent;

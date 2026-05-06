@@ -1,4 +1,5 @@
 import type { DisplayMessage } from "@/entity/message";
+import { extractByTheWayTextFromMessageContent } from "@/commons/utils/message-by-the-way";
 
 const TEXT_PREVIEW_MAX = 140;
 
@@ -12,17 +13,22 @@ export function formatQuotedMessageContentPreview(message: DisplayMessage): stri
   }
   const t = (message.messageType || "text").toLowerCase();
   if (t === "image") {
-    return "[图片]";
+    const btw = extractByTheWayTextFromMessageContent(message.messageContent);
+    return btw ? `[图片] ${btw}` : "[图片]";
   }
   if (t === "video") {
-    return "[视频]";
+    const btw = extractByTheWayTextFromMessageContent(message.messageContent);
+    return btw ? `[视频] ${btw}` : "[视频]";
   }
   if (t === "file") {
     const raw = message.messageContent || "";
     try {
       const o = JSON.parse(raw) as { fileName?: string };
       const name = (o?.fileName || "").trim();
-      return name ? `[文件] ${name}` : "[文件]";
+      const btw = extractByTheWayTextFromMessageContent(raw);
+      if (name && btw) return `[文件] ${name} ${btw}`;
+      if (name) return `[文件] ${name}`;
+      return btw ? `[文件] ${btw}` : "[文件]";
     } catch {
       return "[文件]";
     }

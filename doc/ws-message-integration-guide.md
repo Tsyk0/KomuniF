@@ -34,13 +34,6 @@
 3. 前端组装 `messageContent`（可带文件 + 文本）并发送 `sendMessage`
 4. 后端不会在上传链路自动写 `message`，避免双写
 
-### 1.4 文件类消息待发队列（前端）
-
-1. 用户选择文件后仅执行上传，拿到 `fileId` 后进入输入框上方“待发送附件”队列
-2. 不在选中文件时立即发送 `sendMessage`
-3. 用户按回车时，统一发送本次批次（文本 + 待发附件）
-4. 该机制为后续“混合内容消息”提供前端交互基础
-
 ## 2. 上行消息（前端 -> 后端）
 
 ## 2.1 `ping`
@@ -60,6 +53,14 @@
 - 可选字段：
   - `replyToMessageId`
   - `atUserIds`
+
+`messageContent` 约定：
+
+- `messageType="text"`：`messageContent` 为普通文本字符串
+- `messageType!="text"`：`messageContent` 必须为 JSON 对象字符串（用于文件/图片/视频及扩展）
+- 非文本消息支持附带文案字段：
+  - `textByTheWay`（标准字段）
+  - `textbtw`（兼容别名，后端会归一化为 `textByTheWay`）
 
 前端要求：
 
@@ -167,7 +168,6 @@
 3. 秒传文件发送：只入库一次，流程与非秒传一致
 4. `messageSent` 全部可按 `clientMessageId` 命中临时消息
 5. `newMessage` 到达后列表无重复行（`messageId` 去重有效）
-6. 选择多个附件后，回车可一次性触发统一发送；发送前可逐个移除待发附件
 
 ## 6. 推荐日志字段（最小集）
 
