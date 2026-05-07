@@ -13,7 +13,7 @@ export function validateImageFile(
   options: ValidateImageFileOptions = {}
 ): { ok: boolean; message?: string } {
   if (!file) return { ok: false, message: "未选择文件" };
-  const maxSizeBytes = options.maxSizeBytes ?? 2 * 1024 * 1024;
+  const maxSizeBytes = options.maxSizeBytes ?? 50 * 1024 * 1024;
   const allowMimePrefix = options.allowMimePrefix ?? "image/";
   if (file.size > maxSizeBytes) {
     return { ok: false, message: `图片大小不能超过 ${Math.floor(maxSizeBytes / 1024 / 1024)}MB` };

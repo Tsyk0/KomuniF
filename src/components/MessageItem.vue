@@ -342,7 +342,10 @@ import {
   nextTick,
 } from "vue";
 import { AtSign, Play, Reply, Trash, X } from "lucide-vue-next";
-import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import {
+  normalizeAvatarUrl,
+  normalizeConversationAvatarUrl,
+} from "@/commons/utils/avatar-url";
 import {
   buildFileDownloadUrl,
   buildFileThumbnailUrl,
@@ -438,6 +441,9 @@ watch(rawAvatarSource, () => {
 
 const avatarDisplayUrl = computed(() => {
   if (!isAvatarLoadSuccessful.value) return "";
+  if (resolvedConvType.value === 1 && !props.message.isSentByMe) {
+    return normalizeConversationAvatarUrl(rawAvatarSource.value);
+  }
   return normalizeAvatarUrl(rawAvatarSource.value);
 });
 

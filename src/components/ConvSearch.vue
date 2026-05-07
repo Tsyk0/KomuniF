@@ -1,7 +1,9 @@
 <template>
   <div class="conv-create-panel conv-create-panel--main-area user-search-root">
     <header class="conv-create-toolbar">
-      <button type="button" class="conv-create-tool-btn" @click="emit('exit')">退出</button>
+      <button type="button" class="conv-create-tool-btn" @click="emit('exit')">
+        退出
+      </button>
       <h3 class="conv-create-toolbar-title">找群入群</h3>
       <button
         type="button"
@@ -15,7 +17,9 @@
     <div class="user-search-body">
       <div class="user-search-left">
         <div class="user-search-field">
-          <label class="conv-create-label" for="conv-search-input">搜索群聊</label>
+          <label class="conv-create-label" for="conv-search-input"
+            >搜索群聊</label
+          >
           <input
             id="conv-search-input"
             v-model="keyword"
@@ -30,16 +34,39 @@
         </div>
 
         <div class="user-search-list-region">
-          <div v-if="listError" class="user-search-banner user-search-banner--error">{{ listError }}</div>
-          <div v-else-if="searching && groups.length === 0" class="conv-create-empty user-search-status">搜索中…</div>
-          <div v-else-if="!searching && lastSearchedKeyword && groups.length === 0" class="conv-create-empty user-search-status">未找到相关群聊</div>
-          <div v-else-if="!lastSearchedKeyword" class="conv-create-empty user-search-status">输入关键词开始搜索（失焦或短暂停顿后查询）</div>
+          <div
+            v-if="listError"
+            class="user-search-banner user-search-banner--error"
+          >
+            {{ listError }}
+          </div>
+          <div
+            v-else-if="searching && groups.length === 0"
+            class="conv-create-empty user-search-status"
+          >
+            搜索中…
+          </div>
+          <div
+            v-else-if="!searching && lastSearchedKeyword && groups.length === 0"
+            class="conv-create-empty user-search-status"
+          >
+            未找到相关群聊
+          </div>
+          <div
+            v-else-if="!lastSearchedKeyword"
+            class="conv-create-empty user-search-status"
+          >
+            输入关键词开始搜索（失焦或短暂停顿后查询）
+          </div>
 
           <ul v-else class="user-search-list">
             <li v-for="g in groups" :key="String(g.convId)">
               <ConvSearchResultItem
                 :conversation="g"
-                :selected="selectedGroup != null && Number(selectedGroup.convId) === Number(g.convId)"
+                :selected="
+                  selectedGroup != null &&
+                  Number(selectedGroup.convId) === Number(g.convId)
+                "
                 @select="onPickGroup"
               />
             </li>
@@ -57,20 +84,69 @@
         </div>
       </div>
 
-      <div class="user-search-detail is-open" :aria-hidden="selectedGroup == null">
+      <div
+        class="user-search-detail is-open"
+        :aria-hidden="selectedGroup == null"
+      >
         <div class="user-search-detail-inner">
           <template v-if="selectedGroup">
             <div class="user-search-detail-hero">
-              <h4 class="user-search-detail-name">{{ selectedGroupDisplayName }}</h4>
+              <div class="user-search-detail-avatar-wrap">
+                <img
+                  v-if="selectedGroupAvatar"
+                  :src="selectedGroupAvatar"
+                  alt=""
+                  class="user-search-detail-avatar"
+                  @error="selectedGroupAvatarBroken = true"
+                />
+                <div v-else class="user-search-detail-avatar-ph">
+                  {{ selectedGroupInitial }}
+                </div>
+              </div>
+              <h4 class="user-search-detail-name">
+                {{ selectedGroupDisplayName }}
+              </h4>
               <p class="user-search-detail-meta">
-                <span class="user-search-detail-id">ID {{ selectedGroup.convId }}</span>
-                <span>{{ Number(selectedGroup.currentMemberCount || 0) }}/{{ Number(selectedGroup.maxMemberCount || 0) }}</span>
+                <span class="user-search-detail-id"
+                  >ID {{ selectedGroup.convId ?? "暂未设置" }}</span
+                >
+                <span>成员 {{ selectedGroupMemberCount }}</span>
               </p>
             </div>
             <div class="user-search-detail-fields">
               <div class="user-search-detail-row">
+                <span class="user-search-detail-label">群名称</span>
+                <span class="user-search-detail-value">{{
+                  formatOptionalText(selectedGroup.convName)
+                }}</span>
+              </div>
+              <div class="user-search-detail-row">
+                <span class="user-search-detail-label">群头像</span>
+                <span class="user-search-detail-value">{{
+                  selectedGroup.convAvatar ? "已设置" : "暂未设置"
+                }}</span>
+              </div>
+              <div class="user-search-detail-row">
+                <span class="user-search-detail-label">我的群备注</span>
+                <span class="user-search-detail-value">{{
+                  formatOptionalText(selectedGroup.privateDisplayName)
+                }}</span>
+              </div>
+              <div class="user-search-detail-row">
                 <span class="user-search-detail-label">群类型</span>
-                <span class="user-search-detail-value">群聊（convType=2）</span>
+                <span class="user-search-detail-value">群聊</span>
+              </div>
+              <div class="user-search-detail-row">
+                <span class="user-search-detail-label">当前成员数</span>
+                <span class="user-search-detail-value">{{
+                  formatOptionalNumber(selectedGroup.currentMemberCount)
+                }}</span>
+              </div>
+              <div class="user-search-detail-row">
+                <span class="user-search-detail-label">最大成员数</span>
+                <span class="user-search-detail-value">{{
+                  formatOptionalNumber(selectedGroup.maxMemberCount)
+                }}</span>
               </div>
             </div>
             <div class="user-search-detail-actions">
@@ -87,7 +163,9 @@
           <template v-else>
             <div class="user-search-detail-hero">
               <h4 class="user-search-detail-name">群聊详情</h4>
-              <p class="user-search-detail-meta">从左侧选择一个群聊后，这里会显示详细信息。</p>
+              <p class="user-search-detail-meta">
+                从左侧选择一个群聊后，这里会显示详细信息。
+              </p>
             </div>
           </template>
         </div>
@@ -97,10 +175,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import { useConvCreateStore } from "@/store/conv/convCreate";
 import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import { getConversationDisplayName } from "@/commons/utils/conversation-display";
+import { normalizeConversationAvatarUrl } from "@/commons/utils/avatar-url";
 import { searchGroupsApi } from "@/apis/user-search";
 import { notificationApi } from "@/apis/notification";
 import toast from "@/commons/utils/toast";
@@ -119,17 +198,38 @@ const loadingMore = ref(false);
 const listError = ref("");
 const lastSearchedKeyword = ref("");
 const selectedGroup = ref<ConversationSummaryDTO | null>(null);
+const selectedGroupAvatarBroken = ref(false);
 const groupJoinSubmitting = ref(false);
 let debounceTimer: number | null = null;
+const UNSET_TEXT = "暂未设置";
 
 const canLoadMore = computed(
-  () => !!lastSearchedKeyword.value && !listError.value && groups.value.length < total.value
+  () =>
+    !!lastSearchedKeyword.value &&
+    !listError.value &&
+    groups.value.length < total.value
 );
 const selectedGroupDisplayName = computed(() => {
   return (
     getConversationDisplayName(selectedGroup.value) ||
     `群聊#${selectedGroup.value?.convId || "-"}`
   );
+});
+const selectedGroupInitial = computed(() => {
+  return selectedGroupDisplayName.value.charAt(0).toUpperCase() || "群";
+});
+const selectedGroupAvatar = computed(() => {
+  if (selectedGroupAvatarBroken.value || !selectedGroup.value) return "";
+  return normalizeConversationAvatarUrl(selectedGroup.value.convAvatar) || "";
+});
+const selectedGroupMemberCount = computed(() => {
+  const current = formatOptionalNumber(selectedGroup.value?.currentMemberCount);
+  const max = formatOptionalNumber(selectedGroup.value?.maxMemberCount);
+  return `${current}/${max}`;
+});
+
+watch(selectedGroup, () => {
+  selectedGroupAvatarBroken.value = false;
 });
 
 function scheduleSearch() {
@@ -178,15 +278,23 @@ async function runSearch(reset: boolean) {
     const incoming = Array.isArray(data.conversations)
       ? data.conversations
       : Array.isArray(data.convList)
-        ? data.convList
-        : [];
+      ? data.convList
+      : [];
     groups.value = reset
       ? incoming
-      : [...groups.value, ...incoming.filter((g) => !groups.value.some((x) => Number(x.convId) === Number(g.convId)))];
+      : [
+          ...groups.value,
+          ...incoming.filter(
+            (g) =>
+              !groups.value.some((x) => Number(x.convId) === Number(g.convId))
+          ),
+        ];
     total.value = Number(data.total) || groups.value.length;
     lastSearchedKeyword.value = reset ? kw : lastSearchedKeyword.value;
   } catch (e: any) {
-    if (reset) listError.value = e?.response?.data?.message || e?.message || "搜索群聊失败";
+    if (reset)
+      listError.value =
+        e?.response?.data?.message || e?.message || "搜索群聊失败";
   } finally {
     searching.value = false;
   }
@@ -205,6 +313,26 @@ async function loadMore() {
 
 function onPickGroup(group: ConversationSummaryDTO) {
   selectedGroup.value = group;
+}
+
+/**
+ * 将后端可空文本字段转成详情区展示文案。
+ * 使用场景：群聊搜索详情展示未设置群名、群备注等资料时兜底。
+ */
+function formatOptionalText(value: unknown): string {
+  if (value == null) return UNSET_TEXT;
+  const trimmed = String(value).trim();
+  return trimmed || UNSET_TEXT;
+}
+
+/**
+ * 将后端可空数字段转成详情区展示文案。
+ * 使用场景：群聊搜索详情展示成员数为空或异常时兜底。
+ */
+function formatOptionalNumber(value: unknown): string {
+  if (value == null || value === "") return UNSET_TEXT;
+  const n = Number(value);
+  return Number.isFinite(n) ? String(n) : UNSET_TEXT;
 }
 
 async function applyJoinGroup() {
@@ -301,6 +429,33 @@ onUnmounted(() => {
 .user-search-detail-hero {
   text-align: center;
   margin-bottom: 20px;
+}
+
+.user-search-detail-avatar-wrap {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+  box-shadow: var(--cc-shadow-md);
+}
+
+.user-search-detail-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-search-detail-avatar-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--cc-text-muted);
 }
 
 .user-search-detail-name {

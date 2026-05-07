@@ -38,18 +38,12 @@
             @click="goToNotifications"
             v-ripple
             title="系统通知"
-            :class="{ active: currentMainView === 'notifications' }"
+            :class="{
+              active: currentMainView === 'notifications',
+              'nav-menu-item--notif-unread': notificationHasUnreadRing,
+            }"
           >
             <Bell class="menu-icon" :size="22" :stroke-width="2.2" />
-            <span
-              v-if="notificationUnreadCount > 0"
-              class="nav-notification-badge"
-              aria-label="未读通知"
-            >
-              {{
-                notificationUnreadCount > 99 ? "99+" : notificationUnreadCount
-              }}
-            </span>
           </button>
 
           <button
@@ -114,8 +108,7 @@
               <img
                 v-if="
                   currentUserAvatar &&
-                  currentUserAvatar !== '' &&
-                  !currentUserAvatar.startsWith('data:image/')
+                  currentUserAvatar !== ''
                 "
                 :src="currentUserAvatar"
                 alt="头像"
@@ -414,7 +407,13 @@ const currentFriendId = computed(() => {
   return Number.isFinite(peerId) && peerId > 0 ? peerId : null;
 });
 
-const notificationUnreadCount = computed(() => notificationStore.unreadCount);
+const notificationUnreadCount = computed(() =>
+  Math.max(0, Number(notificationStore.unreadCount || 0))
+);
+const notificationHasUnreadRing = computed(
+  () =>
+    notificationUnreadCount.value > 0 && currentMainView.value !== "notifications"
+);
 const flushOnPageHide = () => {
   conversationStore.flushWsReadMessageReportOnPageHide();
   conversationStore.flushAllPendingReadProgressOnPageUnload();
@@ -634,10 +633,7 @@ const handleAvatarError = () => {
 
 const loadUserData = () => {
   const userStr = authStore.user ? JSON.stringify(authStore.user) : null;
-  const userState = buildHomeUserStateFromSession({
-    sessionUserRaw: userStr,
-    baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:8081",
-  });
+  const userState = buildHomeUserStateFromSession({ sessionUserRaw: userStr });
   if (!userState) return;
   userId.value = userState.userId;
   userNickname.value = userState.userNickname;
@@ -646,8 +642,7 @@ const loadUserData = () => {
 };
 
 const processAvatarUrl = (avatarUrl) => {
-  const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
-  return processHomeAvatarUrl(avatarUrl, base);
+  return processHomeAvatarUrl(avatarUrl);
 };
 
 const formatDateForInput = (dateString) => {

@@ -72,6 +72,33 @@ html.night-mode .sys-notif-item__time {
   color: var(--sn-text-muted, #94a3b8);
 }
 
+html.night-mode .sys-notif-external-actions--open {
+  background: rgba(15, 23, 42, 0.44);
+  border-color: rgba(148, 163, 184, 0.28);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+html.night-mode .sys-notif-accept-action {
+  border-color: rgba(52, 211, 153, 0.4);
+  box-shadow:
+    0 2px 16px rgba(16, 185, 129, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+html.night-mode .sys-notif-reject-action {
+  border-color: rgba(248, 113, 113, 0.42);
+  box-shadow:
+    0 2px 16px rgba(239, 68, 68, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+html.night-mode .sys-notif-block-action {
+  border-color: rgba(113, 113, 122, 0.46);
+  box-shadow:
+    0 2px 18px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
 html.night-mode .sys-notif-item__inner {
   scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
 }

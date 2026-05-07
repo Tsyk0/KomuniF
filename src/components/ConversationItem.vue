@@ -77,7 +77,7 @@ import { Pin, PinOff } from "lucide-vue-next";
 
 /** 与侧栏统一列表项 CSS 变量 --sli-ripple-color 对齐的点击水波纹（日间略深天蓝、夜间由变量覆盖为紫）。 */
 const rippleOpts = { color: "var(--sli-ripple-color)", duration: 520 };
-import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import { normalizeConversationAvatarUrl } from "@/commons/utils/avatar-url";
 import { extractByTheWayTextFromMessageContent } from "@/commons/utils/message-by-the-way";
 import { getConversationDisplayName } from "@/commons/utils/conversation-display";
 import { resolveLastMessageSenderLabel } from "@/commons/utils/conversation-last-message-sender";
@@ -137,7 +137,9 @@ const avatar = computed(() => {
   return props.conversation.convAvatar || "";
 });
 
-const processedAvatar = computed(() => normalizeAvatarUrl(avatar.value));
+const processedAvatar = computed(() =>
+  normalizeConversationAvatarUrl(avatar.value)
+);
 
 const avatarText = computed(() => {
   const name = displayName.value || "";

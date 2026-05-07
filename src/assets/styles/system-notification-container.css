@@ -68,7 +68,7 @@
   padding: 0;
   border-radius: 999px;
   gap: 0;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   color: #6b7280;
   box-shadow: none;
@@ -77,7 +77,7 @@
 
 .sys-notif-header__back-btn:hover {
   background: rgba(107, 114, 128, 0.12);
-  border: none;
+  border: 1px solid transparent;
   color: #6b7280;
   transform: none;
   box-shadow: none;
@@ -218,165 +218,10 @@
   border-radius: 14px;
 }
 
-/* 无外层盒子：点击 item 后从卡片右缘向右滑出 */
-.sys-notif-external-actions {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-  align-self: stretch;
-  overflow: hidden;
-  max-width: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    max-width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.22s ease;
-}
-
-.sys-notif-external-actions--open {
-  max-width: 118px;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.sys-notif-action-btn {
-  margin: 0;
-  flex-shrink: 0;
-  min-width: 102px;
-  padding: 10px 16px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
-  line-height: 1.2;
-  white-space: nowrap;
-  transform: translateX(-115%);
-  opacity: 0;
-  transition:
-    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.26s ease,
-    box-shadow 0.2s ease,
-    filter 0.15s ease;
-}
-
-.sys-notif-external-actions--open .sys-notif-action-btn {
-  transform: translateX(0);
-  opacity: 1;
-}
-
-.sys-notif-external-actions--open .sys-notif-action-btn:nth-child(1) {
-  transition-delay: 0.02s, 0.02s, 0s, 0s;
-}
-
-.sys-notif-external-actions--open .sys-notif-action-btn:nth-child(2) {
-  transition-delay: 0.07s, 0.07s, 0s, 0s;
-}
-
-.sys-notif-external-actions--open .sys-notif-action-btn:nth-child(3) {
-  transition-delay: 0.12s, 0.12s, 0s, 0s;
-}
-
-.sys-notif-action-btn:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-.sys-notif-action-btn:active:not(:disabled) {
-  transform: translateX(0) scale(0.97);
-  filter: brightness(0.95);
-}
-
-.sys-notif-external-actions--open .sys-notif-action-btn:active:not(:disabled) {
-  transform: translateX(0) scale(0.97);
-}
-
-.sys-notif-action-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  filter: grayscale(0.25);
-}
-
-.sys-notif-external-actions:not(.sys-notif-external-actions--open) .sys-notif-action-btn {
-  transition-delay: 0s !important;
-}
-
-/* 绿色：通过 */
-.sys-notif-action-btn--accept {
-  background: linear-gradient(145deg, #34d399 0%, #10b981 40%, #059669 100%);
-  box-shadow:
-    0 2px 14px rgba(16, 185, 129, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
-.sys-notif-action-btn--accept:hover:not(:disabled) {
-  box-shadow:
-    0 4px 20px rgba(16, 185, 129, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-/* 红色：拒绝 */
-.sys-notif-action-btn--reject {
-  background: linear-gradient(145deg, #f87171 0%, #ef4444 45%, #dc2626 100%);
-  box-shadow:
-    0 2px 14px rgba(239, 68, 68, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-.sys-notif-action-btn--reject:hover:not(:disabled) {
-  box-shadow:
-    0 4px 20px rgba(239, 68, 68, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
-/* 黑色：拉黑 */
-.sys-notif-action-btn--block {
-  background: linear-gradient(145deg, #52525b 0%, #27272a 35%, #0a0a0a 100%);
-  box-shadow:
-    0 2px 14px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.sys-notif-action-btn--block:hover:not(:disabled) {
-  box-shadow:
-    0 4px 22px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-
 @media (max-width: 640px) {
   .sys-notif-list-row {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .sys-notif-external-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-    max-width: 100% !important;
-    width: 100%;
-    padding-top: 4px;
-    gap: 8px;
-  }
-
-  .sys-notif-external-actions--open {
-    max-width: 100% !important;
-  }
-
-  .sys-notif-action-btn {
-    min-width: 0;
-    flex: 1 1 calc(33.333% - 6px);
-    transform: translateY(14px);
-  }
-
-  .sys-notif-external-actions--open .sys-notif-action-btn {
-    transform: translateY(0);
-  }
-
-  .sys-notif-external-actions--open .sys-notif-action-btn:active:not(:disabled) {
-    transform: translateY(0) scale(0.97);
   }
 }
 

@@ -1,3 +1,4 @@
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 /**
  * HomeViewInteraction
  * - 存放 HomeView 的界面交互与页面编排方法。
@@ -115,14 +116,9 @@ export function loadSidebarWidthFromStorage(input: {
   }
 }
 
-export function processHomeAvatarUrl(avatarUrl: unknown, baseUrl: string): string {
-  if (typeof avatarUrl !== "string" || !avatarUrl.trim()) return "";
-  let normalized = avatarUrl.trim();
-  if (normalized.startsWith("http") || normalized.startsWith("data:image/")) {
-    return normalized;
-  }
-  if (!normalized.startsWith("/")) normalized = `/${normalized}`;
-  return baseUrl.replace(/\/$/, "") + normalized;
+export function processHomeAvatarUrl(avatarUrl: unknown): string {
+  if (typeof avatarUrl !== "string") return "";
+  return normalizeAvatarUrl(avatarUrl);
 }
 
 export function formatDateForInputInHome(dateString: unknown): string {
@@ -134,7 +130,6 @@ export function formatDateForInputInHome(dateString: unknown): string {
 
 export function buildHomeUserStateFromSession(input: {
   sessionUserRaw: string | null;
-  baseUrl: string;
 }): {
   userId: string;
   userNickname: string;
@@ -144,10 +139,7 @@ export function buildHomeUserStateFromSession(input: {
   if (!input.sessionUserRaw) return null;
   try {
     const user = JSON.parse(input.sessionUserRaw) || {};
-    const avatarUrl = processHomeAvatarUrl(
-      user.userAvatar || "",
-      input.baseUrl
-    );
+    const avatarUrl = processHomeAvatarUrl(user.userAvatar || "");
     return {
       userId: user.userId || "",
       userNickname: user.userNickname || "用户",

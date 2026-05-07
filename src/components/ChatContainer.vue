@@ -390,7 +390,7 @@ import ReadReceiptMemberListDialog from "./ReadReceiptMemberListDialog.vue";
 import ChatSearchPanel from "./ChatSearchPanel.vue";
 import GroupConvInfo from "./GroupConvInfo.vue";
 import SingleConvInfo from "./SingleConvInfo.vue";
-import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import { normalizeConversationAvatarUrl } from "@/commons/utils/avatar-url";
 import { getConversationDisplayName } from "@/commons/utils/conversation-display";
 import {
   loadConversationMessagesAndSyncRealtime,
@@ -676,7 +676,7 @@ const avatarUrl = computed(() => {
 
   const raw = conv.convAvatar || "";
 
-  return normalizeAvatarUrl(raw);
+  return normalizeConversationAvatarUrl(raw);
 });
 
 const firstChar = computed(() => {

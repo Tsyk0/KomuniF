@@ -7,7 +7,8 @@ import {
 
 export interface UploadFileByChunksNormalizedParams {
   file: File;
-  convId: number;
+  convId?: number;
+  userId?: number;
   mimeType: string;
   fileHash: string;
   onProgress?: (progress: number) => void;
@@ -77,10 +78,13 @@ export const calculateFileSha256Normalized = async (file: File): Promise<string>
 export async function uploadFileByChunksNormalized(
   params: UploadFileByChunksNormalizedParams
 ): Promise<UploadFileByChunksNormalizedResult> {
+  const convId = Number(params.convId || 0);
+  const userId = Number(params.userId || 0);
   const CHUNK_SIZE = 6 * 1024 * 1024;
   const totalChunks = Math.ceil(params.file.size / CHUNK_SIZE);
   const initResponse = await initFileUploadApi({
-    convId: params.convId,
+    ...(convId > 0 ? { convId } : {}),
+    ...(userId > 0 ? { userId } : {}),
     fileName: params.file.name,
     fileSize: params.file.size,
     totalChunks,

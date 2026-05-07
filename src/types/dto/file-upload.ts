@@ -1,5 +1,6 @@
 export interface FileUploadInitRequest {
-  convId: number;
+  convId?: number;
+  userId?: number;
   fileName: string;
   fileSize: number;
   totalChunks: number;

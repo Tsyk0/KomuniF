@@ -19,7 +19,9 @@
     </div>
     <div class="conv-create-row-text">
       <span class="conv-create-row-name">{{ nickname }}</span>
-      <span class="conv-create-row-sub">{{ genderLabel }}</span>
+      <span class="conv-create-row-sub">
+        性别：{{ genderLabel }} · 用户生日：{{ birthdayLabel }}
+      </span>
     </div>
   </button>
 </template>
@@ -60,6 +62,10 @@ const genderLabel = computed(() => {
   return "未知";
 });
 
+const birthdayLabel = computed(() => {
+  return props.user.userBirthday?.trim() || "暂未设置";
+});
+
 const avatarDisplay = computed(() => {
   if (imgBroken.value) return "";
   const u = normalizeAvatarUrl(props.user.userAvatar);
@@ -75,7 +81,10 @@ function onImgError() {
 @import "@/assets/styles/conv-create-panel.css";
 
 .user-search-result-item {
+  flex-direction: row;
+  align-items: center;
   gap: 12px;
+  padding: var(--sli-pad-y) var(--sli-pad-x);
   text-align: left;
   font: inherit;
 }

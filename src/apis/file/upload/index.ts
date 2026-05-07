@@ -25,8 +25,11 @@ const unwrapApiResponseData = <T>(response: any): T => {
  * 作用场景：告知后端文件元信息，拿到 uploadId 或秒传结果。
  */
 export function initFileUploadApi(data: FileUploadInitRequest) {
+  const accessToken = localStorage.getItem("access_token");
   return service
-    .post<BaseResponse<FileUploadInitResponseData>>("/MIO/file/upload/init", data)
+    .post<BaseResponse<FileUploadInitResponseData>>("/MIO/file/upload/init", data, {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    })
     .then((response) =>
       unwrapApiResponseData<FileUploadInitResponseData>(response)
     ) as Promise<FileUploadInitResponseData>;

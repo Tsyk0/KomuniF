@@ -118,34 +118,34 @@
             </div>
 
             <div class="user-search-detail-fields">
-              <div v-if="selectedUser.userSignature" class="user-search-detail-row">
-                <span class="user-search-detail-label">签名</span>
+              <div class="user-search-detail-row">
+                <span class="user-search-detail-label">个性签名</span>
                 <span class="user-search-detail-value">{{
-                  selectedUser.userSignature
+                  formatOptionalText(selectedUser.userSignature)
                 }}</span>
               </div>
-              <div v-if="selectedUser.userLocation" class="user-search-detail-row">
-                <span class="user-search-detail-label">地区</span>
+              <div class="user-search-detail-row">
+                <span class="user-search-detail-label">所在地区</span>
                 <span class="user-search-detail-value">{{
-                  selectedUser.userLocation
+                  formatOptionalText(selectedUser.userLocation)
                 }}</span>
               </div>
-              <div v-if="selectedUser.userBirthday" class="user-search-detail-row">
-                <span class="user-search-detail-label">生日</span>
+              <div class="user-search-detail-row">
+                <span class="user-search-detail-label">用户生日</span>
                 <span class="user-search-detail-value">{{
-                  selectedUser.userBirthday
+                  formatOptionalText(selectedUser.userBirthday)
                 }}</span>
               </div>
-              <div v-if="selectedUser.userEmail" class="user-search-detail-row">
-                <span class="user-search-detail-label">邮箱</span>
+              <div class="user-search-detail-row">
+                <span class="user-search-detail-label">电子邮箱</span>
                 <span class="user-search-detail-value">{{
-                  selectedUser.userEmail
+                  formatOptionalText(selectedUser.userEmail)
                 }}</span>
               </div>
-              <div v-if="selectedUser.userPhone" class="user-search-detail-row">
-                <span class="user-search-detail-label">手机</span>
+              <div class="user-search-detail-row">
+                <span class="user-search-detail-label">手机号码</span>
                 <span class="user-search-detail-value">{{
-                  selectedUser.userPhone
+                  formatOptionalText(selectedUser.userPhone)
                 }}</span>
               </div>
             </div>
@@ -209,6 +209,7 @@ import {
 } from "@/interactions/userSearch/UserSearchInteraction";
 
 const DEBOUNCE_MS = 300;
+const UNSET_TEXT = "暂未设置";
 
 const emit = defineEmits<{
   exit: [];
@@ -367,6 +368,16 @@ async function loadMore() {
 
 function onPickUser(u: User) {
   selectedUser.value = u;
+}
+
+/**
+ * 将后端可空资料字段转成详情区展示文案。
+ * 使用场景：用户搜索详情展示未设置生日、签名、邮箱等资料时兜底。
+ */
+function formatOptionalText(value: unknown): string {
+  if (value == null) return UNSET_TEXT;
+  const trimmed = String(value).trim();
+  return trimmed || UNSET_TEXT;
 }
 
 function onLeftPaneClick(e: MouseEvent) {

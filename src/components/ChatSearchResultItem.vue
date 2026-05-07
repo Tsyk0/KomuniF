@@ -31,7 +31,10 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import {
+  normalizeAvatarUrl,
+  normalizeConversationAvatarUrl,
+} from "@/commons/utils/avatar-url";
 import { useConvStore } from "@/store/conv/conv";
 import { useShowMessageStore } from "@/store/message/showMessage";
 import { useUserStore } from "@/store/user/user";
@@ -94,6 +97,9 @@ watch(rawAvatarSource, () => {
 
 const avatarUrl = computed(() => {
   if (!isAvatarLoadSuccessful.value) return "";
+  if (resolvedConvType.value === 1 && !props.message.isSentByMe) {
+    return normalizeConversationAvatarUrl(rawAvatarSource.value);
+  }
   return normalizeAvatarUrl(rawAvatarSource.value);
 });
 

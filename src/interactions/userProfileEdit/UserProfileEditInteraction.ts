@@ -56,8 +56,8 @@ export function buildUserProfileUpdatePayload(formData: any) {
     userPhone: formData.userPhone?.trim() || null,
     userEmail: formData.userEmail?.trim() || null,
   };
-  if (formData.userAvatar && String(formData.userAvatar).startsWith("data:image/")) {
-    payload.userAvatar = formData.userAvatar;
+  if (formData.userAvatar && String(formData.userAvatar).trim()) {
+    payload.userAvatar = String(formData.userAvatar).trim();
   }
   return payload;
 }

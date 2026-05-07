@@ -39,7 +39,8 @@ export const useFileUploadStore = defineStore("fileUpload", () => {
    */
   const uploadFile = async (params: {
     file: File;
-    convId: number;
+    convId?: number;
+    userId?: number;
     mimeType: string;
   }) => {
     startUploadState(params.file.name);
@@ -49,6 +50,7 @@ export const useFileUploadStore = defineStore("fileUpload", () => {
       const result = await uploadFileByChunksNormalized({
         file: params.file,
         convId: params.convId,
+        userId: params.userId,
         mimeType: params.mimeType,
         fileHash,
         onProgress: (value) => {

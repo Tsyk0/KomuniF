@@ -9,15 +9,60 @@
       <div class="sys-notif-item__title-row">
         <span class="sys-notif-item__title">{{ displayTitle }}</span>
       </div>
-      <p v-if="displayContent" class="sys-notif-item__body">{{ displayContent }}</p>
-      <p class="sys-notif-item__status">
-        状态：{{ statusLabel }} · requester={{ rah.requester }} · handler={{ rah.handler }}
+      <p v-if="displayContent" class="sys-notif-item__body">
+        {{ displayContent }}
       </p>
-      <p class="sys-notif-item__time">{{ formatNotificationTime(rah.createTime) }}</p>
-      <div v-if="showActions" class="sys-notif-external-actions sys-notif-external-actions--open">
-        <button type="button" class="sys-notif-action-btn sys-notif-action-btn--accept" @click="$emit('action', 'accept')">通过</button>
-        <button type="button" class="sys-notif-action-btn sys-notif-action-btn--reject" @click="$emit('action', 'reject')">拒绝</button>
-        <button type="button" class="sys-notif-action-btn sys-notif-action-btn--block" @click="$emit('action', 'block')">拉黑</button>
+      <p class="sys-notif-item__status">
+        状态：{{ statusLabel }} · 请求方={{ rah.requester }} · 处理方={{
+          rah.handler
+        }}
+      </p>
+      <p class="sys-notif-item__time">
+        {{ formatNotificationTime(rah.createTime) }}
+      </p>
+      <div
+        v-if="showActions"
+        class="sys-notif-external-actions sys-notif-external-actions--open"
+      >
+        <div
+          role="button"
+          tabindex="0"
+          class="sys-notif-accept-action"
+          title="通过"
+          aria-label="通过"
+          v-ripple
+          @click="$emit('action', 'accept')"
+          @keydown.enter.prevent="$emit('action', 'accept')"
+          @keydown.space.prevent="$emit('action', 'accept')"
+        >
+          <Check class="sys-notif-accept-icon" :size="18" :stroke-width="2.2" />
+        </div>
+        <div
+          role="button"
+          tabindex="0"
+          class="sys-notif-reject-action"
+          title="拒绝"
+          aria-label="拒绝"
+          v-ripple
+          @click="$emit('action', 'reject')"
+          @keydown.enter.prevent="$emit('action', 'reject')"
+          @keydown.space.prevent="$emit('action', 'reject')"
+        >
+          <X class="sys-notif-reject-icon" :size="18" :stroke-width="2.2" />
+        </div>
+        <div
+          role="button"
+          tabindex="0"
+          class="sys-notif-block-action"
+          title="拉黑"
+          aria-label="拉黑"
+          v-ripple
+          @click="$emit('action', 'block')"
+          @keydown.enter.prevent="$emit('action', 'block')"
+          @keydown.space.prevent="$emit('action', 'block')"
+        >
+          <Ban class="sys-notif-block-icon" :size="18" :stroke-width="2.2" />
+        </div>
       </div>
     </div>
   </article>
@@ -25,7 +70,11 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { RequestHandle, RequestHandleAction } from "@/types/dto/notification";
+import { Ban, Check, X } from "lucide-vue-next";
+import type {
+  RequestHandle,
+  RequestHandleAction,
+} from "@/types/dto/notification";
 
 const props = defineProps<{
   rah: RequestHandle;
@@ -56,7 +105,8 @@ const displayTitle = computed(() => {
 
 const displayContent = computed(() => {
   if (props.rah.rahContent) return props.rah.rahContent;
-  if (String(props.rah.type || "") === "conv_join") return "有用户申请加入群聊，等待审批。";
+  if (String(props.rah.type || "") === "conv_join")
+    return "有用户申请加入群聊，等待审批。";
   return "";
 });
 

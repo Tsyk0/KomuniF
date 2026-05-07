@@ -33,6 +33,10 @@ html.night-mode .conv-profile-edit__textarea::placeholder {
   color: #a1a1aa;
 }
 
+html.night-mode .conv-profile-edit__avatar-tip {
+  color: #a1a1aa;
+}
+
 html.night-mode .conv-profile-edit__btn--ghost {
   background: #3f3f46;
   color: #e4e4e7;

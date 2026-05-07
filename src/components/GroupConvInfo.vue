@@ -251,6 +251,7 @@
         <ConvProfileEdit
           :conv-id="Number(props.convId)"
           :initial-name="conversation?.convName || ''"
+          :initial-avatar="conversation?.convAvatar || ''"
           :initial-description="conversation?.convDescription || ''"
           :initial-enable-read-receipt="
             Boolean(conversation?.enableReadReceipt)
@@ -293,7 +294,7 @@ import { useConvStore } from "@/store/conv/conv";
 import { useFriendStore } from "@/store/friend/showFriend";
 import { useShowMessageStore } from "@/store/message/showMessage";
 import { useUserStore } from "@/store/user/user";
-import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
+import { normalizeConversationAvatarUrl } from "@/commons/utils/avatar-url";
 import ConvProfileEdit from "./ConvProfileEdit.vue";
 import GroupMemberPopover from "./GroupMemberPopover.vue";
 import {
@@ -377,7 +378,7 @@ const initialConversationDisplayStatus = ref<number>(
 );
 
 const groupAvatarUrl = computed(() =>
-  normalizeAvatarUrl(conversation.value?.convAvatar || "")
+  normalizeConversationAvatarUrl(conversation.value?.convAvatar || "")
 );
 const groupName = computed(() => conversation.value?.convName || "未命名群聊");
 const groupNumber = computed(() => conversation.value?.convId || "-");
@@ -901,6 +902,7 @@ const handleLeaveGroup = async () => {
  */
 const handleProfileSaved = (payload: {
   convName: string;
+  convAvatar?: string;
   convDescription: string;
   enableReadReceipt: boolean;
 }) => {
@@ -908,6 +910,7 @@ const handleProfileSaved = (payload: {
   /** 群资料本地同步补丁；用于让会话列表与聊天头部在保存后立即响应。 */
   const groupProfilePatch: Partial<ConversationSummaryDTO> = {
     convName: payload.convName,
+    convAvatar: payload.convAvatar ?? conversation.value?.convAvatar ?? null,
   };
   (
     groupProfilePatch as ConversationSummaryDTO & {

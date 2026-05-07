@@ -30,8 +30,8 @@
       <!-- 左半部分：头像区域 -->
       <div class="avatar-section">
         <div class="avatar-display" @click="triggerAvatarUpload">
-          <div v-if="formData.userAvatar" class="avatar-img-container">
-            <img :src="formData.userAvatar" class="avatar-img" />
+          <div v-if="displayAvatarUrl" class="avatar-img-container">
+            <img :src="displayAvatarUrl" class="avatar-img" />
             <div class="avatar-overlay"></div>
           </div>
           <div v-else class="avatar-placeholder-large">
@@ -50,7 +50,7 @@
 
         <div class="avatar-info">
           <p class="avatar-hint">支持 JPG、PNG 格式</p>
-          <p class="avatar-hint">最大 2MB</p>
+          <p class="avatar-hint">不超过50MB</p>
           <p class="avatar-hint">点击头像选择图片</p>
         </div>
       </div>
@@ -85,7 +85,12 @@
                 class="gender-option-unknown"
                 title="未知"
               >
-                <User :size="22" :stroke-width="2.2" class="gender-lucide-icon" /> 未知
+                <User
+                  :size="22"
+                  :stroke-width="2.2"
+                  class="gender-lucide-icon"
+                />
+                未知
               </el-radio-button>
               <el-radio-button
                 :value="1"
@@ -93,7 +98,12 @@
                 class="gender-option-male"
                 title="男"
               >
-                <Mars :size="22" :stroke-width="2.2" class="gender-lucide-icon" /> 男
+                <Mars
+                  :size="22"
+                  :stroke-width="2.2"
+                  class="gender-lucide-icon"
+                />
+                男
               </el-radio-button>
               <el-radio-button
                 :value="2"
@@ -101,7 +111,12 @@
                 class="gender-option-female"
                 title="女"
               >
-                <Venus :size="22" :stroke-width="2.2" class="gender-lucide-icon" /> 女
+                <Venus
+                  :size="22"
+                  :stroke-width="2.2"
+                  class="gender-lucide-icon"
+                />
+                女
               </el-radio-button>
             </el-radio-group>
           </div>
@@ -188,7 +203,7 @@
 
 
 <script>
-import { ref, reactive, onMounted, watch } from "vue";
+import { ref, reactive, computed, watch, onUnmounted } from "vue";
 import {
   ArrowLeft,
   ListChecks,
@@ -198,11 +213,14 @@ import {
   Venus,
 } from "lucide-vue-next";
 import { useUserStore } from "@/store/user/user";
+import { useFileUploadStore } from "@/store/message/fileUpload";
 import toast from "@/commons/utils/toast"; // 导入独立的toast服务
 import {
-  compressImageToBase64,
+  createImagePreviewUrl,
+  revokeImagePreviewUrl,
   validateImageFile,
 } from "@/commons/utils/image";
+import { normalizeAvatarUrl } from "@/commons/utils/avatar-url";
 import {
   buildProfileFormData,
   buildUserProfileUpdatePayload,
@@ -231,8 +249,12 @@ export default {
   emits: ["back", "update:userData"],
   setup(props, { emit }) {
     const userStore = useUserStore();
+    const fileUploadStore = useFileUploadStore();
+
     const avatarInput = ref(null);
     const saving = ref(false);
+    /** 头像本地预览 URL；用于上传完成前即时显示新头像。 */
+    const avatarPreviewUrl = ref("");
 
     // 表单数据
     const formData = reactive({
@@ -247,11 +269,20 @@ export default {
       userEmail: "",
     });
 
+    const displayAvatarUrl = computed(
+      () =>
+        avatarPreviewUrl.value || normalizeAvatarUrl(formData.userAvatar || "")
+    );
+
     // 原始数据备份
     const originalData = ref(null);
 
     // 初始化表单数据
     const initFormData = () => {
+      if (avatarPreviewUrl.value) {
+        revokeImagePreviewUrl(avatarPreviewUrl.value);
+        avatarPreviewUrl.value = "";
+      }
       Object.assign(formData, buildProfileFormData(props.userData));
 
       originalData.value = JSON.parse(JSON.stringify(formData));
@@ -307,15 +338,13 @@ export default {
 
     // 触发头像上传
     const triggerAvatarUpload = () => {
-      avatarInput.value.click();
+      avatarInput.value?.click();
     };
 
     // 处理头像上传
     const handleAvatarUpload = async (event) => {
       const file = event.target.files[0];
-      const validation = validateImageFile(file, {
-        maxSizeBytes: 2 * 1024 * 1024,
-      });
+      const validation = validateImageFile(file);
       if (!validation.ok) {
         if (validation.message) toast.error(validation.message);
         return;
@@ -323,13 +352,16 @@ export default {
 
       try {
         saving.value = true;
-        const compressedBase64 = await compressImageToBase64(
+        if (avatarPreviewUrl.value) {
+          revokeImagePreviewUrl(avatarPreviewUrl.value);
+          avatarPreviewUrl.value = "";
+        }
+        avatarPreviewUrl.value = createImagePreviewUrl(file);
+        const uploadResult = await fileUploadStore.uploadFile({
           file,
-          400,
-          400,
-          0.7
-        );
-        formData.userAvatar = compressedBase64;
+          mimeType: file.type || "image/jpeg",
+        });
+        formData.userAvatar = uploadResult.fileId;
         toast.success("头像上传成功");
       } catch (error) {
         console.error("图片处理失败:", error);
@@ -343,6 +375,10 @@ export default {
     // 重置表单
     const resetForm = () => {
       if (shouldResetProfileForm(confirm)) {
+        if (avatarPreviewUrl.value) {
+          revokeImagePreviewUrl(avatarPreviewUrl.value);
+          avatarPreviewUrl.value = "";
+        }
         Object.assign(formData, JSON.parse(JSON.stringify(originalData.value)));
         toast.info("表单已重置");
       }
@@ -351,10 +387,18 @@ export default {
     // 监听props变化
     watch(() => props.userData, initFormData, { immediate: true });
 
+    onUnmounted(() => {
+      if (avatarPreviewUrl.value) {
+        revokeImagePreviewUrl(avatarPreviewUrl.value);
+        avatarPreviewUrl.value = "";
+      }
+    });
+
     return {
       avatarInput,
       saving,
       formData,
+      displayAvatarUrl,
       saveProfile,
       triggerAvatarUpload,
       handleAvatarUpload,

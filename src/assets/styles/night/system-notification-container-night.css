@@ -123,25 +123,6 @@ html.night-mode .sys-notif-spinner {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* 夜间：绿 / 红 / 黑渐变与日间一致，略加强阴影 */
-html.night-mode .sys-notif-action-btn--accept {
-  box-shadow:
-    0 2px 16px rgba(16, 185, 129, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
-}
-
-html.night-mode .sys-notif-action-btn--reject {
-  box-shadow:
-    0 2px 16px rgba(239, 68, 68, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-html.night-mode .sys-notif-action-btn--block {
-  box-shadow:
-    0 2px 18px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
 html.night-mode .sys-notif-segment__track {
   background: rgba(15, 23, 42, 0.45);
   border-color: rgba(148, 163, 184, 0.28);
