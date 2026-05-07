@@ -11,6 +11,7 @@ export class WebSocketHandler {
   private readonly maxReconnectAttempts = 5;
   private reconnectUserId: number | null = null;
   private reconnectConvIds: number[] = [];
+  private readonly wsPath = "/ws";
 
   readonly sessionManager = new WebSocketSessionManager();
   readonly actionHandler = new WebSocketActionHandler((payload) => this.send(payload));
@@ -37,8 +38,11 @@ export class WebSocketHandler {
       if (!token) throw new Error("未提供认证 token，请先登录");
 
       this.disconnect();
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`;
+      const wsBase = String(import.meta.env.VITE_WS_BASE_URL || "").trim().replace(/\/$/, "");
+      if (!wsBase) {
+        throw new Error("缺少 VITE_WS_BASE_URL 配置，请在 .env.* 文件中设置");
+      }
+      const wsUrl = `${wsBase}${this.wsPath}?token=${encodeURIComponent(token)}`;
       const ws = new WebSocket(wsUrl);
       this.ws = ws;
 

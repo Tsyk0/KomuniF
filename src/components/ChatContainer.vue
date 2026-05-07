@@ -1912,9 +1912,6 @@ watch(
 
 onMounted(() => {
   console.log("ChatContainer mounted");
-  if (props.convId) {
-    loadMessages();
-  }
   window.addEventListener("mousemove", handlePreviewMouseMove);
   window.addEventListener("mouseup", handlePreviewMouseUp);
 });

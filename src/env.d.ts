@@ -12,6 +12,7 @@ declare module '*.vue' {
 // 声明 Vite 环境变量类型
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string
+  readonly VITE_WS_BASE_URL?: string
   readonly VITE_APP_TITLE: string
   readonly VITE_API_TIMEOUT?: string
   // 可以在这里添加更多环境变量...

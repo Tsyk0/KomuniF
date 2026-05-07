@@ -36,6 +36,11 @@ interface WsReadMessageReportRuntimeState {
 }
 
 let wsReadMessageReportState: WsReadMessageReportRuntimeState | null = null;
+/**
+ * 会话已读回执请求去重表（按 convId + offset + limit）。
+ * 使用场景：进入会话阶段同一参数被多处并发触发时，复用同一 Promise，避免重复 HTTP。
+ */
+const readReceiptInFlightMap = new Map<string, Promise<ConversationReadReceiptRuntimeState>>();
 
 /**
  * 清除 WS 已读上报计时器引用。
@@ -230,53 +235,68 @@ export const useConvStore = defineStore("conv", {
       const force = !!options?.force;
       const offset = Math.max(0, Number(options?.offset || 0));
       const limit = Math.max(1, Number(options?.limit || 50));
+      const inFlightKey = `${convId}:${offset}:${limit}`;
       const now = Date.now();
       if (!force && offset === 0 && now - runtime.lastFetchedAt < 8000) {
         return runtime;
       }
-      try {
-        const response = await conversationReadApi.getLatestReadReceipt({
-          convId,
-          limit,
-          offset,
-        });
-        if (response.code !== 200) return runtime;
-        const data = response.data;
-        if (!data || Number(data.messageId) <= 0) {
-          runtime.latestOwnMessageId = 0;
-          runtime.readCount = 0;
-          runtime.readMembers = [];
+      if (!force) {
+        const existing = readReceiptInFlightMap.get(inFlightKey);
+        if (existing) {
+          return existing;
+        }
+      }
+      const task = (async () => {
+        try {
+          const response = await conversationReadApi.getLatestReadReceipt({
+            convId,
+            limit,
+            offset,
+          });
+          if (response.code !== 200) return runtime;
+          const data = response.data;
+          if (!data || Number(data.messageId) <= 0) {
+            runtime.latestOwnMessageId = 0;
+            runtime.readCount = 0;
+            runtime.readMembers = [];
+            runtime.updatedAt = Date.now();
+            runtime.lastFetchedAt = Date.now();
+            return runtime;
+          }
+          const incomingMembers = (Array.isArray(data.readMembers) ? data.readMembers : []).filter(
+            (member) => Number(member.userId) !== currentUserId
+          );
+          if (offset > 0) {
+            const seen = new Set<number>();
+            const merged = [...runtime.readMembers, ...incomingMembers].filter((member) => {
+              const uid = Number(member.userId);
+              if (!Number.isFinite(uid) || uid <= 0 || seen.has(uid)) return false;
+              seen.add(uid);
+              return true;
+            });
+            runtime.readMembers = merged.sort(
+              (a, b) => Date.parse(b.readTime || "") - Date.parse(a.readTime || "")
+            );
+          } else {
+            runtime.readMembers = incomingMembers.sort(
+              (a, b) => Date.parse(b.readTime || "") - Date.parse(a.readTime || "")
+            );
+          }
+          runtime.latestOwnMessageId = Math.max(0, Number(data.messageId || 0));
+          runtime.readCount = Math.max(0, Number(data.readCount || 0) - 1);
           runtime.updatedAt = Date.now();
           runtime.lastFetchedAt = Date.now();
-          return runtime;
+        } catch {
+          // 静默失败，不影响消息主链路。
+        } finally {
+          readReceiptInFlightMap.delete(inFlightKey);
         }
-        const incomingMembers = (Array.isArray(data.readMembers) ? data.readMembers : []).filter(
-          (member) => Number(member.userId) !== currentUserId
-        );
-        if (offset > 0) {
-          const seen = new Set<number>();
-          const merged = [...runtime.readMembers, ...incomingMembers].filter((member) => {
-            const uid = Number(member.userId);
-            if (!Number.isFinite(uid) || uid <= 0 || seen.has(uid)) return false;
-            seen.add(uid);
-            return true;
-          });
-          runtime.readMembers = merged.sort(
-            (a, b) => Date.parse(b.readTime || "") - Date.parse(a.readTime || "")
-          );
-        } else {
-          runtime.readMembers = incomingMembers.sort(
-            (a, b) => Date.parse(b.readTime || "") - Date.parse(a.readTime || "")
-          );
-        }
-        runtime.latestOwnMessageId = Math.max(0, Number(data.messageId || 0));
-        runtime.readCount = Math.max(0, Number(data.readCount || 0) - 1);
-        runtime.updatedAt = Date.now();
-        runtime.lastFetchedAt = Date.now();
-      } catch {
-        // 静默失败，不影响消息主链路。
+        return runtime;
+      })();
+      if (!force) {
+        readReceiptInFlightMap.set(inFlightKey, task);
       }
-      return runtime;
+      return task;
     },
 
     /**

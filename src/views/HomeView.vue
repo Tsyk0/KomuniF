@@ -663,12 +663,7 @@ const handleConversationClick = (convId) => {
     return;
   }
 
-  const oldConvId = conversationStore.currentConversation?.convId || null;
-  if (oldConvId && oldConvId !== id) {
-    void conversationStore.notifyConversationExited(oldConvId);
-  }
-  console.log("HomeView: 设置当前会话ID:", id);
-  conversationStore.setCurrentConversation(id);
+  console.log("HomeView: 会话已在 ConversationList 中切换，HomeView 仅更新界面状态:", id);
   currentMainView.value = null;
   selectedFriend.value = null;
 };

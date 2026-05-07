@@ -22,7 +22,11 @@
       <p class="empty-hint">Start a chat from your friend list.</p>
     </div>
 
-    <div v-else class="conversation-list-main" :class="{ 'is-archive-view': isArchiveView }">
+    <div
+      v-else
+      class="conversation-list-main"
+      :class="{ 'is-archive-view': isArchiveView }"
+    >
       <!-- conversation list -->
       <div class="conversations-container sidebar-list-items">
         <ConversationItem
@@ -33,14 +37,19 @@
           @click="handleConversationClick(conversation.convId)"
         />
         <ArchivedConversationFolder
-          v-if="!isArchiveView && archivedConversations.length > 0"
+          v-if="
+            !isArchiveView &&
+            (keyword
+              ? filteredArchivedConversations.length > 0
+              : archivedConversations.length > 0)
+          "
           @open="enterArchiveView"
         />
         <div
           v-if="isArchiveView && filteredConversations.length === 0"
           class="archive-empty-state"
         >
-          当前没有归档会话
+          当前没有结果
         </div>
       </div>
       <button
@@ -56,28 +65,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onUnmounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useConvStore } from "@/store/conv/conv";
 import { useShowMessageStore } from "@/store/message/showMessage";
-import {
-  openConversationByClick,
-  searchConversationMatchedIdsByMessages,
-} from "@/interactions/conversationList/ConversationListInteraction";
+import { openConversationByClick } from "@/interactions/conversationList/ConversationListInteraction";
 import {
   prepareArchivedConversationSidebarList,
   prepareMainConversationSidebarList,
 } from "@/commons/utils/conversation-main-list";
-import { resolveLastMessageSenderLabel } from "@/commons/utils/conversation-last-message-sender";
-import { useFriendStore } from "@/store/friend/showFriend";
-import { useUserStore } from "@/store/user/user";
 import ConversationItem from "./ConversationItem.vue";
 import ArchivedConversationFolder from "./ArchivedConversationFolder.vue";
 
 // Store
 const convStore = useConvStore();
 const showMessageStore = useShowMessageStore();
-const friendStore = useFriendStore();
-const userStore = useUserStore();
 
 // Props
 const props = defineProps<{
@@ -87,9 +88,7 @@ const props = defineProps<{
 // error state
 const errorMessage = ref<string | null>(null);
 const loading = ref(false);
-const messageMatchedConversationIds = ref<Set<number>>(new Set());
 const isArchiveView = ref(false);
-let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 // computed states
 const conversations = computed(() => {
@@ -104,52 +103,76 @@ const archivedConversations = computed(() =>
   prepareArchivedConversationSidebarList(conversations.value)
 );
 const hasAnyConversation = computed(() => conversations.value.length > 0);
+const keyword = computed(() => props.searchQuery?.trim().toLowerCase() || "");
+
+const applyKeywordFilter = (
+  list: typeof mainSidebarConversations.value,
+  normalizedKeyword: string
+) =>
+  list.filter((conversation) => {
+    // 按会话 ID 过滤
+    if (String(conversation.convId).includes(normalizedKeyword)) {
+      return true;
+    }
+    // 按用户自定义显示名（privateDisplayName）过滤
+    const privateDisplayName = String(
+      conversation.privateDisplayName || ""
+    ).toLowerCase();
+    if (privateDisplayName.includes(normalizedKeyword)) {
+      return true;
+    }
+    // 按会话公开名（群名 / 后端会话名）过滤
+    const publicConversationName = String(
+      conversation.convName || ""
+    ).toLowerCase();
+    if (publicConversationName.includes(normalizedKeyword)) {
+      return true;
+    }
+    // 单聊补充：备注名 / 对方 userId / 对方昵称
+    if (Number(conversation.convType) === 1) {
+      const peerRemarkName = String(
+        conversation.peer?.peerRemarkName || ""
+      ).toLowerCase();
+      if (peerRemarkName.includes(normalizedKeyword)) {
+        return true;
+      }
+      const peerNickname = String(
+        conversation.peer?.peerNickname || ""
+      ).toLowerCase();
+      if (peerNickname.includes(normalizedKeyword)) {
+        return true;
+      }
+      const peerUserId = String(
+        conversation.peer?.peerUserId ?? conversation.targetUserId ?? ""
+      );
+      if (peerUserId.includes(normalizedKeyword)) {
+        return true;
+      }
+    }
+    return false;
+  });
+
+const filteredMainConversations = computed(() => {
+  if (!keyword.value) return mainSidebarConversations.value;
+  return applyKeywordFilter(mainSidebarConversations.value, keyword.value);
+});
+
+const filteredArchivedConversations = computed(() => {
+  if (!keyword.value) return archivedConversations.value;
+  return applyKeywordFilter(archivedConversations.value, keyword.value);
+});
+
 const sourceConversations = computed(() =>
-  isArchiveView.value ? archivedConversations.value : mainSidebarConversations.value
+  isArchiveView.value
+    ? filteredArchivedConversations.value
+    : filteredMainConversations.value
 );
 
 const isLoading = computed(() => {
   return loading.value;
 });
 
-const filteredConversations = computed(() => {
-  const keyword = props.searchQuery?.trim().toLowerCase();
-  if (!keyword) {
-    return sourceConversations.value;
-  }
-
-  const matchedConvIdSet = messageMatchedConversationIds.value;
-  return sourceConversations.value.filter((conversation) => {
-    if (conversation.convName?.toLowerCase().includes(keyword)) {
-      return true;
-    }
-
-    // match by last message content
-    const lastMsg = conversation.lastMessage;
-    if (lastMsg?.messageContent?.toLowerCase().includes(keyword)) {
-      return true;
-    }
-
-    // match by sender display name（与 ConversationItem 一致：好友优先备注，否则群昵称等）
-    const senderName = lastMsg
-      ? resolveLastMessageSenderLabel(lastMsg, friendStore.friends, userStore.user?.userId, {
-          convType: conversation.convType,
-          conversationMembers: convStore.compressedCMMap.get(conversation.convId),
-        })
-      : "";
-    if (senderName.toLowerCase().includes(keyword)) {
-      return true;
-    }
-
-    // match by conversation id
-    if (conversation.convId.toString().includes(keyword)) {
-      return true;
-    }
-
-    // match by message hits from IndexedDB
-    return matchedConvIdSet.has(conversation.convId);
-  });
-});
+const filteredConversations = computed(() => sourceConversations.value);
 
 const currentConversationId = computed(() => {
   return convStore.currentConversation?.convId || null;
@@ -164,17 +187,6 @@ const isActiveConversation = (convId: number) => {
 const retryLoad = async () => {
   errorMessage.value = null;
   await loadConversations();
-};
-
-const searchConversationByMessages = async (keyword: string) => {
-  if (!keyword) {
-    messageMatchedConversationIds.value = new Set();
-    return;
-  }
-  messageMatchedConversationIds.value = await searchConversationMatchedIdsByMessages(
-    keyword,
-    sourceConversations.value
-  );
 };
 
 const enterArchiveView = () => {
@@ -208,8 +220,8 @@ const handleConversationClick = async (convId: number) => {
       currentConversationId: currentConversationId.value,
       selectConversation: (id) => convStore.selectConversation(id),
       clearMessages: () => showMessageStore.clearMessages(),
-      loadMessages: (id) => showMessageStore.loadMessages(id),
-      notifyConversationEntered: (id) => convStore.notifyConversationEntered(id),
+      notifyConversationEntered: (id) =>
+        convStore.notifyConversationEntered(id),
       emitConversationClick: (id) => emit("conversation-click", id),
     });
   } catch (error) {
@@ -221,43 +233,6 @@ const handleConversationClick = async (convId: number) => {
 // lifecycle
 onMounted(async () => {
   await loadConversations();
-});
-
-onUnmounted(() => {
-  if (searchTimer) {
-    clearTimeout(searchTimer);
-    searchTimer = null;
-  }
-});
-
-watch(
-  () => props.searchQuery,
-  (newQuery) => {
-    const keyword = newQuery?.trim() || "";
-    if (searchTimer) {
-      clearTimeout(searchTimer);
-      searchTimer = null;
-    }
-
-    if (!keyword) {
-      messageMatchedConversationIds.value = new Set();
-      return;
-    }
-
-    searchTimer = setTimeout(() => {
-      searchConversationByMessages(keyword);
-    }, 250);
-  },
-  { immediate: true }
-);
-
-watch(isArchiveView, () => {
-  const keyword = props.searchQuery?.trim() || "";
-  if (!keyword) {
-    messageMatchedConversationIds.value = new Set();
-    return;
-  }
-  void searchConversationByMessages(keyword);
 });
 
 // emits

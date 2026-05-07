@@ -1,5 +1,5 @@
-import service from "../../service";
 import type { GetConversationMembersResponse } from "@/types/dto/conversation";
+import { getConversationWithMembersApi } from "@/apis/chat/conversation-member";
 
 /**
  * 根据会话 ID 获取会话成员列表。
@@ -8,10 +8,7 @@ import type { GetConversationMembersResponse } from "@/types/dto/conversation";
 export function getConversationMembersApi(
   convId: number
 ): Promise<GetConversationMembersResponse> {
-  return service({
-    url: `/conversations/${convId}/members`,
-    method: "get",
-  }).then((resp: any) => {
+  return getConversationWithMembersApi(convId).then((resp: any) => {
     const members = resp?.data?.members || [];
     return {
       ...resp,

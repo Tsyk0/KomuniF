@@ -41,8 +41,6 @@ export async function openConversationByClick(input: {
   selectConversation: (convId: number) => void;
   // 清空旧消息
   clearMessages: () => void;
-  // 加载会话消息
-  loadMessages: (convId: number) => Promise<void>;
   // 进入会话并清空本地未读展示
   notifyConversationEntered: (convId: number) => void;
   // 通知父组件“会话被点击”
@@ -54,6 +52,5 @@ export async function openConversationByClick(input: {
     input.clearMessages();
   }
   input.notifyConversationEntered(input.convId);
-  await input.loadMessages(input.convId);
   input.emitConversationClick(input.convId);
 }
