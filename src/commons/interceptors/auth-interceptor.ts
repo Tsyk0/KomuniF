@@ -11,6 +11,8 @@ import { useUserStore } from '@/store/user/user'
 /**
  * 认证相关的拦截器整合
  */
+// 防止多个 401 并发时重复弹窗和重复重定向
+let isHandlingUnauthorized = false
 
 // 请求拦截器
 export const authRequestInterceptor = {
@@ -65,6 +67,11 @@ export const authResponseInterceptor = {
 
     // 401 未授权 / Token 失效：清理登录状态并跳转到登录页
     if (error.response?.status === 401) {
+      if (isHandlingUnauthorized) {
+        return Promise.reject(error)
+      }
+      isHandlingUnauthorized = true
+
       try {
         const authStore = useUserStore()
         authStore.logout()
@@ -76,10 +83,16 @@ export const authResponseInterceptor = {
 
       // 避免重复跳转：仅在当前路由不是登录页时执行
       if (router.currentRoute.value.name !== 'login') {
+        window.alert('登录状态已过期，请重新登录。')
         router.push({ name: 'login' }).catch(() => {
           // 忽略重复导航等非致命错误
         })
       }
+
+      // 给并发失败请求留出缓冲，避免短时间内连续触发相同处理
+      window.setTimeout(() => {
+        isHandlingUnauthorized = false
+      }, 1000)
     }
 
     return Promise.reject(error)
