@@ -67,10 +67,35 @@ export function updateConversationMemberNamesApi(
   convId: number,
   payload: UpdateConversationMemberNamesPayload
 ): Promise<BaseResponse<string>> {
+  /**
+   * PATCH /members/me/names 采用“按需字段”提交：
+   * - 仅传本次有变更的字段
+   * - clear* 标记折叠为空串字段，避免把 clear* 直接透传给后端
+   */
+  const requestBody: {
+    memberNickname?: string;
+    privateDisplayName?: string;
+    displayStatus?: number;
+  } = {};
+  if (payload.memberNickname !== undefined) {
+    requestBody.memberNickname = String(payload.memberNickname ?? "");
+  } else if (payload.clearMemberNickname === true) {
+    requestBody.memberNickname = "";
+  }
+  if (payload.privateDisplayName !== undefined) {
+    requestBody.privateDisplayName = String(payload.privateDisplayName ?? "");
+  } else if (payload.clearPrivateDisplayName === true) {
+    requestBody.privateDisplayName = "";
+  }
+  if (payload.displayStatus !== undefined) {
+    requestBody.displayStatus = Number(payload.displayStatus);
+  }
+  const accessToken = localStorage.getItem("access_token");
   return service({
     url: `/conversations/${convId}/members/me/names`,
     method: "patch",
-    data: payload,
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    data: requestBody,
   });
 }
 

@@ -57,3 +57,18 @@ export function prepareMainConversationSidebarList(
     return compareConversationSummaryRecency(a, b);
   });
 }
+
+/**
+ * 归档会话列表：仅保留 displayStatus===2，并按更新时间降序（同时间按未读数降序）。
+ * 使用场景：ConversationList 归档文件夹展开后的会话渲染与搜索。
+ */
+export function prepareArchivedConversationSidebarList(
+  items: ConversationSummaryDTO[]
+): ConversationSummaryDTO[] {
+  const archived = items.filter(
+    (row) =>
+      coerceConversationMemberDisplayStatus(row.displayStatus) ===
+      ConversationMemberDisplayStatus.HIDDEN
+  );
+  return [...archived].sort(compareConversationSummaryRecency);
+}

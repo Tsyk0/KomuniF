@@ -9,6 +9,7 @@ html.night-mode .single-conv-info__header {
 html.night-mode .single-conv-info__title,
 html.night-mode .single-name,
 html.night-mode .single-item-title,
+html.night-mode .settings-label,
 html.night-mode .single-readonly-value {
   color: #e4e4e7;
 }
@@ -16,6 +17,7 @@ html.night-mode .single-readonly-value {
 html.night-mode .single-conv-info__close,
 html.night-mode .single-conv-info__state,
 html.night-mode .single-id,
+html.night-mode .settings-row--status .settings-status,
 html.night-mode .single-readonly-label {
   color: #a1a1aa;
 }
@@ -29,6 +31,10 @@ html.night-mode .single-section {
 }
 
 html.night-mode .single-readonly-row + .single-readonly-row {
+  border-top-color: #3f3f46;
+}
+
+html.night-mode .settings-row + .settings-row {
   border-top-color: #3f3f46;
 }
 

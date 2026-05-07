@@ -173,6 +173,27 @@ html.night-mode .conversation-list .conversations-container {
   background: #1a1a1a;
 }
 
+html.night-mode .conversation-list .conversation-list-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+html.night-mode .conversation-list .archive-empty-state {
+  background: rgba(63, 63, 70, 0.45);
+  color: #a1a1aa;
+}
+
+html.night-mode .conversation-list .archive-back-btn {
+  border-color: #3f3f46;
+  background: #27272a;
+  color: #e4e4e7;
+}
+
+html.night-mode .conversation-list .archive-back-btn:hover {
+  background: #3f3f46;
+}
+
 
 /* 动画 */
 html.night-mode .conversation-list .fade-enter-active {

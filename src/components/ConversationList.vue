@@ -16,21 +16,41 @@
     </div>
 
     <!-- empty state -->
-    <div v-else-if="mainSidebarConversations.length === 0" class="empty-conversation">
+    <div v-else-if="!hasAnyConversation" class="empty-conversation">
       <div class="empty-icon">-</div>
       <p class="empty-text">No conversations</p>
       <p class="empty-hint">Start a chat from your friend list.</p>
     </div>
 
-    <!-- conversation list -->
-    <div v-else class="conversations-container sidebar-list-items">
-      <ConversationItem
-        v-for="conversation in filteredConversations"
-        :key="conversation.convId"
-        :conversation="conversation"
-        :is-active="isActiveConversation(conversation.convId)"
-        @click="handleConversationClick(conversation.convId)"
-      />
+    <div v-else class="conversation-list-main" :class="{ 'is-archive-view': isArchiveView }">
+      <!-- conversation list -->
+      <div class="conversations-container sidebar-list-items">
+        <ConversationItem
+          v-for="conversation in filteredConversations"
+          :key="conversation.convId"
+          :conversation="conversation"
+          :is-active="isActiveConversation(conversation.convId)"
+          @click="handleConversationClick(conversation.convId)"
+        />
+        <ArchivedConversationFolder
+          v-if="!isArchiveView && archivedConversations.length > 0"
+          @open="enterArchiveView"
+        />
+        <div
+          v-if="isArchiveView && filteredConversations.length === 0"
+          class="archive-empty-state"
+        >
+          当前没有归档会话
+        </div>
+      </div>
+      <button
+        v-if="isArchiveView"
+        type="button"
+        class="archive-back-btn archive-back-btn--fixed"
+        @click="exitArchiveView"
+      >
+        返回普通会话
+      </button>
     </div>
   </div>
 </template>
@@ -43,11 +63,15 @@ import {
   openConversationByClick,
   searchConversationMatchedIdsByMessages,
 } from "@/interactions/conversationList/ConversationListInteraction";
-import { prepareMainConversationSidebarList } from "@/commons/utils/conversation-main-list";
+import {
+  prepareArchivedConversationSidebarList,
+  prepareMainConversationSidebarList,
+} from "@/commons/utils/conversation-main-list";
 import { resolveLastMessageSenderLabel } from "@/commons/utils/conversation-last-message-sender";
 import { useFriendStore } from "@/store/friend/showFriend";
 import { useUserStore } from "@/store/user/user";
 import ConversationItem from "./ConversationItem.vue";
+import ArchivedConversationFolder from "./ArchivedConversationFolder.vue";
 
 // Store
 const convStore = useConvStore();
@@ -64,6 +88,7 @@ const props = defineProps<{
 const errorMessage = ref<string | null>(null);
 const loading = ref(false);
 const messageMatchedConversationIds = ref<Set<number>>(new Set());
+const isArchiveView = ref(false);
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 // computed states
@@ -75,6 +100,13 @@ const conversations = computed(() => {
 const mainSidebarConversations = computed(() =>
   prepareMainConversationSidebarList(conversations.value)
 );
+const archivedConversations = computed(() =>
+  prepareArchivedConversationSidebarList(conversations.value)
+);
+const hasAnyConversation = computed(() => conversations.value.length > 0);
+const sourceConversations = computed(() =>
+  isArchiveView.value ? archivedConversations.value : mainSidebarConversations.value
+);
 
 const isLoading = computed(() => {
   return loading.value;
@@ -83,11 +115,11 @@ const isLoading = computed(() => {
 const filteredConversations = computed(() => {
   const keyword = props.searchQuery?.trim().toLowerCase();
   if (!keyword) {
-    return mainSidebarConversations.value;
+    return sourceConversations.value;
   }
 
   const matchedConvIdSet = messageMatchedConversationIds.value;
-  return mainSidebarConversations.value.filter((conversation) => {
+  return sourceConversations.value.filter((conversation) => {
     if (conversation.convName?.toLowerCase().includes(keyword)) {
       return true;
     }
@@ -141,8 +173,16 @@ const searchConversationByMessages = async (keyword: string) => {
   }
   messageMatchedConversationIds.value = await searchConversationMatchedIdsByMessages(
     keyword,
-    mainSidebarConversations.value
+    sourceConversations.value
   );
+};
+
+const enterArchiveView = () => {
+  isArchiveView.value = true;
+};
+
+const exitArchiveView = () => {
+  isArchiveView.value = false;
 };
 
 // load conversations
@@ -210,6 +250,15 @@ watch(
   },
   { immediate: true }
 );
+
+watch(isArchiveView, () => {
+  const keyword = props.searchQuery?.trim() || "";
+  if (!keyword) {
+    messageMatchedConversationIds.value = new Set();
+    return;
+  }
+  void searchConversationByMessages(keyword);
+});
 
 // emits
 const emit = defineEmits<{

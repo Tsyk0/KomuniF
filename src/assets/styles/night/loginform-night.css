@@ -41,8 +41,7 @@ html.night-mode .loginform .hint-content {
 }
 
 html.night-mode .loginform .hint-icon {
-  font-size: 24px;
-  line-height: 1;
+  flex-shrink: 0;
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -111,6 +110,12 @@ html.night-mode .loginform .normal-login-btn {
 
 html.night-mode .loginform .normal-login-btn:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+html.night-mode .loginform .auto-login-btn:focus-visible,
+html.night-mode .loginform .normal-login-btn:focus-visible {
+  outline: 2px solid var(--theme-focus-ring);
+  outline-offset: 2px;
 }
 
 /* ========== 错误提示 ========== */

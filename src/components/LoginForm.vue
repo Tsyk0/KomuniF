@@ -6,7 +6,7 @@
       <!-- 免密登录提示 -->
       <div v-if="showAutoLoginHint && !isLoggingIn" class="auto-login-hint">
         <div class="hint-content">
-          <span class="hint-icon">🔑</span>
+          <KeyRound class="hint-icon" :size="22" :stroke-width="2.2" />
           <div class="hint-text">
             <p class="hint-title">欢迎回来！</p>
             <p class="hint-desc">您上次选择了"记住我"</p>
@@ -17,11 +17,16 @@
             @click="handleAutoLogin"
             :disabled="isAutoLogging"
             class="auto-login-btn"
+            v-ripple="{ color: 'rgba(255, 255, 255, 0.28)', duration: 600 }"
           >
             <span v-if="!isAutoLogging">免密登录</span>
             <span v-else>登录中...</span>
           </button>
-          <button @click="showAutoLoginHint = false" class="normal-login-btn">
+          <button
+            @click="showAutoLoginHint = false"
+            class="normal-login-btn"
+            v-ripple="{ color: 'rgba(255, 255, 255, 0.2)', duration: 600 }"
+          >
             其他账号
           </button>
         </div>
@@ -88,6 +93,7 @@
 
 <!-- script 部分保持不变 -->
 <script>
+import { KeyRound } from "lucide-vue-next";
 import { useUserStore } from "@/store/user/user";
 import { useRouter } from "vue-router";
 import {
@@ -99,6 +105,9 @@ import {
 
 export default {
   name: "LoginForm",
+  components: {
+    KeyRound,
+  },
 
   emits: ["show-register", "show-forgot"],
 

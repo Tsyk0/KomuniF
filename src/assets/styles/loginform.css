@@ -25,12 +25,13 @@
 
 /* ========== 免密登录提示 ========== */
 .loginform .auto-login-hint {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theme-primary-mid) 0%, var(--theme-primary-strong) 100%);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
   color: white;
   box-sizing: border-box;
+  box-shadow: var(--theme-shadow-primary-soft);
 }
 
 .loginform .hint-content {
@@ -41,8 +42,8 @@
 }
 
 .loginform .hint-icon {
-  font-size: 24px;
-  line-height: 1;
+  flex-shrink: 0;
+  color: #ffffff;
 }
 
 .loginform .hint-text {
@@ -85,11 +86,11 @@
 .loginform .auto-login-btn {
   flex: 2;
   background: white;
-  color: #667eea;
+  color: var(--theme-primary-strong);
 }
 
 .loginform .auto-login-btn:hover:not(:disabled) {
-  background: #f8f9fa;
+  background: #f8fafc;
   transform: translateY(-1px);
 }
 
@@ -107,6 +108,13 @@
 
 .loginform .normal-login-btn:hover {
   background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.loginform .auto-login-btn:focus-visible,
+.loginform .normal-login-btn:focus-visible {
+  outline: 2px solid var(--theme-focus-ring);
+  outline-offset: 2px;
 }
 
 /* ========== 错误提示 ========== */
