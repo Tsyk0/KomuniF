@@ -88,7 +88,10 @@
               </button>
             </template>
             <div v-else class="message-text">{{ message.messageContent }}</div>
-            <div v-if="isAttachmentMessage && attachmentByTheWayText" class="message-text">
+            <div
+              v-if="isAttachmentMessage && attachmentByTheWayText"
+              class="message-text"
+            >
               {{ attachmentByTheWayText }}
             </div>
             <div class="message-time">{{ formatTime(message.sendTime) }}</div>
@@ -125,9 +128,13 @@
           </button>
         </div>
         <div v-if="replyQuoteDisplay" class="message-reply-quote">
-          <span class="message-reply-quote__sender">{{ replyQuoteDisplay.label }}</span>
+          <span class="message-reply-quote__sender">{{
+            replyQuoteDisplay.label
+          }}</span>
           <span class="message-reply-quote__sep">：</span>
-          <span class="message-reply-quote__text">{{ replyQuoteDisplay.text }}</span>
+          <span class="message-reply-quote__text">{{
+            replyQuoteDisplay.text
+          }}</span>
         </div>
         <div
           v-if="atMentionsLine?.length"
@@ -236,7 +243,10 @@
               </button>
             </template>
             <div v-else class="message-text">{{ message.messageContent }}</div>
-            <div v-if="isAttachmentMessage && attachmentByTheWayText" class="message-text">
+            <div
+              v-if="isAttachmentMessage && attachmentByTheWayText"
+              class="message-text"
+            >
               {{ attachmentByTheWayText }}
             </div>
             <div class="message-time">{{ formatTime(message.sendTime) }}</div>
@@ -246,9 +256,13 @@
           v-if="replyQuoteDisplay"
           class="message-reply-quote message-reply-quote--self"
         >
-          <span class="message-reply-quote__sender">{{ replyQuoteDisplay.label }}</span>
+          <span class="message-reply-quote__sender">{{
+            replyQuoteDisplay.label
+          }}</span>
           <span class="message-reply-quote__sep">：</span>
-          <span class="message-reply-quote__text">{{ replyQuoteDisplay.text }}</span>
+          <span class="message-reply-quote__text">{{
+            replyQuoteDisplay.text
+          }}</span>
         </div>
         <div
           v-if="atMentionsLine?.length"
@@ -334,13 +348,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  computed,
-  ref,
-  watch,
-  watchEffect,
-  nextTick,
-} from "vue";
+import { computed, ref, watch, watchEffect, nextTick } from "vue";
 import { AtSign, Play, Reply, Trash, X } from "lucide-vue-next";
 import {
   normalizeAvatarUrl,
@@ -482,55 +490,59 @@ const canRecallCurrentMessage = computed(() => {
  * 否则用服务端下发的 replyQuote* 快照（他人客户端常见）；
  * 最后才降级为「原消息不在当前记录中」。
  */
-const replyQuoteDisplay = computed((): { label: string; text: string } | null => {
-  const rawId = props.message.replyToMessageId;
-  if (rawId == null || rawId === undefined) return null;
-  const id = Number(rawId);
-  if (!Number.isFinite(id) || id <= 0) return null;
-  void friendStore.friends;
-  const replied = showMessageStore.messages.find((m) => m.messageId === id);
-  if (replied) {
-    return {
-      label: showMessageStore.getSenderDisplayName(replied),
-      text: formatQuotedMessageContentPreview(replied),
-    };
+const replyQuoteDisplay = computed(
+  (): { label: string; text: string } | null => {
+    const rawId = props.message.replyToMessageId;
+    if (rawId == null || rawId === undefined) return null;
+    const id = Number(rawId);
+    if (!Number.isFinite(id) || id <= 0) return null;
+    void friendStore.friends;
+    const replied = showMessageStore.messages.find((m) => m.messageId === id);
+    if (replied) {
+      return {
+        label: showMessageStore.getSenderDisplayName(replied),
+        text: formatQuotedMessageContentPreview(replied),
+      };
+    }
+    const ha = (props.message.replyQuoteAuthorHint || "").trim();
+    const ht = (props.message.replyQuoteContentHint || "").trim();
+    if (ha || ht) {
+      return {
+        label: ha || "…",
+        text: ht || "原消息不在当前记录中",
+      };
+    }
+    return { label: "…", text: "原消息不在当前记录中" };
   }
-  const ha = (props.message.replyQuoteAuthorHint || "").trim();
-  const ht = (props.message.replyQuoteContentHint || "").trim();
-  if (ha || ht) {
-    return {
-      label: ha || "…",
-      text: ht || "原消息不在当前记录中",
-    };
-  }
-  return { label: "…", text: "原消息不在当前记录中" };
-});
+);
 
 /**
  * 本条消息带 atUserIds（下行/实体字段；库表可能为 at_user_ids）时，在气泡下展示 @群策略名。
  */
-const atMentionsLine = computed((): { userId: number; label: string }[] | null => {
-  const ids = props.message.atUserIds;
-  if (!ids || !Array.isArray(ids) || ids.length === 0) return null;
-  void friendStore.friends;
-  const convId = Number(props.message.convId);
-  const members = convStore.compressedCMMap.get(convId) ?? [];
-  const ct = resolvedConvType.value;
-  return ids.map((uid) => {
-    const n = Number(uid);
-    const member = members.find((m) => Number(m.userId) === n);
-    return {
-      userId: n,
-      label: showMessageStore.resolveSenderName(
-        n,
-        member?.userNickname || "User",
-        ct ?? undefined,
-        member?.memberNickname ?? null,
-        convId
-      ),
-    };
-  });
-});
+const atMentionsLine = computed(
+  (): { userId: number; label: string }[] | null => {
+    const ids = props.message.atUserIds;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) return null;
+    void friendStore.friends;
+    const convId = Number(props.message.convId);
+    const members = convStore.compressedCMMap.get(convId) ?? [];
+    const ct = resolvedConvType.value;
+    return ids.map((uid) => {
+      const n = Number(uid);
+      const member = members.find((m) => Number(m.userId) === n);
+      return {
+        userId: n,
+        label: showMessageStore.resolveSenderName(
+          n,
+          member?.userNickname || "User",
+          ct ?? undefined,
+          member?.memberNickname ?? null,
+          convId
+        ),
+      };
+    });
+  }
+);
 
 const emitStartReply = () => {
   emit("start-reply", props.message);
@@ -586,8 +598,8 @@ const messagePopoverConvOwnerId = computed((): number => {
 });
 
 /** 当前群会话成员缓存行；用于群主判断与禁言角标逻辑。 */
-const membersForMessageConv = computed(() =>
-  convStore.compressedCMMap.get(Number(props.message.convId)) ?? []
+const membersForMessageConv = computed(
+  () => convStore.compressedCMMap.get(Number(props.message.convId)) ?? []
 );
 
 const isCurrentUserGroupOwnerForMessage = computed(() => {
@@ -598,9 +610,7 @@ const isCurrentUserGroupOwnerForMessage = computed(() => {
   const me = membersForMessageConv.value.find(
     (m) => Number(m.userId) === myUserId
   );
-  return me
-    ? isGroupOwnerMember(me as MessageDisplayMemberDTO, oid)
-    : false;
+  return me ? isGroupOwnerMember(me as MessageDisplayMemberDTO, oid) : false;
 });
 
 const getAuthUserIdForMessage = (): number => {
@@ -651,7 +661,10 @@ const showMessagePopoverAddFriendAction = computed(
 );
 
 const showMessagePopoverGroupManage = computed(() => {
-  if (!isCurrentUserGroupOwnerForMessage.value || isMessagePopoverMemberSelf.value)
+  if (
+    !isCurrentUserGroupOwnerForMessage.value ||
+    isMessagePopoverMemberSelf.value
+  )
     return false;
   const m = messageMemberPopover.value;
   if (!m) return false;
@@ -763,9 +776,9 @@ const syncMessagePopoverMemberFromCompressed = () => {
   if (!m) return;
   const uid = Number(m.userId);
   const convId = Number(props.message.convId);
-  const fresh = convStore.compressedCMMap.get(convId)?.find(
-    (x) => Number(x.userId) === uid
-  );
+  const fresh = convStore.compressedCMMap
+    .get(convId)
+    ?.find((x) => Number(x.userId) === uid);
   if (fresh) {
     messageMemberPopover.value = fresh as ConversationMemberDTO;
   } else {

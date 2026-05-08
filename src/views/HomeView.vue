@@ -129,7 +129,10 @@
         </div>
 
         <div class="sidebar-content">
-          <div v-if="convCreateStore.active" class="friend-pick-sidebar-wrap">
+          <div
+            v-if="convCreateStore.active"
+            class="friend-pick-sidebar-wrap"
+          >
             <FriendPickSidebar :search-query="searchKeyword" />
           </div>
 
@@ -197,7 +200,9 @@
         />
 
         <PlusPanel
-          v-else-if="convCreateStore.active"
+          v-else-if="
+            convCreateStore.active && convCreateStore.groupInviteToConvId == null
+          "
           @exit="exitConvCreate"
           @created="handleGroupCreated"
           @send-message="onUserSearchSendMessage"
@@ -362,7 +367,9 @@ const currentMainView = ref(null);
 
 const searchKeyword = ref("");
 const searchPlaceholder = computed(() => {
-  if (convCreateStore.active) return "搜索好友或选择...";
+  if (convCreateStore.active) {
+    return "搜索好友或选择...";
+  }
   if (currentListView.value === "friends") return "搜索好友名称...";
   return "搜索会话...";
 });
@@ -658,6 +665,16 @@ const handleConversationClick = (convId) => {
     return;
   }
 
+  if (
+    convCreateStore.active &&
+    convCreateStore.groupInviteToConvId != null
+  ) {
+    const target = Number(convCreateStore.groupInviteToConvId);
+    if (!Number.isFinite(target) || target !== id) {
+      convCreateStore.exit(false);
+    }
+  }
+
   console.log("HomeView: 会话已在 ConversationList 中切换，HomeView 仅更新界面状态:", id);
   currentMainView.value = null;
   selectedFriend.value = null;
@@ -665,6 +682,9 @@ const handleConversationClick = (convId) => {
 
 const clearCurrentConversation = async () => {
   await flushCurrentConversationReadProgress();
+  if (convCreateStore.active) {
+    convCreateStore.exit(false);
+  }
   conversationStore.clearCurrentConversation();
   currentMainView.value = null;
 };

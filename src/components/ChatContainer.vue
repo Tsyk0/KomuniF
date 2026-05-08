@@ -124,7 +124,10 @@
             <!-- 消息列表 -->
             <div class="messages-list">
               <!-- 每条消息使用MessageItem组件 -->
-              <div v-for="message in messages" :key="messageListRowKey(message)">
+              <div
+                v-for="message in messages"
+                :key="messageListRowKey(message)"
+              >
                 <MessageItem
                   :message="message"
                   :conv-type="currentConvTypeOrNull"
@@ -237,7 +240,9 @@
                 :key="draft.localDraftId"
                 class="composer-file-strip__item"
               >
-                <span class="composer-file-strip__name">{{ draft.fileName }}</span>
+                <span class="composer-file-strip__name">{{
+                  draft.fileName
+                }}</span>
                 <span class="composer-file-strip__meta">{{
                   formatPendingFileSize(draft.fileSize)
                 }}</span>
@@ -362,7 +367,10 @@
       :visible="readReceiptDialogVisible"
       :members="currentConvReadReceipt.readMembers"
       :total-count="currentConvReadReceipt.readCount"
-      :has-more="currentConvReadReceipt.readMembers.length < currentConvReadReceipt.readCount"
+      :has-more="
+        currentConvReadReceipt.readMembers.length <
+        currentConvReadReceipt.readCount
+      "
       :loading-more="readReceiptDialogLoadingMore"
       @close="readReceiptDialogVisible = false"
       @load-more="loadMoreReadReceiptMembers"
@@ -590,7 +598,9 @@ const messageListRowKey = (m: DisplayMessage): string | number => {
  * 判断消息是否已持久化到后端（可用于 mark-read 上报游标）。
  * 使用场景：过滤本地发送中的临时消息，避免把临时 messageId 当作已读游标提交。
  */
-const isPersistedServerMessage = (message: DisplayMessage | null | undefined): boolean => {
+const isPersistedServerMessage = (
+  message: DisplayMessage | null | undefined
+): boolean => {
   if (!message) return false;
   const messageId = Number(message.messageId);
   if (!Number.isFinite(messageId) || messageId <= 0) return false;
@@ -686,7 +696,8 @@ const firstChar = computed(() => {
 
 const canSend = computed(() => {
   return (
-    (messageText.value.trim().length > 0 || pendingFileDrafts.value.length > 0) &&
+    (messageText.value.trim().length > 0 ||
+      pendingFileDrafts.value.length > 0) &&
     props.convId &&
     !isSending.value &&
     !isCurrentUserMutedInGroup.value
@@ -906,7 +917,12 @@ watch(
 );
 
 watch(
-  () => [props.convId, latestSelfMessageIdInList.value, isMessagesReady.value] as const,
+  () =>
+    [
+      props.convId,
+      latestSelfMessageIdInList.value,
+      isMessagesReady.value,
+    ] as const,
   ([convId, , ready]) => {
     if (!convId || !ready) return;
     void syncAndRefreshReadReceiptForCurrentConv();
@@ -1244,7 +1260,8 @@ const sendTextMessage = async (input?: {
     const replyToMessageId =
       input?.replyToMessageId ?? takeReplyToMessageIdForCurrentConv();
     const pendingAtUserIds =
-      input?.atUserIds ?? composerAtStore.getPendingAtUserIdsForConv(props.convId);
+      input?.atUserIds ??
+      composerAtStore.getPendingAtUserIdsForConv(props.convId);
     console.log("发送消息:", {
       convId: props.convId,
       content,
@@ -1344,7 +1361,9 @@ const sendComposerBatch = async () => {
         mimeType: draft.mimeType,
         ...(content ? { textByTheWay: content } : {}),
         ...(replyToMessageId != null ? { replyToMessageId } : {}),
-        ...(pendingAtUserIds?.length ? { atUserIds: [...pendingAtUserIds] } : {}),
+        ...(pendingAtUserIds?.length
+          ? { atUserIds: [...pendingAtUserIds] }
+          : {}),
       });
     }
 
@@ -1405,10 +1424,16 @@ const loadMessages = async () => {
   let latestPersistedId = 0;
   if (props.convId && isPersistedServerMessage(latestMessage)) {
     latestPersistedId = Number(latestMessage!.messageId);
-    conversationStore.trackConversationReadProgress(props.convId, latestPersistedId);
+    conversationStore.trackConversationReadProgress(
+      props.convId,
+      latestPersistedId
+    );
   }
   if (props.convId) {
-    conversationStore.onChatViewportReadyForWsReadReport(props.convId, latestPersistedId);
+    conversationStore.onChatViewportReadyForWsReadReport(
+      props.convId,
+      latestPersistedId
+    );
   }
   await syncAndRefreshReadReceiptForCurrentConv();
 };
@@ -1483,7 +1508,8 @@ const sendFileMessage = async (params: {
   const replyToMessageId =
     params.replyToMessageId ?? takeReplyToMessageIdForCurrentConv();
   const pendingAtUserIds =
-    params.atUserIds ?? composerAtStore.getPendingAtUserIdsForConv(props.convId);
+    params.atUserIds ??
+    composerAtStore.getPendingAtUserIdsForConv(props.convId);
   const tempMessage = sendMessageStore.appendLocalMessageEcho(
     {
       convId: props.convId,
@@ -1586,12 +1612,15 @@ const handleFilePicked = async (event: Event) => {
       convId: props.convId,
       mimeType: pickedFile.type || "application/octet-stream",
     });
-    console.log("[file-msg-debug] upload completed, append pending file draft", {
-      convId: props.convId,
-      fileId: uploadResult.fileId,
-      messageType,
-      instantUpload: !!uploadResult.instantUpload,
-    });
+    console.log(
+      "[file-msg-debug] upload completed, append pending file draft",
+      {
+        convId: props.convId,
+        fileId: uploadResult.fileId,
+        messageType,
+        instantUpload: !!uploadResult.instantUpload,
+      }
+    );
     pendingFileDrafts.value.push({
       localDraftId: buildPendingFileDraftId(),
       messageType,

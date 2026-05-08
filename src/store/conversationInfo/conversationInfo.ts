@@ -4,6 +4,7 @@ import type { ConversationSummaryDTO } from "@/types/dto/conversation";
 import { useConvStore } from "@/store/conv/conv";
 import { useFriendStore } from "@/store/friend/showFriend";
 import {
+  addGroupMembersNormalized,
   deleteFriendNormalized,
   leaveConversationNormalized,
   loadConversationInfoNormalized,
@@ -95,6 +96,11 @@ export const useConversationInfoStore = defineStore("conversationInfo", {
     /** 群主踢出成员；成功返回后端提示文案。 */
     removeGroupMember(convId: number, targetUserId: number) {
       return removeGroupMemberNormalized(convId, targetUserId);
+    },
+
+    /** 批量邀请好友入群；成功返回后端提示文案。 */
+    addGroupMembers(convId: number, userIds: number[]) {
+      return addGroupMembersNormalized(convId, userIds);
     },
 
     /** 群主禁言成员。 */

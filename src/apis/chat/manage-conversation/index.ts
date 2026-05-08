@@ -127,6 +127,21 @@ export function removeConversationMemberApi(
 }
 
 /**
+ * 批量邀请好友入群。
+ * 对应后端接口：POST /conversations/{convId}/members
+ */
+export function addConversationMembersApi(
+  convId: number,
+  userIds: number[]
+): Promise<BaseResponse<string>> {
+  return service({
+    url: `/conversations/${convId}/members`,
+    method: "post",
+    data: { userIds },
+  });
+}
+
+/**
  * 禁言成员：正常 → 2
  * POST /conversations/{convId}/members/{targetUserId}/mute
  */
@@ -159,6 +174,7 @@ export const manageConversationApi = {
   updateConversationMemberNames: updateConversationMemberNamesApi,
   leaveConversation: leaveConversationApi,
   removeConversationMember: removeConversationMemberApi,
+  addConversationMembers: addConversationMembersApi,
   muteConversationMember: muteConversationMemberApi,
   unmuteConversationMember: unmuteConversationMemberApi,
 };

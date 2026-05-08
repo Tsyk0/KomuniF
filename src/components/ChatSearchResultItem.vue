@@ -11,7 +11,12 @@
   >
     <div class="left">
       <div class="avatar">
-        <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" @error="onImgError" />
+        <img
+          v-if="avatarUrl"
+          :src="avatarUrl"
+          alt="avatar"
+          @error="onImgError"
+        />
         <span v-else class="avatar-fallback">{{ fallbackChar }}</span>
       </div>
     </div>
@@ -65,7 +70,9 @@ const displayName = computed(
     String(props.message.senderId == null ? "" : props.message.senderId)
 );
 
-const strategyName = computed(() => showMessageStore.getSenderDisplayName(props.message));
+const strategyName = computed(() =>
+  showMessageStore.getSenderDisplayName(props.message)
+);
 
 const fallbackChar = computed(() => {
   const n = strategyName.value || displayName.value || "";

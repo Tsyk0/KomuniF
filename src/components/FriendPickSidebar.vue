@@ -3,7 +3,7 @@
   <div class="friend-pick-sidebar">
     <div class="friend-pick-scroll">
       <div v-if="selectableFriends.length === 0" class="friend-pick-empty">
-        暂无好友，请先添加好友
+        {{ friendPickEmptyText }}
       </div>
       <!-- 与会话列表一致：单滚动容器 + sidebar-list-items；每行为 *-item → *-item-container（头像 + 文案） -->
       <div
@@ -16,9 +16,7 @@
           :key="f.friendId"
           class="friend-pick-item"
           role="listitem"
-          :class="{
-            selected: convCreateStore.selectedFriendIds.includes(f.friendId),
-          }"
+          :class="{ selected: effectiveSelectedFriendIds.includes(f.friendId) }"
           v-ripple="{ rippleOpts }"
           @click="toggle(f.friendId)"
         >
@@ -55,6 +53,7 @@ import { computed, watch } from "vue";
 import { useFriendStore } from "@/store/friend/showFriend";
 import { useUserStore } from "@/store/user/user";
 import { useConvCreateStore } from "@/store/conv/convCreate";
+import { FriendRelationStatus } from "@/types/dto/friend";
 import {
   filterSelectableFriends,
   resolveFriendAvatarUrl,
@@ -66,6 +65,14 @@ const rippleOpts = { color: "var(--sli-ripple-color)", duration: 520 };
 
 const props = defineProps<{
   searchQuery?: string;
+  /**
+   * 受控多选；未传时使用 convCreateStore（与 PlusPanel 同源）。
+   */
+  selectedFriendIds?: number[];
+}>();
+
+const emit = defineEmits<{
+  "update:selectedFriendIds": [ids: number[]];
 }>();
 
 const friendStore = useFriendStore();
@@ -82,6 +89,16 @@ watch(
 
 const myUserId = computed(() => Number(authStore.user?.userId) || 0);
 
+const isControlledFriendSelection = computed(
+  () => props.selectedFriendIds !== undefined
+);
+
+const effectiveSelectedFriendIds = computed((): number[] =>
+  isControlledFriendSelection.value
+    ? props.selectedFriendIds!
+    : convCreateStore.selectedFriendIds
+);
+
 const getFriendDisplayName = (friend: {
   displayName?: string;
   nickname?: string;
@@ -91,10 +108,48 @@ const selectableFriends = computed(() =>
   filterSelectableFriends(friendStore.filteredFriends, myUserId.value)
 );
 
+/**
+ * 列表为空时的提示。
+ * 使用场景：PlusPanel 选人、群资料邀请选人共用侧栏组件。
+ */
+const friendPickEmptyText = computed(() => {
+  if (friendStore.loadingFriends) {
+    return "加载好友列表中...";
+  }
+  const me = myUserId.value;
+  const before = selectableFriends.value;
+  const hasVisibleRelationFriend = friendStore.friends.some((f) => {
+    const r = Number(f.relationStatus);
+    const ok =
+      r === FriendRelationStatus.FRIEND_PINNED ||
+      r === FriendRelationStatus.NORMAL;
+    return ok && Number(f.friendId) !== me;
+  });
+  if (before.length === 0) {
+    if (!hasVisibleRelationFriend) {
+      return "暂无好友，请先添加好友";
+    }
+    return "无匹配好友，请清空侧栏搜索或更换关键词";
+  }
+  return "";
+});
+
 const getFriendAvatarUrl = (avatar?: string | null): string =>
   resolveFriendAvatarUrl(avatar);
 
+/**
+ * 切换好友行选中状态。
+ * 使用场景：convCreateStore（PlusPanel / 群邀请）或受控 v-model。
+ */
 function toggle(friendId: number) {
+  if (isControlledFriendSelection.value) {
+    const cur = props.selectedFriendIds!;
+    const idx = cur.indexOf(friendId);
+    const next =
+      idx >= 0 ? cur.filter((_, i) => i !== idx) : [...cur, friendId];
+    emit("update:selectedFriendIds", next);
+    return;
+  }
   convCreateStore.toggleFriendId(friendId);
 }
 </script>

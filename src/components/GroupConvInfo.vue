@@ -31,19 +31,88 @@
 
     <div v-else class="group-conv-info__content">
       <section class="group-section group-section--identity">
-        <div class="group-identity-row">
-          <div class="group-avatar">
-            <img
-              v-if="groupAvatarUrl"
-              :src="groupAvatarUrl"
-              alt="群头像"
-              class="group-avatar__img"
-            />
-            <span v-else>{{ groupName.charAt(0).toUpperCase() }}</span>
+        <div class="group-identity-header">
+          <div class="group-identity-row">
+            <div class="group-avatar">
+              <img
+                v-if="groupAvatarUrl"
+                :src="groupAvatarUrl"
+                alt="群头像"
+                class="group-avatar__img"
+              />
+              <span v-else>{{ groupName.charAt(0).toUpperCase() }}</span>
+            </div>
+            <div class="group-main-info">
+              <div class="group-name">{{ groupName }}</div>
+              <div class="group-id">群号：{{ groupNumber }}</div>
+            </div>
           </div>
-          <div class="group-main-info">
-            <div class="group-name">{{ groupName }}</div>
-            <div class="group-id">群号：{{ groupNumber }}</div>
+          <button
+            type="button"
+            class="group-add-members-trigger"
+            :title="
+              isGroupInvitePickingForThisConv
+                ? '结束选人（左侧恢复会话列表）'
+                : '邀请好友入群'
+            "
+            :aria-label="
+              isGroupInvitePickingForThisConv ? '结束选人' : '邀请好友入群'
+            "
+            :aria-expanded="isGroupInvitePickingForThisConv"
+            @click="toggleGroupInviteSidebar"
+          >
+            <CirclePlus :size="22" :stroke-width="2.2" />
+          </button>
+        </div>
+
+        <div
+          v-if="isGroupInvitePickingForThisConv"
+          class="group-invite-pending"
+        >
+          <div class="group-section-title">待邀请好友</div>
+          <p
+            v-if="groupInvitePendingFriends.length === 0"
+            class="group-invite-pending-hint"
+          >
+            请在左侧好友列表中点选成员，所选将显示在此处
+          </p>
+          <div v-else class="group-invite-chip-list">
+            <span
+              v-for="item in groupInvitePendingFriends"
+              :key="item.friendId"
+              class="group-invite-chip"
+            >
+              {{ item.label }}
+              <button
+                type="button"
+                class="group-invite-chip-remove"
+                :aria-label="`移除 ${item.label}`"
+                @click="removeGroupInviteChip(item.friendId)"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+          <div class="group-add-members-actions">
+            <button
+              type="button"
+              class="group-add-members-btn group-add-members-btn--primary"
+              :disabled="
+                isAddingMembers ||
+                convCreateStore.selectedFriendIds.length === 0
+              "
+              @click="handleConfirmAddMembers"
+            >
+              {{ isAddingMembers ? "提交中..." : "提交邀请" }}
+            </button>
+            <button
+              type="button"
+              class="group-add-members-btn group-add-members-btn--ghost"
+              :disabled="isAddingMembers"
+              @click="cancelGroupInvitePick"
+            >
+              取消选人
+            </button>
           </div>
         </div>
       </section>
@@ -84,7 +153,10 @@
       <section class="group-section">
         <div class="settings-row">
           <span class="settings-label">设为置顶</span>
-          <el-switch v-model="pinConversation" :disabled="archivedConversation" />
+          <el-switch
+            v-model="pinConversation"
+            :disabled="archivedConversation"
+          />
         </div>
         <div class="settings-row">
           <span class="settings-label">归档会话</span>
@@ -168,15 +240,18 @@
               <span
                 v-if="isGroupOwnerMember(m, convOwnerIdForMemberUi)"
                 class="group-member-row__badge is-owner"
-              >群主</span>
+                >群主</span
+              >
               <span
                 v-else-if="isGroupAdminMember(m, convOwnerIdForMemberUi)"
                 class="group-member-row__badge is-admin"
-              >管理员</span>
+                >管理员</span
+              >
               <span
                 v-if="getMemberEffectiveStatus(m) === MemberStatus.MUTED"
                 class="group-member-row__badge is-muted"
-              >禁言</span>
+                >禁言</span
+              >
             </button>
             <p
               v-if="filteredMembersForList.length === 0"
@@ -277,6 +352,7 @@ import {
 import {
   ChevronDown,
   ChevronRight,
+  CirclePlus,
   Pencil,
   Search,
   Trash,
@@ -365,10 +441,15 @@ const groupMemberPopoverRef = ref<{ panelRef: HTMLElement | null } | null>(
 /** 悬浮卡上「发消息 / 加好友」请求进行中；用于防止重复点击。 */
 const memberPopoverActionLoading = ref(false);
 
+/** POST /members 进行中；用于禁用按钮防重复提交。 */
+const isAddingMembers = ref(false);
+
 const editableNotice = ref("");
 const editableMyNickname = ref("");
 const editableGroupRemark = ref("");
-const conversationDisplayStatus = ref<number>(ConversationMemberDisplayStatus.DEFAULT);
+const conversationDisplayStatus = ref<number>(
+  ConversationMemberDisplayStatus.DEFAULT
+);
 
 const initialNotice = ref("");
 const initialMyNickname = ref("");
@@ -387,7 +468,8 @@ const convOwnerIdForMemberUi = computed(() =>
   Number(conversation.value?.convOwnerId || 0)
 );
 const pinConversation = computed({
-  get: () => conversationDisplayStatus.value === ConversationMemberDisplayStatus.PINNED,
+  get: () =>
+    conversationDisplayStatus.value === ConversationMemberDisplayStatus.PINNED,
   set: (nextPinned: boolean) => {
     conversationDisplayStatus.value = nextPinned
       ? ConversationMemberDisplayStatus.PINNED
@@ -395,7 +477,8 @@ const pinConversation = computed({
   },
 });
 const archivedConversation = computed({
-  get: () => conversationDisplayStatus.value === ConversationMemberDisplayStatus.HIDDEN,
+  get: () =>
+    conversationDisplayStatus.value === ConversationMemberDisplayStatus.HIDDEN,
   set: (nextArchived: boolean) => {
     conversationDisplayStatus.value = nextArchived
       ? ConversationMemberDisplayStatus.HIDDEN
@@ -403,10 +486,14 @@ const archivedConversation = computed({
   },
 });
 const displayStatusText = computed(() => {
-  if (conversationDisplayStatus.value === ConversationMemberDisplayStatus.PINNED) {
+  if (
+    conversationDisplayStatus.value === ConversationMemberDisplayStatus.PINNED
+  ) {
     return "已置顶";
   }
-  if (conversationDisplayStatus.value === ConversationMemberDisplayStatus.HIDDEN) {
+  if (
+    conversationDisplayStatus.value === ConversationMemberDisplayStatus.HIDDEN
+  ) {
     return "已归档";
   }
   return "默认显示";
@@ -463,6 +550,38 @@ const filteredMembersForList = computed(() => {
     const nn = (m.userNickname || "").toLowerCase();
     const mn = (m.memberNickname || "").toLowerCase();
     return nn.includes(q) || mn.includes(q) || id.includes(q);
+  });
+});
+
+/**
+ * 当前群内有效成员的 userId 列表。
+ * 使用场景：FriendPickSidebar.excludePeerUserIds，避免重复邀请已在群好友。
+ */
+/** 当前群是否正处于「左侧 FriendPickSidebar（与 PlusPanel 同源）→ 本页待选」流程。 */
+const isGroupInvitePickingForThisConv = computed(
+  () =>
+    convCreateStore.active &&
+    convCreateStore.groupInviteToConvId != null &&
+    props.convId != null &&
+    Number(convCreateStore.groupInviteToConvId) === Number(props.convId)
+);
+
+/**
+ * 待邀请好友展示行（ friendStore 解析展示名）。
+ * 使用场景：群资料「待邀请好友」 chips。
+ */
+const groupInvitePendingFriends = computed(() => {
+  return convCreateStore.selectedFriendIds.map((fid) => {
+    const id = Number(fid);
+    const row = friendStore.friends.find(
+      (f) => Number(f.friendId) === id || Number(f.userId) === id
+    );
+    const label =
+      row?.displayName ||
+      row?.nickname ||
+      row?.remarkName ||
+      `好友 ${id}`;
+    return { friendId: id, label };
   });
 });
 
@@ -758,11 +877,7 @@ const mergeMemberStatusFromCompressedCache = (convId: number) => {
   if (!cm?.length) return;
   members.value = members.value.map((m) => {
     const row = cm.find((c) => Number(c.userId) === Number(m.userId));
-    if (
-      !row ||
-      row.memberStatus === undefined ||
-      row.memberStatus === null
-    ) {
+    if (!row || row.memberStatus === undefined || row.memberStatus === null) {
       return m;
     }
     const cached = Number(row.memberStatus);
@@ -772,8 +887,7 @@ const mergeMemberStatusFromCompressedCache = (convId: number) => {
     ) {
       return { ...m, memberStatus: MemberStatus.MUTED };
     }
-    const hasApi =
-      m.memberStatus !== undefined && m.memberStatus !== null;
+    const hasApi = m.memberStatus !== undefined && m.memberStatus !== null;
     if (!hasApi) {
       return { ...m, memberStatus: cached };
     }
@@ -800,6 +914,82 @@ const toggleMemberSearch = () => {
   isMemberSearchVisible.value = !isMemberSearchVisible.value;
   if (!isMemberSearchVisible.value) {
     memberSearchQuery.value = "";
+  }
+};
+
+/**
+ * 保证好友缓存已拉取。
+ * 使用场景：打开左侧选人流程前 friends 仍为空时补拉 GET /friends。
+ */
+const ensureFriendsLoadedForPick = async () => {
+  if (friendStore.loadingFriends) return;
+  if (friendStore.friends.length > 0) return;
+  try {
+    await friendStore.loadFriends();
+  } catch {
+    toast.error("加载好友列表失败，请稍后重试");
+  }
+};
+
+/**
+ * 切换「左侧 FriendPickSidebar ↔ 会话列表」邀请流程。
+ * 使用场景：身份区右侧 CirclePlus；与发起会话流程互斥。
+ */
+const toggleGroupInviteSidebar = () => {
+  if (!props.convId) return;
+  if (isGroupInvitePickingForThisConv.value) {
+    convCreateStore.exit(false);
+    return;
+  }
+  if (convCreateStore.active && convCreateStore.groupInviteToConvId == null) {
+    convCreateStore.exit(false);
+  }
+  convCreateStore.enterGroupMemberInvite(props.convId, "chat");
+  void ensureFriendsLoadedForPick();
+};
+
+/**
+ * 退出邀请选人并恢复左侧列表。
+ * 使用场景：用户点击「取消选人」。
+ */
+const cancelGroupInvitePick = () => {
+  convCreateStore.exit(false);
+};
+
+/**
+ * 从待邀请 chips 移除一项。
+ * 使用场景： chip 上 × 按钮。
+ */
+const removeGroupInviteChip = (friendId: number) => {
+  convCreateStore.toggleFriendId(friendId);
+};
+
+/**
+ * 将勾选好友写入后端并刷新会话摘要、compressed 成员与当前详情页。
+ * 使用场景：邀请面板点击「添加已选好友」。
+ */
+const handleConfirmAddMembers = async () => {
+  if (!props.convId || isAddingMembers.value) return;
+  const userIds = [...convCreateStore.selectedFriendIds];
+  if (userIds.length < 1) {
+    toast.error("请至少选择 1 位好友");
+    return;
+  }
+  isAddingMembers.value = true;
+  try {
+    const msg = await conversationInfoStore.addGroupMembers(
+      props.convId,
+      userIds
+    );
+    toast.success(msg);
+    convCreateStore.exit(false);
+    await conversationStore.refreshConversationById(props.convId);
+    await conversationStore.loadCompressedCM(props.convId, true);
+    await loadGroupConversationInfo();
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : "添加失败");
+  } finally {
+    isAddingMembers.value = false;
   }
 };
 
@@ -958,7 +1148,9 @@ const syncLocalChangesToPinia = () => {
       summaryPatch.convName = conversation.value.convName;
     }
   }
-  if (conversationDisplayStatus.value !== initialConversationDisplayStatus.value) {
+  if (
+    conversationDisplayStatus.value !== initialConversationDisplayStatus.value
+  ) {
     summaryPatch.displayStatus = conversationDisplayStatus.value;
   }
   if (Object.keys(summaryPatch).length > 0) {
@@ -1036,7 +1228,9 @@ const handleApply = async () => {
         memberPayload.privateDisplayName = normalizedGroupRemark;
       }
     }
-    if (conversationDisplayStatus.value !== initialConversationDisplayStatus.value) {
+    if (
+      conversationDisplayStatus.value !== initialConversationDisplayStatus.value
+    ) {
       memberPayload.displayStatus = conversationDisplayStatus.value;
     }
     /** 群聊备注变更标识；用于提交成功后主动刷新会话摘要，确保 convName 与后端一致。 */
@@ -1080,8 +1274,9 @@ const initEditableFields = () => {
   initialGroupRemark.value =
     conversationStore.getConversationById(Number(props.convId))
       ?.privateDisplayName || "";
-  const displayStatusRaw = conversationStore.getConversationById(Number(props.convId))
-    ?.displayStatus;
+  const displayStatusRaw = conversationStore.getConversationById(
+    Number(props.convId)
+  )?.displayStatus;
   initialConversationDisplayStatus.value =
     Number(displayStatusRaw) === ConversationMemberDisplayStatus.PINNED ||
     Number(displayStatusRaw) === ConversationMemberDisplayStatus.HIDDEN
@@ -1122,6 +1317,14 @@ const loadGroupConversationInfo = async () => {
 watch(
   () => props.convId,
   () => {
+    if (
+      convCreateStore.active &&
+      convCreateStore.groupInviteToConvId != null &&
+      props.convId != null &&
+      Number(convCreateStore.groupInviteToConvId) !== Number(props.convId)
+    ) {
+      convCreateStore.exit(false);
+    }
     isMembersSectionExpanded.value = false;
     isMemberSearchVisible.value = false;
     memberSearchQuery.value = "";
@@ -1140,16 +1343,31 @@ watch(hasPendingChanges, (pending) => {
  */
 const onGroupMembersNeedRefresh = (e: Event) => {
   const d = (e as CustomEvent<{ convId?: number }>).detail;
-  if (props.convId == null || Number(d?.convId) !== Number(props.convId)) return;
+  if (props.convId == null || Number(d?.convId) !== Number(props.convId))
+    return;
   void loadGroupConversationInfo();
 };
 
 onMounted(() => {
-  window.addEventListener(GROUP_CONV_MEMBERS_REFRESH_EVENT, onGroupMembersNeedRefresh);
+  window.addEventListener(
+    GROUP_CONV_MEMBERS_REFRESH_EVENT,
+    onGroupMembersNeedRefresh
+  );
 });
 
 onUnmounted(() => {
-  window.removeEventListener(GROUP_CONV_MEMBERS_REFRESH_EVENT, onGroupMembersNeedRefresh);
+  if (
+    convCreateStore.active &&
+    convCreateStore.groupInviteToConvId != null &&
+    props.convId != null &&
+    Number(convCreateStore.groupInviteToConvId) === Number(props.convId)
+  ) {
+    convCreateStore.exit(false);
+  }
+  window.removeEventListener(
+    GROUP_CONV_MEMBERS_REFRESH_EVENT,
+    onGroupMembersNeedRefresh
+  );
 });
 </script>
 

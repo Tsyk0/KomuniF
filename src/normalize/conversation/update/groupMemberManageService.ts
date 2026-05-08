@@ -38,6 +38,31 @@ export async function removeGroupMemberNormalized(
 }
 
 /**
+ * 批量添加群成员（邀请好友入群）。
+ * 使用场景：GroupConvInfo 勾选好友后提交 POST /conversations/{convId}/members。
+ */
+export async function addGroupMembersNormalized(
+  convId: number,
+  userIds: number[]
+): Promise<string> {
+  if (!Array.isArray(userIds) || userIds.length < 1) {
+    throw new Error("请至少选择 1 位好友");
+  }
+  try {
+    const r = await manageConversationApi.addConversationMembers(
+      convId,
+      userIds
+    );
+    if (r.code !== 200) {
+      throw new Error(r.message || "添加成员失败");
+    }
+    return (r.message || "").trim() || "已发送邀请";
+  } catch (e) {
+    throwNormalizedManageError(e, "添加成员失败，请稍后重试");
+  }
+}
+
+/**
  * 禁言群成员。
  */
 export async function muteGroupMemberNormalized(

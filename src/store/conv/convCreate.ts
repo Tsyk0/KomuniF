@@ -4,6 +4,7 @@ import {
   createOrGetSingleConversationNormalized,
 } from "@/normalize/conversation";
 import { useConvStore } from "@/store/conv/conv";
+import { useFriendStore } from "@/store/friend/showFriend";
 
 export type ConvCreatePanel = "group" | "add-friend" | "search-conv";
 
@@ -18,6 +19,10 @@ export const useConvCreateStore = defineStore("convCreate", {
     selectedFriendIds: [] as number[],
     draftConvName: "",
     savedListView: "chat" as "chat" | "friends",
+    /**
+     * 非空表示当前侧栏选人与 PlusPanel「发起会话」同源，但主区域仍为聊天（群资料邀请成员）。
+     */
+    groupInviteToConvId: null as number | null,
   }),
 
   getters: {
@@ -178,6 +183,7 @@ export const useConvCreateStore = defineStore("convCreate", {
     },
 
     enter(fromListView: "chat" | "friends", resetDraft = false) {
+      this.groupInviteToConvId = null;
       this.savedListView = fromListView;
       this.active = true;
       if (resetDraft) {
@@ -185,8 +191,29 @@ export const useConvCreateStore = defineStore("convCreate", {
       }
     },
 
+    /**
+     * 群资料邀请成员：与 enter 共用侧栏 FriendPickSidebar + selectedFriendIds，但不展示 PlusPanel。
+     */
+    enterGroupMemberInvite(
+      convId: number,
+      fromListView: "chat" | "friends" = "chat"
+    ) {
+      const cid = Number(convId);
+      if (!Number.isFinite(cid) || cid <= 0) return;
+      useFriendStore().setSearchKeyword("");
+      this.savedListView = fromListView;
+      this.active = true;
+      this.groupInviteToConvId = cid;
+      this.selectedFriendIds = [];
+    },
+
     exit(resetDraft = false) {
+      const wasGroupInvite = this.groupInviteToConvId != null;
       this.active = false;
+      this.groupInviteToConvId = null;
+      if (wasGroupInvite) {
+        useFriendStore().setSearchKeyword("");
+      }
       if (resetDraft) {
         this.resetDraft();
       }
