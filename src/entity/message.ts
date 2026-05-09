@@ -38,6 +38,8 @@ export interface DisplayMessage extends RealMessage {
     fileMimeType?: string | null;
     thumbnailUrl?: string | null;
     downloadUrl?: string | null;
+    /** 内联预览/播放（/play）；image / video 有值，普通 file 通常无 */
+    playUrl?: string | null;
 }
 
 // 消息类型和状态常量

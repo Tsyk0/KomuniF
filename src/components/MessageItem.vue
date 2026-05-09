@@ -44,7 +44,7 @@
             <template v-if="isImageMessage">
               <img
                 class="message-image-thumb"
-                :src="resolvedThumbnailUrl"
+                :src="resolvedImageInlineSrc"
                 alt="图片消息"
                 @click="handleOpenImage"
               />
@@ -199,7 +199,7 @@
             <template v-if="isImageMessage">
               <img
                 class="message-image-thumb"
-                :src="resolvedThumbnailUrl"
+                :src="resolvedImageInlineSrc"
                 alt="图片消息"
                 @click="handleOpenImage"
               />
@@ -356,7 +356,9 @@ import {
 } from "@/commons/utils/avatar-url";
 import {
   buildFileDownloadUrl,
+  buildFilePlayUrl,
   buildFileThumbnailUrl,
+  resolveFileResourceUrl,
 } from "@/commons/utils/file-url";
 import { extractByTheWayTextFromMessageContent } from "@/commons/utils/message-by-the-way";
 import { useShowMessageStore } from "@/store/message/showMessage";
@@ -943,17 +945,46 @@ const isFileLikeMessage = computed(() => props.message.messageType === "file");
 const isAttachmentMessage = computed(
   () => isImageMessage.value || isVideoMessage.value || isFileLikeMessage.value
 );
+/** 附件下载链接（/download）；用于 file 卡片与「保存」行为，不经视频/img 内联 */
 const resolvedDownloadUrl = computed(() => {
   const directUrl = props.message.downloadUrl;
   if (directUrl) return directUrl;
   const fileId = props.message.fileId || parsedFilePayload.value?.fileId;
   return fileId ? buildFileDownloadUrl(fileId) : "";
 });
+/**
+ * 内联预览/播放地址（/play）；image / video 使用。
+ * 使用场景：视频 `<video src>`、图片放大走 axios 拉 blob；勿用于触发浏览器下载。
+ */
+const resolvedPlayUrl = computed(() => {
+  if (!isImageMessage.value && !isVideoMessage.value) return "";
+  const directUrl = props.message.playUrl;
+  if (directUrl) return directUrl;
+  const fileId = props.message.fileId || parsedFilePayload.value?.fileId;
+  return fileId ? buildFilePlayUrl(fileId) : "";
+});
+/** 解析后的播放 URL，供 `<video>` 直接 Range 拉流（可与 API 基地址拼接） */
+const resolvedPlayUrlForVideo = computed(() =>
+  resolveFileResourceUrl(resolvedPlayUrl.value)
+);
+/** 解析后的下载 URL，供 `window.open` 等与内联播放分离 */
+const resolvedDownloadUrlResolved = computed(() =>
+  resolveFileResourceUrl(resolvedDownloadUrl.value)
+);
 const resolvedThumbnailUrl = computed(() => {
   const directUrl = props.message.thumbnailUrl;
   if (directUrl) return directUrl;
   const fileId = props.message.fileId || parsedFilePayload.value?.fileId;
   return fileId ? buildFileThumbnailUrl(fileId) : "";
+});
+/**
+ * 图片气泡内联 src，优先 `/play`（与后端 inline 一致）；无 play 时回退缩略图。
+ * 使用场景：会话列表中图片消息小块预览；视频消息仍用 {@link resolvedVideoPreviewUrl}。
+ */
+const resolvedImageInlineSrc = computed(() => {
+  const play = resolveFileResourceUrl(resolvedPlayUrl.value);
+  if (play) return play;
+  return resolvedThumbnailUrl.value;
 });
 /**
  * 视频消息列表缩略图地址。
@@ -990,16 +1021,16 @@ const attachmentByTheWayText = computed(() =>
 
 /**
  * 打开图片原图。
- * 作用场景：图片消息点击缩略图后查看原图。
+ * 作用场景：图片消息点击缩略图后通过 `/play` 查看原图（axios + Bearer）。
  */
 const handleOpenImage = () => {
-  if (!resolvedDownloadUrl.value) return;
-  void imagePreviewStore.openPreviewByDownloadUrl(resolvedDownloadUrl.value);
+  if (!resolvedPlayUrl.value) return;
+  void imagePreviewStore.openPreviewByPlayUrl(resolvedPlayUrl.value);
 };
 
 /** 全屏遮罩是否显示；与 videoDialogSrc 配合，仅渲染 video 本体（无 el-dialog 白底标题栏） */
 const videoDialogVisible = ref(false);
-/** 遮罩内 video 的 src，指向 /MIO/file/{fileId}/download */
+/** 遮罩内 video 的 src，须为 `/play` 以便服务端 HTTP Range 拖动进度 */
 const videoDialogSrc = ref("");
 const videoOverlayRef = ref<HTMLElement | null>(null);
 
@@ -1017,8 +1048,8 @@ const closeVideoPlayerOverlay = () => {
  * 使用场景：用户点击缩略图后在暗色背景上居中展示原生 video（仅 controls，无外层卡片）。
  */
 const handleOpenVideo = () => {
-  if (!resolvedDownloadUrl.value) return;
-  videoDialogSrc.value = resolvedDownloadUrl.value;
+  if (!resolvedPlayUrlForVideo.value) return;
+  videoDialogSrc.value = resolvedPlayUrlForVideo.value;
   videoDialogVisible.value = true;
   void nextTick(() => {
     videoOverlayRef.value?.focus();
@@ -1030,8 +1061,8 @@ const handleOpenVideo = () => {
  * 作用场景：file 类型消息点击卡片后在新窗口打开下载链接。
  */
 const handleDownloadFile = () => {
-  if (!resolvedDownloadUrl.value) return;
-  window.open(resolvedDownloadUrl.value, "_blank");
+  if (!resolvedDownloadUrlResolved.value) return;
+  window.open(resolvedDownloadUrlResolved.value, "_blank");
 };
 
 // 依赖好友列表，使修改备注后消息中的对方名称实时更新（优先级：群昵称 > 好友备注 > 用户昵称）

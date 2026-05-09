@@ -1,12 +1,12 @@
-import { fetchOriginImageBlobApi } from "@/apis/file/preview";
+import { fetchInlinePreviewBlobApi } from "@/apis/file/preview";
 
 /**
- * 获取原图并转换成浏览器可直接展示的 object URL。
- * 使用场景：消息图片点击放大预览时，先通过后端下载接口拉取原图。
+ * 通过 /play 拉取图片并转成 object URL（保留 axios 鉴权头）。
+ * 使用场景：消息图片点击放大预览；禁止改用 /download 以免与附件下载语义混淆。
  */
 export async function fetchOriginImagePreviewUrlNormalized(
-  downloadUrl: string
+  playUrl: string
 ): Promise<string> {
-  const imageBlob = await fetchOriginImageBlobApi(downloadUrl);
+  const imageBlob = await fetchInlinePreviewBlobApi(playUrl);
   return URL.createObjectURL(imageBlob);
 }

@@ -77,6 +77,8 @@ export interface MessageSummaryDTO {
   fileMimeType?: string | null;
   thumbnailUrl?: string | null;
   downloadUrl?: string | null;
+  /** 内联播放/预览 URL（GET …/play）；image / video */
+  playUrl?: string | null;
 }
 
 /**

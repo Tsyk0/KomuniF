@@ -182,6 +182,7 @@ export function mapMessageSummaryToDisplayMessage(
     fileMimeType: message.fileMimeType ?? null,
     thumbnailUrl: message.thumbnailUrl ?? null,
     downloadUrl: message.downloadUrl ?? null,
+    playUrl: message.playUrl ?? null,
   };
 }
 

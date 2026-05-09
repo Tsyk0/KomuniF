@@ -45,7 +45,11 @@ export const useFileUploadStore = defineStore("fileUpload", () => {
   }) => {
     startUploadState(params.file.name);
     try {
-      const fileHash = await calculateFileSha256Normalized(params.file);
+      const fileHash = await calculateFileSha256Normalized(params.file, {
+        onProgress: (ratio) => {
+          progress.value = Math.max(1, Math.min(4, Math.floor(ratio * 4)));
+        },
+      });
       progress.value = 5;
       const result = await uploadFileByChunksNormalized({
         file: params.file,

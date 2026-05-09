@@ -40,6 +40,13 @@ export function mapSearchSummaryToDisplayMessage(
     senderAvatar: dto.senderAvatar == null ? null : dto.senderAvatar,
     senderName: dto.displayName,
     isSentByMe: dto.isSentByMe,
+    fileId: dto.fileId ?? null,
+    fileName: dto.fileName ?? null,
+    fileSize: dto.fileSize ?? null,
+    fileMimeType: dto.fileMimeType ?? null,
+    thumbnailUrl: dto.thumbnailUrl ?? null,
+    downloadUrl: dto.downloadUrl ?? null,
+    playUrl: dto.playUrl ?? null,
   };
 }
 

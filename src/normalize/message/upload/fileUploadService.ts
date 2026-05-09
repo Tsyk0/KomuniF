@@ -4,6 +4,8 @@ import {
   initFileUploadApi,
   uploadChunkApi,
 } from "@/apis/file/upload";
+import { sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex } from "@noble/hashes/utils.js";
 
 export interface UploadFileByChunksNormalizedParams {
   file: File;
@@ -59,16 +61,40 @@ const uploadSingleChunkWithRetry = async (
   throw lastError;
 };
 
+/** 单次从磁盘读入参与哈希的字节数；避免 `file.arrayBuffer()` 整文件进内存导致 GB 级 OOM 或 NotReadableError */
+const FILE_HASH_READ_CHUNK_BYTES = 8 * 1024 * 1024;
+
+export interface CalculateFileSha256Options {
+  /** 已读比例 0~1；用于大文件哈希阶段更新进度条，避免长时间卡在 1% */
+  onProgress?: (ratio: number) => void;
+}
+
 /**
- * 计算文件 SHA-256。
- * 使用场景：上传 init/complete 阶段用于秒传判定与完整性校验。
+ * 分块增量计算文件 SHA-256（结果与整包 `crypto.subtle.digest` 一致）。
+ * 使用场景：上传 init/complete 秒传与校验；禁止对大文件使用一次性 `arrayBuffer()`。
  */
-export const calculateFileSha256Normalized = async (file: File): Promise<string> => {
-  const fileBuffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest("SHA-256", fileBuffer);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
+export const calculateFileSha256Normalized = async (
+  file: File,
+  options?: CalculateFileSha256Options
+): Promise<string> => {
+  const hasher = sha256.create();
+  let offset = 0;
+  const { size } = file;
+  let iter = 0;
+  while (offset < size) {
+    const end = Math.min(offset + FILE_HASH_READ_CHUNK_BYTES, size);
+    const chunkBlob = file.slice(offset, end);
+    const buf = await chunkBlob.arrayBuffer();
+    hasher.update(new Uint8Array(buf));
+    offset = end;
+    iter += 1;
+    if (iter % 8 === 0) {
+      options?.onProgress?.(size > 0 ? offset / size : 1);
+      await new Promise<void>((r) => setTimeout(r, 0));
+    }
+  }
+  options?.onProgress?.(1);
+  return bytesToHex(hasher.digest());
 };
 
 /**

@@ -92,6 +92,7 @@ export const useRecallMessageStore = defineStore("recallMessage", () => {
       fileMimeType: null,
       thumbnailUrl: null,
       downloadUrl: null,
+      playUrl: null,
     };
     await patchMessageInDB(input.messageId, {
       isRecalled: true,

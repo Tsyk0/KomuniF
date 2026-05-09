@@ -1,11 +1,11 @@
 import service from "@/apis/service";
 
 /**
- * 获取原图二进制数据。
- * 使用场景：点击聊天图片缩略图后，请求原图用于弹层预览。
+ * 获取内联预览资源（如图片 /play）的二进制数据。
+ * 使用场景：聊天图片点击放大后走 Bearer 鉴权拉取原图；URL 须为 /play 而非 /download。
  */
-export function fetchOriginImageBlobApi(downloadUrl: string) {
-  return service.get(downloadUrl, {
+export function fetchInlinePreviewBlobApi(playUrl: string) {
+  return service.get(playUrl, {
     responseType: "blob",
   }) as unknown as Promise<Blob>;
 }

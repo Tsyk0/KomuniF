@@ -12,14 +12,14 @@ export const useImagePreviewStore = defineStore("imagePreview", () => {
 
   /**
    * 打开原图预览。
-   * 使用场景：消息列表点击图片缩略图后，走 normalize 请求原图并展示弹层。
+   * 使用场景：消息列表点击图片缩略图后，请求 `/play` 原图并展示弹层（非 `/download`）。
    */
-  const openPreviewByDownloadUrl = async (downloadUrl: string) => {
-    if (!downloadUrl) return;
+  const openPreviewByPlayUrl = async (playUrl: string) => {
+    if (!playUrl) return;
     loading.value = true;
     error.value = null;
     try {
-      const previewUrl = await fetchOriginImagePreviewUrlNormalized(downloadUrl);
+      const previewUrl = await fetchOriginImagePreviewUrlNormalized(playUrl);
       if (currentPreviewObjectUrl.value) {
         URL.revokeObjectURL(currentPreviewObjectUrl.value);
       }
@@ -54,7 +54,7 @@ export const useImagePreviewStore = defineStore("imagePreview", () => {
     imageUrl,
     loading,
     error,
-    openPreviewByDownloadUrl,
+    openPreviewByPlayUrl,
     closePreview,
   };
 });

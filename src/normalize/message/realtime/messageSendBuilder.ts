@@ -2,6 +2,7 @@ import type { DisplayMessage } from "@/entity/message";
 import type { MessageDisplayMemberDTO } from "@/types/dto/conversation";
 import {
   buildFileDownloadUrl,
+  buildFilePlayUrl,
   buildFileThumbnailUrl,
 } from "@/commons/utils/file-url";
 
@@ -137,5 +138,9 @@ export function buildTempFileMessage(input: TempFileMessageBuildInput): DisplayM
     fileMimeType: input.mimeType,
     thumbnailUrl: input.messageType === "image" ? buildFileThumbnailUrl(input.fileId) : null,
     downloadUrl: buildFileDownloadUrl(input.fileId),
+    playUrl:
+      input.messageType === "image" || input.messageType === "video"
+        ? buildFilePlayUrl(input.fileId)
+        : null,
   };
 }

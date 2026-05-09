@@ -215,6 +215,7 @@ export function mapRealtimeIncomingToDisplayMessage(
     fileMimeType: payload.fileMimeType ?? null,
     thumbnailUrl: payload.thumbnailUrl ?? null,
     downloadUrl: payload.downloadUrl ?? null,
+    playUrl: payload.playUrl ?? null,
     // 统一判定是否本人发送，供 UI 左右布局与状态渲染使用。
     isSentByMe: senderId === context.currentUserId,
   };
