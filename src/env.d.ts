@@ -15,7 +15,12 @@ interface ImportMetaEnv {
   readonly VITE_WS_BASE_URL?: string
   readonly VITE_APP_TITLE: string
   readonly VITE_API_TIMEOUT?: string
-  // 可以在这里添加更多环境变量...
+  /** 控制台 TRTC 应用的 SDKAppID，可暴露给前端；UserSig 必须由后端签发 */
+  readonly VITE_TRTC_SDK_APP_ID?: string
+  /** 申请 UserSig 的 HTTP 路径（相对 VITE_API_BASE_URL），默认 `/trtc/user-sig` */
+  readonly VITE_API_TRTC_USER_SIG_PATH?: string
+  /** 语音转文字上传接口路径，默认 `/api/tencent/asr/transcribe` */
+  readonly VITE_API_ASR_TRANSCRIBE_PATH?: string
 }
 
 interface ImportMeta {

@@ -8,8 +8,10 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import '@/assets/directives/ripple/style.css'
 import './assets/styles/toast.css'
+import './assets/styles/tuikit-callkit-overrides.css'
 import App from './App.vue'
 import router from './router'
+import { install as installTUICallKit } from '@trtc/calls-uikit-vue'
 import { useThemeStore } from './store/theme/theme'
 import { bindConversationRealtimeLastMessageListener } from './store/conv/conv'
 import { bindGroupConvMemberManageRealtimeListener } from '@/interactions/realtime/groupConvMemberManageInteraction'
@@ -25,6 +27,9 @@ bindGroupConvMemberManageRealtimeListener()
 
 // 使用路由
 app.use(router)
+
+// 官方 TUICallKit：通话信令走腾讯 IM + CallKit（控制台须开通 IM + 音视频通话）
+app.use(installTUICallKit)
 app.directive('ripple', rippleDirective)
 
 // 使用Element Plus UI库

@@ -1,0 +1,30 @@
+/**
+ * TUICallKit（@trtc/calls-uikit-vue）外观覆盖。
+ * 场景：默认样式通过 JS 注入，关键属性使用 !important 保证覆盖顺序。
+ */
+
+@keyframes komunif-tuikit-call-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0.96;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* PC：外层圆角去掉；全屏主面板从右侧滑入（最小化后不重复大幅位移动画） */
+.TUICallKit-desktop {
+  border-radius: 0 !important;
+}
+
+.TUICallKit-desktop:not(.miniMized) {
+  animation: komunif-tuikit-call-slide-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+/* 移动：主通话区域无圆角 + 同样滑入 */
+.TUICallKit-mobile .singCall {
+  border-radius: 0 !important;
+  animation: komunif-tuikit-call-slide-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}

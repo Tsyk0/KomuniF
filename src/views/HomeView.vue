@@ -214,7 +214,10 @@
           :friend-id="currentFriendId"
           :show-back-button="false"
           @back="clearCurrentConversation"
+          @call="handleChatTrtcCall"
         />
+
+        <TUICallKitShell />
       </div>
     </div>
 
@@ -247,10 +250,14 @@ import { useShowMessageStore } from "@/store/message/showMessage";
 import { useConvCreateStore } from "@/store/conv/convCreate";
 import { useSystemNotificationsStore } from "@/store/notification/systemNotifications";
 import { useAppBootstrapStore } from "@/store/app/bootstrap";
+import { komuniUserIdToTrtcUserId } from "@/commons/utils/tuikit-user-id";
+import { useTUICallKitSessionStore } from "@/store/trtc/tuikitSession";
+import { TUICallKitAPI, TUICallType } from "@trtc/calls-uikit-vue";
 import UserProfileEdit from "@/components/UserProfileEdit.vue";
 import MoreOptions from "@/components/MoreOptions.vue";
 import ChangePassword from "@/components/ChangePassword.vue";
 import ChatContainer from "@/components/ChatContainer.vue";
+import TUICallKitShell from "@/components/TUICallKitShell.vue";
 import ConversationList from "@/components/ConversationList.vue";
 import FriendInfo from "@/components/FriendInfo.vue";
 import FriendList from "@/components/FriendList.vue";
@@ -284,6 +291,26 @@ const showMessageStore = useShowMessageStore();
 const convCreateStore = useConvCreateStore();
 const notificationStore = useSystemNotificationsStore();
 const appBootstrapStore = useAppBootstrapStore();
+const tuikitSessionStore = useTUICallKitSessionStore();
+/**
+ * 单聊头部「视频通话」：走 TUICallKitAPI.calls（IM 信令）。
+ * 场景：须与 `TUICallKitShell` 共用同一静态导入的 uikit 模块，避免动态 import 拆 chunk 后出现两套 CallService 单例。
+ * 场景：引擎实例可能在内部 login 完成前就存在，须以 `callKitSessionReady`（init 整链结束）为准，否则会报「尚未完成初始化或登录」。
+ */
+const handleChatTrtcCall = async (payload) => {
+  if (!tuikitSessionStore.callKitSessionReady) {
+    toast.error("通话正在初始化或未就绪，请稍候（需 UserSig 成功且 init 完成）");
+    return;
+  }
+  try {
+    await TUICallKitAPI.calls({
+      userIDList: [komuniUserIdToTrtcUserId(payload.peerUserId)],
+      type: TUICallType.VIDEO_CALL,
+    });
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : "发起通话失败");
+  }
+};
 
 const getAuthUserIdOr = (fallback) => {
   const authUser = authStore.user;
