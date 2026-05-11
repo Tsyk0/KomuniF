@@ -706,6 +706,61 @@ html.night-mode .message-input-container .mic-button:hover {
   color: #ffffff;
 }
 
+html.night-mode
+  .message-input-container
+  .asr-mic-button.asr-mic-button--listening {
+  background-color: #ef4444;
+  color: #ffffff;
+  animation: asr-mic-pulse-night 1s ease-in-out infinite;
+}
+
+html.night-mode
+  .message-input-container
+  .asr-mic-button.asr-mic-button--listening:hover {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+html.night-mode
+  .message-input-container
+  .asr-mic-button.asr-mic-button--listening:active {
+  background-color: #b91c1c;
+  color: #ffffff;
+}
+
+@keyframes asr-mic-pulse-night {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(239 68 68 / 0.45);
+  }
+  50% {
+    opacity: 0.92;
+    box-shadow: 0 0 0 6px rgb(239 68 68 / 0);
+  }
+}
+
+html.night-mode
+  .message-input-container
+  .asr-mic-button.asr-mic-button--asr-busy {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+html.night-mode
+  .message-input-container
+  .asr-mic-button.asr-mic-button--asr-error {
+  background-color: rgb(251 146 60 / 0.22);
+  color: #fdba74;
+}
+
+html.night-mode
+  .message-input-container
+  .asr-mic-button.asr-mic-button--asr-error:hover {
+  background-color: rgb(251 146 60 / 0.35);
+  color: #fed7aa;
+}
+
 /* 输入框包装器 */
 html.night-mode .message-input-container .message-input-wrapper {
   flex: 1;
@@ -759,6 +814,7 @@ html.night-mode .message-input-container .message-input-el .el-input__inner:focu
 html.night-mode .message-input-container .attachment-trigger-wrap {
   display: inline-flex;
   align-items: center;
+  gap: 2px;
 }
 
 html.night-mode .message-input-container .message-input-el .el-input__inner::placeholder {

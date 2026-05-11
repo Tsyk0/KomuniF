@@ -784,6 +784,52 @@
   color: #ffffff;
 }
 
+/* 讯飞实时转写：识别中（红色闪烁提示） */
+.message-input-container .asr-mic-button.asr-mic-button--listening {
+  background-color: #ef4444;
+  color: #ffffff;
+  animation: asr-mic-pulse 1s ease-in-out infinite;
+}
+
+.message-input-container .asr-mic-button.asr-mic-button--listening:hover {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.message-input-container .asr-mic-button.asr-mic-button--listening:active {
+  background-color: #b91c1c;
+  color: #ffffff;
+}
+
+@keyframes asr-mic-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(239 68 68 / 0.45);
+  }
+  50% {
+    opacity: 0.92;
+    box-shadow: 0 0 0 6px rgb(239 68 68 / 0);
+  }
+}
+
+/* 连接中 / 请求权限：弱化不可点状态 */
+.message-input-container .asr-mic-button.asr-mic-button--asr-busy {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* 上次出错：可点击重试 */
+.message-input-container .asr-mic-button.asr-mic-button--asr-error {
+  background-color: rgb(251 146 60 / 0.35);
+  color: #c2410c;
+}
+
+.message-input-container .asr-mic-button.asr-mic-button--asr-error:hover {
+  background-color: rgb(251 146 60 / 0.5);
+  color: #9a3412;
+}
+
 /* 输入框包装器 */
 .message-input-container .message-input-wrapper {
   background:transparent !important;
@@ -856,6 +902,7 @@
 .message-input-container .attachment-trigger-wrap {
   display: inline-flex;
   align-items: center;
+  gap: 2px;
 }
 
 .message-input-container .message-input-el .el-input__inner::placeholder {

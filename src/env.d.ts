@@ -21,6 +21,14 @@ interface ImportMetaEnv {
   readonly VITE_API_TRTC_USER_SIG_PATH?: string
   /** 语音转文字上传接口路径，默认 `/api/tencent/asr/transcribe` */
   readonly VITE_API_ASR_TRANSCRIBE_PATH?: string
+  /**
+   * 讯飞「实时语音转写大模型」WebSocket 地址（默认官方 wss）。
+   * 密钥暴露在打包产物中有泄露风险，生产环境建议由后端代签。
+   */
+  readonly VITE_IFLYTEK_RTASR_WSS_URL?: string
+  readonly VITE_IFLYTEK_APP_ID?: string
+  readonly VITE_IFLYTEK_ACCESS_KEY_ID?: string
+  readonly VITE_IFLYTEK_ACCESS_KEY_SECRET?: string
 }
 
 interface ImportMeta {

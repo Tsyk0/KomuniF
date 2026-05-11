@@ -281,6 +281,32 @@
 
               <div class="attachment-trigger-wrap">
                 <button
+                  type="button"
+                  class="action-button asr-mic-button"
+                  :class="{
+                    'asr-mic-button--listening': asrPhase === 'live',
+                    'asr-mic-button--asr-busy':
+                      asrPhase === 'mic' || asrPhase === 'ws',
+                    'asr-mic-button--asr-error': asrPhase === 'error',
+                  }"
+                  :title="asrMicTitle"
+                  :aria-label="asrMicTitle"
+                  :disabled="
+                    composerDisabled ||
+                    !asrSupported ||
+                    asrPhase === 'mic' ||
+                    asrPhase === 'ws'
+                  "
+                  @click="toggleAsrMic"
+                >
+                  <Mic
+                    :size="22"
+                    :stroke-width="2.2"
+                    alt="语音转文字"
+                    aria-hidden="true"
+                  />
+                </button>
+                <button
                   class="action-button attachment-button"
                   title="附件"
                   type="button"
@@ -304,7 +330,7 @@
               type="button"
               :disabled="composerDisabled"
             >
-              <Mic :size="22" :stroke-width="2.2" />
+              <AudioLines :size="22" :stroke-width="2.2" />
             </button>
           </div>
         </div>
@@ -380,7 +406,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from "vue";
-import { MessageCircleDashed, Mic, Paperclip, Smile } from "lucide-vue-next";
+import {
+  AudioLines,
+  MessageCircleDashed,
+  Mic,
+  Paperclip,
+  Smile,
+} from "lucide-vue-next";
 import { CircleEllipsis, Search, Video, ChevronsDown } from "lucide-vue-next";
 import { useShowMessageStore } from "@/store/message/showMessage";
 import { useComposerReplyStore } from "@/store/message/composerReply";
@@ -421,6 +453,7 @@ import { useFriendStore } from "@/store/friend/showFriend";
 import type { User } from "@/entity/user";
 import toast from "@/commons/utils/toast";
 import { MemberStatus, MemberRole } from "@/entity/conversation-member";
+import { useIflytekRtasrLlm } from "@/composables/useIflytekRtasrLlm";
 
 // Store
 const showMessageStore = useShowMessageStore();
@@ -474,10 +507,6 @@ const isCurrentUserMutedInGroup = computed(() => {
 });
 
 const composerDisabled = computed(() => isCurrentUserMutedInGroup.value);
-
-const composerPlaceholder = computed(() =>
-  isCurrentUserMutedInGroup.value ? "您已被禁言，无法发送消息" : "输入消息..."
-);
 
 const conversationDisplayName = computed(() => {
   return getConversationDisplayName(currentConversation.value);
@@ -533,6 +562,75 @@ const imagePreviewTransformStyle = computed(() => ({
   transform: `translate(${previewOffsetX.value}px, ${previewOffsetY.value}px) scale(${previewScale.value})`,
 }));
 const messageText = ref("");
+
+const {
+  isSupported: asrSupported,
+  isListening: asrListening,
+  phase: asrPhase,
+  startListening: startSpeechAsr,
+  stopListening: stopSpeechAsr,
+  dispose: disposeSpeechAsr,
+} = useIflytekRtasrLlm({
+  onFullText: (text) => {
+    messageText.value = text;
+  },
+  onNotify: (msg) => toast.error(msg),
+});
+
+/**
+ * 输入框占位文案：禁言提示 / 语音听写等待态 / 默认。
+ * 使用场景：`el-input` 的 placeholder；听写中且尚无文字时引导用户开口。
+ */
+const composerPlaceholder = computed(() => {
+  if (isCurrentUserMutedInGroup.value) return "您已被禁言，无法发送消息";
+  if (asrListening.value && !messageText.value.trim()) {
+    if (asrPhase.value === "mic") return "请求麦克风权限…";
+    if (asrPhase.value === "ws") return "连接语音识别…";
+    return "等待语音";
+  }
+  return "输入消息...";
+});
+
+/**
+ * 语音听写按钮的可访问名称与悬浮提示。
+ * 使用场景：麦克风按钮 `title` / `aria-label`。
+ */
+const asrMicTitle = computed(() => {
+  if (!asrSupported.value)
+    return "语音输入未配置（请在 .env 中填写讯飞实时转写大模型凭证）";
+  switch (asrPhase.value) {
+    case "mic":
+      return "⏳ 请求麦克风权限…";
+    case "ws":
+      return "🔌 连接语音识别…";
+    case "live":
+      return "🔴 停止语音输入";
+    case "error":
+      return "⚠️ 点击重试语音输入";
+    default:
+      return "🎤 开始语音输入";
+  }
+});
+
+/**
+ * 切换讯飞实时语音转写（WebSocket + 麦克风 PCM）。
+ * 使用场景：点击 `asr-mic-button`；识别中再次点击停止并保持输入框已有文字。
+ */
+const toggleAsrMic = () => {
+  if (composerDisabled.value) return;
+  if (!asrSupported.value) {
+    toast.error(
+      "语音输入不可用：请在环境变量中配置 VITE_IFLYTEK_APP_ID、VITE_IFLYTEK_ACCESS_KEY_ID、VITE_IFLYTEK_ACCESS_KEY_SECRET"
+    );
+    return;
+  }
+  if (asrPhase.value === "live") {
+    stopSpeechAsr();
+    return;
+  }
+  void startSpeechAsr(messageText.value);
+};
+
 const isSending = ref(false);
 const isSearchOpen = ref(false);
 const savedScrollTop = ref(0);
@@ -1891,6 +1989,7 @@ const cleanupWebSocketListeners = () => {
 watch(
   () => props.convId,
   (newConvId, oldConvId) => {
+    disposeSpeechAsr();
     console.log("ChatContainer: 会话ID变化:", {
       旧ID: oldConvId,
       新ID: newConvId,
