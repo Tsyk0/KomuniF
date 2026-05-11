@@ -389,6 +389,36 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 }
 
+/* 通话摘要（messageType rtc）：左侧图标 + 右侧文案 */
+.message-item .message-rtc-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
+  min-width: 0;
+}
+
+.message-item .message-rtc-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: inherit;
+  opacity: 0.92;
+}
+
+.message-item .message-rtc-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+.message-item .sent .message-rtc-text {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
 .message-image-thumb {
   display: block;
   width: 100%;

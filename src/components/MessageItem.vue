@@ -87,6 +87,17 @@
                 </div>
               </button>
             </template>
+            <template v-else-if="isRtcMessage">
+              <div class="message-rtc-row">
+                <Video
+                  class="message-rtc-icon"
+                  :size="20"
+                  :stroke-width="2.2"
+                  aria-hidden="true"
+                />
+                <span class="message-rtc-text">{{ message.messageContent }}</span>
+              </div>
+            </template>
             <div v-else class="message-text">{{ message.messageContent }}</div>
             <div
               v-if="isAttachmentMessage && attachmentByTheWayText"
@@ -107,6 +118,7 @@
             <AtSign :size="22" :stroke-width="2.2" />
           </button>
           <button
+            v-if="!isRtcMessage"
             type="button"
             class="message-reply-btn"
             title="回复"
@@ -116,7 +128,7 @@
             <Reply :size="22" :stroke-width="2.2" />
           </button>
           <button
-            v-if="canRecallCurrentMessage"
+            v-if="canRecallCurrentMessage && !isRtcMessage"
             type="button"
             class="message-recall-btn"
             :disabled="recallLoading"
@@ -156,7 +168,7 @@
         <div class="message-bubble-row message-bubble-row--self">
           <!-- 本人消息：气泡左侧从左到右 撤回 → 回复 → @（与他人侧 @→回复→撤回 中心对称） -->
           <button
-            v-if="canRecallCurrentMessage"
+            v-if="canRecallCurrentMessage && !isRtcMessage"
             type="button"
             class="message-recall-btn message-recall-btn--self"
             :disabled="recallLoading"
@@ -167,6 +179,7 @@
             <Trash :size="22" :stroke-width="2.2" />
           </button>
           <button
+            v-if="!isRtcMessage"
             type="button"
             class="message-reply-btn message-reply-btn--self"
             title="回复"
@@ -241,6 +254,17 @@
                   </div>
                 </div>
               </button>
+            </template>
+            <template v-else-if="isRtcMessage">
+              <div class="message-rtc-row">
+                <Video
+                  class="message-rtc-icon"
+                  :size="20"
+                  :stroke-width="2.2"
+                  aria-hidden="true"
+                />
+                <span class="message-rtc-text">{{ message.messageContent }}</span>
+              </div>
             </template>
             <div v-else class="message-text">{{ message.messageContent }}</div>
             <div
@@ -349,7 +373,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, watchEffect, nextTick } from "vue";
-import { AtSign, Play, Reply, Trash, X } from "lucide-vue-next";
+import { AtSign, Play, Reply, Trash, Video, X } from "lucide-vue-next";
 import {
   normalizeAvatarUrl,
   normalizeConversationAvatarUrl,
@@ -465,11 +489,20 @@ const isSentByMe = computed(() => props.message.isSentByMe);
 const recallLoading = computed(() => !!props.recallLoading);
 
 /**
+ * 是否为音视频通话摘要（后端 messageType `rtc`，与附件类型 `video` 无关）。
+ * 使用场景：气泡内左侧 Video 图标 + 摘要文案；隐藏回复/撤回。
+ */
+const isRtcMessage = computed(
+  () => (props.message.messageType || "").toLowerCase() === "rtc"
+);
+
+/**
  * 判断当前消息是否可撤回。
  * 使用场景：控制消息操作区是否显示撤回按钮。
  */
 const canRecallCurrentMessage = computed(() => {
   if (props.message.isRecalled) return false;
+  if (isRtcMessage.value) return false;
   const currentUserId = Number(props.currentUserId);
   if (!Number.isFinite(currentUserId) || currentUserId <= 0) return false;
 

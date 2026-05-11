@@ -11,6 +11,10 @@ import { fetchTrtcUserSigApi } from "@/apis/tencent/trtc";
 import toast from "@/commons/utils/toast";
 import { waitForTUICallKitImReady } from "@/commons/utils/wait-for-tuikit-im-ready";
 import { useTUICallKitSessionStore } from "@/store/trtc/tuikitSession";
+import {
+  installKomuniCallRtcSummaryListeners,
+  uninstallKomuniCallRtcSummaryListeners,
+} from "@/trtc/komuni-call-summary";
 
 const authStore = useUserStore();
 const tuikitSession = useTUICallKitSessionStore();
@@ -41,6 +45,7 @@ async function bootstrap(): Promise<void> {
     await waitForTUICallKitImReady();
     ready.value = true;
     tuikitSession.setCallKitSessionReady(true);
+    installKomuniCallRtcSummaryListeners();
   } catch (e) {
     ready.value = false;
     tuikitSession.setCallKitSessionReady(false);
@@ -56,6 +61,7 @@ async function bootstrap(): Promise<void> {
 async function teardown(): Promise<void> {
   ready.value = false;
   tuikitSession.setCallKitSessionReady(false);
+  uninstallKomuniCallRtcSummaryListeners();
   try {
     await TUICallKitAPI.destroyed();
   } catch {

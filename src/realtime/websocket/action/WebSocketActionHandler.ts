@@ -73,24 +73,46 @@ export class WebSocketActionHandler {
           request.replyToMessageId,
           atUserIds
         );
+      case "rtc":
+        // 通话摘要由流程自动生成：不传 reply / @（第 4、5 参 undefined）；第 6 参置 messageType 为 rtc。
+        return this.sendTextMessage(
+          request.convId,
+          request.messageContent,
+          request.clientMessageId,
+          undefined,
+          undefined,
+          "rtc"
+        );
       default:
         return false;
     }
   }
 
-  /** 发送文本消息。 */
+  /**
+   * 发送文本或与文本同形的上行帧（含通话摘要 `rtc`）。
+   * 使用场景：`sendMessageByType` 中 text / rtc 共用同一帧结构。
+   *
+   * 参数位次说明（避免把末尾的 `"rtc"` 当成「多出来的字符串」）：
+   * 1. convId
+   * 2. messageContent
+   * 3. clientMessageId
+   * 4. replyToMessageId（仅普通文本/附件引用回复；rtc 传 undefined）
+   * 5. atUserIds（提及用户；rtc 传 undefined，由 handler 忽略请求体里的 @）
+   * 6. messageType：WS 帧里的消息类型，默认 `"text"`；通话摘要为 `"rtc"`。
+   */
   sendTextMessage(
     convId: number,
     messageContent: string,
     clientMessageId?: string,
     replyToMessageId?: number,
-    atUserIds?: number[]
+    atUserIds?: number[],
+    messageType: "text" | "rtc" = "text"
   ): boolean {
     const normalizedClientMessageId = clientMessageId || `client_${Date.now()}`;
     const payload: SendMessageWSRequest = {
       action: "sendMessage",
       convId,
-      messageType: "text",
+      messageType,
       messageContent,
       clientMessageId: normalizedClientMessageId,
     };

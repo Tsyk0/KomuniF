@@ -27,6 +27,7 @@ export const useRecallMessageStore = defineStore("recallMessage", () => {
     context: RecallPermissionContext
   ): boolean => {
     if (!message || message.isRecalled) return false;
+    if (String(message.messageType || "").toLowerCase() === "rtc") return false;
     const currentUserId = Number(context.currentUserId);
     if (!Number.isFinite(currentUserId) || currentUserId <= 0) return false;
 

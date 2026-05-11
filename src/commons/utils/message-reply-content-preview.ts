@@ -20,6 +20,10 @@ export function formatQuotedMessageContentPreview(message: DisplayMessage): stri
     const btw = extractByTheWayTextFromMessageContent(message.messageContent);
     return btw ? `[视频] ${btw}` : "[视频]";
   }
+  if (t === "rtc") {
+    const body = (message.messageContent || "").replace(/\s+/g, " ").trim();
+    return body || "[通话]";
+  }
   if (t === "file") {
     const raw = message.messageContent || "";
     try {

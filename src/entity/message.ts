@@ -49,6 +49,8 @@ export const MessageType = {
     FILE: 'file',
     AUDIO: 'audio',
     VIDEO: 'video',
+    /** 音视频通话结束摘要（与附件 video 不同） */
+    RTC: 'rtc',
     LOCATION: 'location',
     EMOJI: 'emoji',
     SYSTEM: 'system'

@@ -55,6 +55,7 @@ export type MessageType =
   | "file"
   | "audio"
   | "video"
+  | "rtc"
   | "location"
   | "emoji"
   | "system";

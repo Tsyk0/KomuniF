@@ -188,6 +188,12 @@ function buildLastMessagePreviewBody(lastMsg: LastMessageInfo): string {
 
   if (type === "image") return "[图片]";
   if (type === "video") return "[视频]";
+  if (type === "rtc") {
+    const body = (lastMsg.messageContent || "").trim();
+    if (!body) return "[通话]";
+    if (body.length > 30) return `${body.slice(0, 30)}...`;
+    return body;
+  }
   if (type === "file") {
     const fileName =
       parseFileNameFromMessageContent(lastMsg.messageContent) ?? "文件";

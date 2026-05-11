@@ -106,10 +106,7 @@
           <div class="user-profile" @click="enterEditMode" v-ripple>
             <div class="avatar-placeholder">
               <img
-                v-if="
-                  currentUserAvatar &&
-                  currentUserAvatar !== ''
-                "
+                v-if="currentUserAvatar && currentUserAvatar !== ''"
                 :src="currentUserAvatar"
                 alt="头像"
                 class="avatar-img-small"
@@ -129,10 +126,7 @@
         </div>
 
         <div class="sidebar-content">
-          <div
-            v-if="convCreateStore.active"
-            class="friend-pick-sidebar-wrap"
-          >
+          <div v-if="convCreateStore.active" class="friend-pick-sidebar-wrap">
             <FriendPickSidebar :search-query="searchKeyword" />
           </div>
 
@@ -201,7 +195,8 @@
 
         <PlusPanel
           v-else-if="
-            convCreateStore.active && convCreateStore.groupInviteToConvId == null
+            convCreateStore.active &&
+            convCreateStore.groupInviteToConvId == null
           "
           @exit="exitConvCreate"
           @created="handleGroupCreated"
@@ -216,7 +211,7 @@
           @back="clearCurrentConversation"
           @call="handleChatTrtcCall"
         />
-
+        <!-- @call代表监听call事件 -->
         <TUICallKitShell />
       </div>
     </div>
@@ -297,17 +292,29 @@ const tuikitSessionStore = useTUICallKitSessionStore();
  * 场景：须与 `TUICallKitShell` 共用同一静态导入的 uikit 模块，避免动态 import 拆 chunk 后出现两套 CallService 单例。
  * 场景：引擎实例可能在内部 login 完成前就存在，须以 `callKitSessionReady`（init 整链结束）为准，否则会报「尚未完成初始化或登录」。
  */
+/**
+ * 单聊头部发起视频通话；payload 来自 ChatContainer `emit("call", { convId, peerUserId })`。
+ * @param {{ convId: number; peerUserId: number }} payload
+ */
 const handleChatTrtcCall = async (payload) => {
   if (!tuikitSessionStore.callKitSessionReady) {
-    toast.error("通话正在初始化或未就绪，请稍候（需 UserSig 成功且 init 完成）");
+    toast.error(
+      "通话正在初始化或未就绪，请稍候（需 UserSig 成功且 init 完成）"
+    );
     return;
   }
   try {
+    tuikitSessionStore.beginKomuniOutboundCall({
+      convId: payload.convId,
+      peerUserId: payload.peerUserId,
+      callMediaType: TUICallType.VIDEO_CALL,
+    });
     await TUICallKitAPI.calls({
       userIDList: [komuniUserIdToTrtcUserId(payload.peerUserId)],
       type: TUICallType.VIDEO_CALL,
     });
   } catch (e) {
+    tuikitSessionStore.clearKomuniOutboundCallContext();
     toast.error(e instanceof Error ? e.message : "发起通话失败");
   }
 };
@@ -446,7 +453,8 @@ const notificationUnreadCount = computed(() =>
 );
 const notificationHasUnreadRing = computed(
   () =>
-    notificationUnreadCount.value > 0 && currentMainView.value !== "notifications"
+    notificationUnreadCount.value > 0 &&
+    currentMainView.value !== "notifications"
 );
 const flushOnPageHide = () => {
   conversationStore.flushWsReadMessageReportOnPageHide();
@@ -692,17 +700,17 @@ const handleConversationClick = (convId) => {
     return;
   }
 
-  if (
-    convCreateStore.active &&
-    convCreateStore.groupInviteToConvId != null
-  ) {
+  if (convCreateStore.active && convCreateStore.groupInviteToConvId != null) {
     const target = Number(convCreateStore.groupInviteToConvId);
     if (!Number.isFinite(target) || target !== id) {
       convCreateStore.exit(false);
     }
   }
 
-  console.log("HomeView: 会话已在 ConversationList 中切换，HomeView 仅更新界面状态:", id);
+  console.log(
+    "HomeView: 会话已在 ConversationList 中切换，HomeView 仅更新界面状态:",
+    id
+  );
   currentMainView.value = null;
   selectedFriend.value = null;
 };
