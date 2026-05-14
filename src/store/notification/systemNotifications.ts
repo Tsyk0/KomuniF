@@ -16,7 +16,51 @@ import type {
   RequestHandleAction,
   SystemNotification,
 } from "@/types/dto/notification";
+import { requestHandleIsPending } from "@/types/dto/notification";
 import toast from "@/commons/utils/toast";
+
+function pickRecord(v: unknown): Record<string, unknown> | null {
+  if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, unknown>;
+  return null;
+}
+
+/**
+ * 从 `newRequestHandle` WS 整帧解析出业务体（兼容 `data`、`data.requestHandle` / `data.rah` 与扁平帧）。
+ * 使用场景：`systemNotifications` 合并 RAH；避免后端嵌套字段导致取不到 `id` 而整段被丢弃。
+ */
+function resolveNewRequestHandleBody(payload: unknown): Record<string, unknown> | null {
+  const root = pickRecord(payload);
+  if (!root) return null;
+  const data = pickRecord(root.data);
+  if (data) {
+    const nested =
+      pickRecord(data.requestHandle) ||
+      pickRecord(data.rah) ||
+      pickRecord(data.request_handle);
+    if (nested) return nested;
+    return data;
+  }
+  return root;
+}
+
+function coercePositiveId(body: Record<string, unknown>): number {
+  const keys = ["id", "rahId", "requestHandleId", "request_handle_id"];
+  for (const k of keys) {
+    const n = Number(body[k]);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 0;
+}
+
+function strField(body: Record<string, unknown>, ...keys: string[]): string | null {
+  for (const k of keys) {
+    const v = body[k];
+    if (v == null) continue;
+    const s = String(v).trim();
+    if (s !== "") return s;
+  }
+  return null;
+}
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -265,24 +309,40 @@ export const useSystemNotificationsStore = defineStore("systemNotifications", ()
     };
 
     const onRequest = (payload: unknown) => {
-      const p = payload as Record<string, any>;
-      const body = ((p.data as Record<string, any>) || p) as Record<string, any>;
-      const id = Number(body.id ?? body.rahId);
-      if (!Number.isFinite(id) || id <= 0) return;
-      const key = `rah:${id}:${String(body.createTime ?? body.handleTime ?? "")}`;
+      const body = resolveNewRequestHandleBody(payload);
+      if (!body) return;
+      const id = coercePositiveId(body);
+      if (id <= 0) return;
+      const key = `rah:${id}:${String(body.createTime ?? body.handleTime ?? body.updateTime ?? "")}`;
       if (!consumeOnce(key)) return;
-      upsertRequestHandle({
+      const rah: RequestHandle = {
         id,
         type: String(body.type || ""),
         status: String(body.status || "pending"),
-        requester: Number(body.requester || 0),
-        handler: Number(body.handler || body.receiverUserId || 0),
-        rahTitle: body.rahTitle ?? null,
-        rahContent: body.rahContent ?? null,
-        rahFeedback: body.rahFeedback ?? null,
-        createTime: String(body.createTime || new Date().toISOString()),
-        handleTime: body.handleTime == null ? null : String(body.handleTime),
-      });
+        requester: Number(body.requester ?? body.requester_id ?? 0),
+        handler: Number(
+          body.handler ?? body.handler_id ?? body.receiverUserId ?? body.receiver_user_id ?? 0
+        ),
+        convId: (() => {
+          const raw = body.convId ?? body.conv_id;
+          if (raw == null || raw === "") return null;
+          const n = Number(raw);
+          return Number.isFinite(n) && n > 0 ? n : null;
+        })(),
+        rahTitle: strField(body, "rahTitle", "rah_title"),
+        rahContent: strField(body, "rahContent", "rah_content"),
+        rahFeedback: strField(body, "rahFeedback", "rah_feedback"),
+        createTime: strField(body, "createTime", "create_time") || new Date().toISOString(),
+        handleTime: (() => {
+          const v = body.handleTime ?? body.handle_time;
+          if (v == null || v === "") return null;
+          return String(v);
+        })(),
+      };
+      upsertRequestHandle(rah);
+      if (requestHandleIsPending(rah)) {
+        unreadSummary.value.notificationUnread += 1;
+      }
       console.info("[WS-NOTIF-RT][STORE][MERGED]", "newRequestHandle", { rahId: id });
     };
 

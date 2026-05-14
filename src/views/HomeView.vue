@@ -451,9 +451,13 @@ const currentFriendId = computed(() => {
 const notificationUnreadCount = computed(() =>
   Math.max(0, Number(notificationStore.unreadCount || 0))
 );
+/** 有待处理 RAH 时也提示（后端 unread-summary 可能不含 RAH；且 initialize 可能在 WS 之后把未读摘要拉回 0） */
+const hasPendingNotificationRequests = computed(
+  () => (notificationStore.pendingRequestHandleList?.length || 0) > 0
+);
 const notificationHasUnreadRing = computed(
   () =>
-    notificationUnreadCount.value > 0 &&
+    (notificationUnreadCount.value > 0 || hasPendingNotificationRequests.value) &&
     currentMainView.value !== "notifications"
 );
 const flushOnPageHide = () => {
